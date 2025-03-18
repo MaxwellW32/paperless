@@ -1,0 +1,26 @@
+.contDiv {
+    display: grid;
+    position: relative;
+    align-items: center;
+}
+
+.moreItemsMenu {
+    padding: .5rem;
+    display: grid;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: min(300px, 100vw);
+    background-color: rgb(var(--shade2));
+}
+
+.moreIntemsItem {
+    padding: .5rem;
+    transition: color 400ms, background-color 400ms;
+    cursor: pointer;
+}
+
+.moreIntemsItem:hover {
+    background-color: rgb(var(--shade1));
+    color: rgb(var(--shade4));
+}

@@ -1,0 +1,20 @@
+.main {
+    display: grid;
+    overflow: auto;
+}
+
+.templatesCont {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(400px, 100%), 1fr));
+    gap: var(--gapSmall);
+}
+
+.templateCont {
+    border: 1px solid rgb(var(--shade1));
+    width: 100%;
+    aspect-ratio: 1/1;
+    position: relative;
+    display: grid;
+    align-content: flex-start;
+    grid-template-rows: 1fr auto;
+}

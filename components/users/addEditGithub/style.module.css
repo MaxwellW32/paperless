@@ -1,0 +1,33 @@
+.form {
+    display: grid;
+    align-content: flex-start;
+}
+
+.form>div {
+    display: grid;
+    align-content: flex-start;
+    gap: .5rem;
+}
+
+
+
+
+
+.tokensCont {
+    display: grid;
+    grid-auto-flow: column;
+    overflow-x: auto;
+    grid-auto-columns: 80%;
+    margin-top: 2rem;
+}
+
+.tokenCont {
+    display: grid;
+    align-content: flex-start;
+}
+
+.tokenCont>div {
+    display: grid;
+    align-content: flex-start;
+    gap: .5rem;
+}
