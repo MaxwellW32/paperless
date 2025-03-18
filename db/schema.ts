@@ -2,13 +2,14 @@ import { relations } from "drizzle-orm";
 import { timestamp, pgTable, text, primaryKey, integer, varchar, pgEnum, json, index, boolean } from "drizzle-orm/pg-core"
 import type { AdapterAccountType } from "next-auth/adapters"
 
-export const accessLevelEnum = pgEnum("role", ["admin"]);
+export const accessLevelEnum = pgEnum("accessLevel", ["admin"]);
 
 export const users = pgTable("users", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     fromDepartment: boolean("fromDepartment").notNull().default(false),
     phoneNumbers: json("phoneNumbers").$type<string[]>().notNull().default([]),
     accessLevel: accessLevelEnum(),
+
     name: varchar("name", { length: 255 }),
     image: text("image"),
     email: varchar("email", { length: 255 }).unique(),
@@ -84,7 +85,7 @@ export const tapesRelations = relations(users, ({ many }) => ({
 
 
 
-export const userDepartmentRoleEnum = pgEnum("role", ["head", "elevated", "regular"]);
+export const userDepartmentRoleEnum = pgEnum("departmentRole", ["head", "elevated", "regular"]);
 
 export const usersToDepartments = pgTable("usersToDepartments", {
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
@@ -106,7 +107,7 @@ export const usersToDepartmentsRelations = relations(usersToDepartments, ({ one 
 
 
 
-export const userCompanyRoleEnum = pgEnum("role", ["elevated", "regular"]);
+export const userCompanyRoleEnum = pgEnum("companyRole", ["head", "elevated", "regular"]);
 
 export const usersToCompanies = pgTable("usersToCompanies", {
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),

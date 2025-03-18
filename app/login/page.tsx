@@ -2,12 +2,13 @@
 import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast"
 import { signIn } from "next-auth/react"
 import { useState } from "react"
+import toast from "react-hot-toast"
 
 export default function Page() {
     const [email, emailSet] = useState("")
 
     return (
-        <div style={{ display: "grid", alignItems: "center", justifyItems: "center", alignContent: "flex-start", gap: ".5rem" }}>
+        <div style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", justifyItems: "center" }}>
             <h3>Sign in with Email</h3>
 
             <input type="text" value={email} placeholder="enter your email"
@@ -16,15 +17,16 @@ export default function Page() {
                 }}
             />
 
-            <button className="mainButton"
+            <button className="mainButton" style={{ justifySelf: "center" }}
                 onClick={async () => {
                     try {
                         await signIn("nodemailer", {
                             email: email,
                             callbackUrl: `${window.location.origin}`,
                             redirect: false,
-                            // redirectTo: "/"
                         })
+
+                        toast.success("login email sent")
 
                     } catch (error) {
                         consoleAndToastError(error)
