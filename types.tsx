@@ -89,7 +89,7 @@ export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
 
 //keep synced with db schema
-export const userRoleSchema = z.enum(["admin", "elevated", "regular"])
+export const userRoleSchema = z.enum(["admin", "elevated"])
 
 export const userSchema = z.object({
     id: z.string().min(1),
