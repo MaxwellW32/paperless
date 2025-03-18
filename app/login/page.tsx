@@ -1,4 +1,5 @@
 "use client"
+import { sendEmail } from "@/serverFunctions/handleMail"
 import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast"
 import { signIn } from "next-auth/react"
 import { useState } from "react"

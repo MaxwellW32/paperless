@@ -11,7 +11,7 @@ const nextConfig = {
                 hostname: "localhost"
             }
         ]
-    }
+    },
 };
 
 export default nextConfig;

@@ -2,7 +2,7 @@ import Link from "next/link"
 import { auth } from "@/auth/auth"
 import styles from "./styles.module.css"
 import Image from "next/image"
-import logo from "@/public/logo.svg"
+import logo from "@/public/logo.png"
 import MoreNavOptions from "../moreNavOptions/MoreNavOptions"
 
 export default async function Nav() {
