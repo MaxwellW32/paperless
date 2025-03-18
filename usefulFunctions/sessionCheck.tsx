@@ -1,15 +1,16 @@
-// import { auth } from "@/auth/auth"
+import { auth } from "@/auth/auth"
 
-// export async function sessionCheckWithError() {
-//     const session = await auth()
+export async function sessionCheckWithError() {
+    const session = await auth()
 
-//     if (session === null) {
-//         throw new Error("no session seen")
+    if (session === null) {
+        throw new Error("no session seen")
 
-//     } else {
-//         return session
-//     }
-// }
+    } else {
+        return session
+    }
+}
+
 // export async function ensureUserCanAccessWebsite(authorId: string, authorisedList: authorisedUserType[], checkForEditRights?: boolean) {
 //     const session = await sessionCheckWithError()
 

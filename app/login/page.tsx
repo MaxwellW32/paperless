@@ -19,7 +19,7 @@ export default function Page() {
             <button className="mainButton"
                 onClick={async () => {
                     try {
-                        const signInResult = await signIn("nodemailer", {
+                        await signIn("nodemailer", {
                             email: email,
                             callbackUrl: `${window.location.origin}`,
                             redirect: false,
