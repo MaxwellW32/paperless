@@ -263,6 +263,8 @@ export type adminUpdateClientRequest = z.infer<typeof adminUpdateClientRequestSc
 export const updateClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, companyId: true })
 export type updateClientRequest = z.infer<typeof updateClientRequestSchema>
 
+export const newClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, companyId: true, status: true })
+export type newClientRequest = z.infer<typeof newClientRequestSchema>
 
 
 
@@ -286,6 +288,7 @@ export type updateClientRequest = z.infer<typeof updateClientRequestSchema>
 export const userDepartmentRoleSchema = z.enum(["head", "elevated", "regular"])
 
 export const userToDepartmentSchema = z.object({
+    id: z.string().min(1),
     userId: z.string().min(1),
     departmentId: z.string().min(1),
     departmentRole: userDepartmentRoleSchema,
@@ -293,7 +296,7 @@ export const userToDepartmentSchema = z.object({
 export type userToDepartment = z.infer<typeof userToDepartmentSchema> & {
 }
 
-export const updateUserToDepartmentSchema = userToDepartmentSchema.omit({ userId: true, departmentId: true, departmentRole: true })
+export const updateUserToDepartmentSchema = userToDepartmentSchema.omit({ id: true, userId: true, departmentId: true, departmentRole: true })
 export type updateUserToDepartment = z.infer<typeof updateUserToDepartmentSchema>
 
 
@@ -303,6 +306,7 @@ export type updateUserToDepartment = z.infer<typeof updateUserToDepartmentSchema
 export const userCompanyRoleSchema = z.enum(["head", "elevated", "regular"])
 
 export const userToCompanySchema = z.object({
+    id: z.string().min(1),
     userId: z.string().min(1),
     companyId: z.string().min(1),
     companyRole: userCompanyRoleSchema,
@@ -311,7 +315,10 @@ export const userToCompanySchema = z.object({
 export type userToCompany = z.infer<typeof userToCompanySchema> & {
 }
 
-export const updateUserToCompanySchema = userToCompanySchema.omit({ userId: true, companyId: true, companyRole: true })
+export const newUserToCompanySchema = userToCompanySchema.omit({ id: true, userId: true })
+export type newUserToCompany = z.infer<typeof newUserToCompanySchema>
+
+export const updateUserToCompanySchema = userToCompanySchema.omit({ id: true, userId: true, companyId: true, companyRole: true })
 export type updateUserToCompany = z.infer<typeof updateUserToCompanySchema>
 
 
