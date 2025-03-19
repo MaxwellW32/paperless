@@ -1,7 +1,6 @@
 import { auth } from "@/auth/auth"
-import styles from "./page.module.css"
 import AddEditDepositTape from "@/components/clientRequests/depositTape/DepositTape"
-import { getUser } from "@/serverFunctions/handleUser"
+import { getSpecificUser } from "@/serverFunctions/handleUser"
 
 export default async function Page() {
   const session = await auth()
@@ -10,7 +9,7 @@ export default async function Page() {
     return (<p>Please login</p>)
   }
 
-  const seenUser = await getUser(session.user.id)
+  const seenUser = await getSpecificUser(session.user.id)
   if (seenUser === undefined) {
     return (<p>not seeing user</p>)
   }

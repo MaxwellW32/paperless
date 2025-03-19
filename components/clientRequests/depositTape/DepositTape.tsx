@@ -1,11 +1,11 @@
 "use client"
+import TextInput from "@/components/textInput/TextInput";
 import { addClientRequests } from "@/serverFunctions/handleClientRequests";
-import { getUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies";
-import { newClientRequest, newTape, tapeDepositRequestType, user, userToCompany } from "@/types";
+import { newClientRequest, newTape, tapeDepositRequestSchema, tapeDepositRequestType, user, userToCompany } from "@/types";
 import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast";
 import { deepClone } from "@/utility/utility";
-import { Session } from "next-auth"
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 
 //design from client access
 //then do from egov perspective
@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 //roleplay
 //maxwell is admin of app - maxwellwedderburn32
 //Adrian Dixon is company manager - head - squaremaxtech@gmail.com
-//christopher is making this request as the client - elevated - uncommonfavour32@gmail.com
+//christopher Masters is making this request as the client - elevated - uncommonfavour32@gmail.com
 //Danielle is department manager - head - need other email
 //Donovan is making this request from egov - elevated - need other email
 
@@ -23,7 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 //need client account christopher
 
 export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
-    const [chosenUser, chosenUserSet] = useState<user>(seenUser)
+    const [chosenUser,] = useState<user>(seenUser)
     const [activeUserToCompanyId, activeUserToCompanyIdSet] = useState<userToCompany["id"] | undefined>()
 
     const activeUserToCompany = useMemo<userToCompany | undefined>(() => {
@@ -37,6 +37,42 @@ export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
         newTapes: []
     }
     const [newTapeDepositRequest, newTapeDepositRequestSet] = useState<tapeDepositRequestType>(deepClone(initialTapeDepositRequest))
+
+    type tapeDepositRequestKeys = keyof Partial<tapeDepositRequestType>
+
+    const [formErrors, formErrorsSet] = useState<{ [key: string]: string }>({})
+
+    //if only one company for user set as active
+    useEffect(() => {
+        //only run for clients
+        if (seenUser.fromDepartment) return
+        if (seenUser.usersToCompanies === undefined) return
+
+        if (seenUser.usersToCompanies.length === 1) {
+            activeUserToCompanyIdSet(seenUser.usersToCompanies[0].id)
+        }
+    }, [])
+
+    function checkIfValid() {
+        formErrorsSet({})
+
+        const seenSchemaResults = tapeDepositRequestSchema.safeParse(newTapeDepositRequest)
+
+        if (seenSchemaResults.success) {
+
+        } else if (seenSchemaResults.error !== undefined) {
+            formErrorsSet(prevFormErrors => {
+                const newFormErrors = { ...prevFormErrors }
+
+                seenSchemaResults.error.errors.forEach(eachError => {
+                    const errorKey = eachError.path.join('/')
+                    newFormErrors[errorKey] = eachError.message
+                })
+
+                return newFormErrors
+            })
+        }
+    }
 
     async function handleSubmit() {
         try {
@@ -53,13 +89,17 @@ export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
             //send off request
             await addClientRequests(newClientRequestObj, { companyIdBeingAccessed: activeUserToCompany.companyId })
 
+            toast.success("submitted")
+
         } catch (error) {
             consoleAndToastError(error)
         }
     }
 
+
+
     return (
-        <form style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }} action={() => { }}>
+        <form style={{ display: "grid", alignContent: "flex-start", gap: "1rem", overflowY: "auto" }} action={() => { }}>
             {seenUser.usersToCompanies !== undefined && (
                 <>
                     <label>Company Selection</label>
@@ -69,7 +109,11 @@ export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
                             if (eachUserToCompany.company === undefined) return null
 
                             return (
-                                <button key={eachUserToCompany.id} className="button1" style={{ backgroundColor: activeUserToCompany !== undefined && eachUserToCompany.id === activeUserToCompany.id ? "rgb(var(--color1))" : "" }}>
+                                <button key={eachUserToCompany.id} className="button1" style={{ backgroundColor: activeUserToCompany !== undefined && eachUserToCompany.id === activeUserToCompany.id ? "rgb(var(--color1))" : "" }}
+                                    onClick={() => {
+                                        activeUserToCompanyIdSet(eachUserToCompany.id)
+                                    }}
+                                >
                                     {eachUserToCompany.company.name}
                                 </button>
                             )
@@ -78,25 +122,30 @@ export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
                 </>
             )}
 
-            <div className="snap" style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: "200px" }}>
+            <div className="snap" style={{ display: "flex", gap: "1rem", overflowX: "auto" }}>
                 {/* handle tapes */}
                 {newTapeDepositRequest.newTapes.map((eachNewTape, eachNewTapeIndex) => {
                     return (
-                        <div key={eachNewTapeIndex} style={{ display: "grid", alignContent: "flex-start", gap: ".5rem" }}>
-                            <button
+                        <div key={eachNewTapeIndex} style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", width: "min(400px, 100%)" }}>
+                            <button className="button2"
                                 onClick={() => {
                                     newTapeDepositRequestSet(prevNewTapeDepositRequest => {
                                         const newNewTapeDepositRequest = { ...prevNewTapeDepositRequest }
 
-                                        newNewTapeDepositRequest.newTapes = newNewTapeDepositRequest.newTapes.filter((eachNewTapeFilter, eachNewTapeFilterIndex) => { eachNewTapeFilterIndex !== eachNewTapeIndex })
+                                        newNewTapeDepositRequest.newTapes = newNewTapeDepositRequest.newTapes.filter((eachNewTapeFilter, eachNewTapeFilterIndex) => eachNewTapeFilterIndex !== eachNewTapeIndex)
+
                                         return newNewTapeDepositRequest
                                     })
                                 }}
                             >remove</button>
 
-                            <label>media label</label>
-                            <input type="text" value={eachNewTape.mediaLabel} placeholder="enter the tape media label"
-                                onChange={(e) => {
+                            <TextInput
+                                name={`newTapes/${eachNewTapeIndex}/mediaLabel`}
+                                value={eachNewTape.mediaLabel}
+                                type={undefined}
+                                label={"media label"}
+                                placeHolder={"enter the tape media label"}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     newTapeDepositRequestSet(prevNewTapeDepositRequest => {
                                         const newNewTapeDepositRequest = { ...prevNewTapeDepositRequest }
 
@@ -104,11 +153,17 @@ export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
                                         return newNewTapeDepositRequest
                                     })
                                 }}
+                                onBlur={checkIfValid}
+                                errors={formErrors[`newTapes/${eachNewTapeIndex}/mediaLabel`]}
                             />
 
-                            <label>initial</label>
-                            <input type="text" value={eachNewTape.initial} placeholder="enter the tape initial"
-                                onChange={(e) => {
+                            <TextInput
+                                name={`newTapes/${eachNewTapeIndex}/initial`}
+                                value={eachNewTape.initial}
+                                type={undefined}
+                                label={"initial"}
+                                placeHolder={"enter the tape initial"}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     newTapeDepositRequestSet(prevNewTapeDepositRequest => {
                                         const newNewTapeDepositRequest = { ...prevNewTapeDepositRequest }
 
@@ -116,13 +171,15 @@ export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
                                         return newNewTapeDepositRequest
                                     })
                                 }}
+                                onBlur={checkIfValid}
+                                errors={formErrors[`newTapes/${eachNewTapeIndex}/initial`]}
                             />
                         </div>
                     )
                 })}
             </div>
 
-            <button
+            <button className="button1"
                 onClick={() => {
                     newTapeDepositRequestSet(prevNewTapeDepositRequest => {
                         const newNewTapeDepositRequest = { ...prevNewTapeDepositRequest }
@@ -139,7 +196,7 @@ export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
                 }}
             >add tape</button>
 
-            <button
+            <button className="button1"
                 onClick={handleSubmit}
             >submit</button>
         </form>

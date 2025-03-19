@@ -218,7 +218,7 @@ export type requestType = z.infer<typeof requestTypeSchema>
 
 export const tapeDepositRequestSchema = z.object({
     type: z.literal(requestTypeSchema.Values.tapeDeposit),
-    newTapes: z.array(newTapeSchema)
+    newTapes: z.array(newTapeSchema).min(1)
 });
 export type tapeDepositRequestType = z.infer<typeof tapeDepositRequestSchema>
 

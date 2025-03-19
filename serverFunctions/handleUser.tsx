@@ -21,7 +21,7 @@ export async function updateTheUser(userId: user["id"], userObj: Partial<updateU
     return result
 }
 
-export async function getUser(userId: user["id"]): Promise<user | undefined> {
+export async function getSpecificUser(userId: user["id"]): Promise<user | undefined> {
     await sessionCheckWithError()
 
     userSchema.shape.id.parse(userId)

@@ -100,7 +100,7 @@ export const usersToDepartmentsRelations = relations(usersToDepartments, ({ one 
         references: [users.id],
     }),
     department: one(departments, {
-        fields: [usersToDepartments.userId],
+        fields: [usersToDepartments.departmentId],
         references: [departments.id],
     }),
 }));
@@ -126,7 +126,7 @@ export const usersToCompaniesRelations = relations(usersToCompanies, ({ one }) =
         references: [users.id],
     }),
     company: one(companies, {
-        fields: [usersToCompanies.userId],
+        fields: [usersToCompanies.companyId],
         references: [companies.id],
     }),
 }));
@@ -148,7 +148,7 @@ export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
         references: [users.id],
     }),
     company: one(companies, {
-        fields: [clientRequests.userId],
+        fields: [clientRequests.companyId],
         references: [companies.id],
     }),
 }));
