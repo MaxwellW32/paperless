@@ -1,3 +1,4 @@
+import { clientRequestDataType } from "@/types";
 import { relations } from "drizzle-orm";
 import { timestamp, pgTable, text, primaryKey, integer, varchar, pgEnum, json, index, boolean } from "drizzle-orm/pg-core"
 import type { AdapterAccountType } from "next-auth/adapters"
@@ -64,7 +65,7 @@ export const equipment = pgTable("equipment", {
     amps: varchar("amps", { length: 255 }),
     weight: varchar("weight", { length: 255 }),
 })
-export const equipmentRelations = relations(users, ({ many }) => ({
+export const equipmentRelations = relations(equipment, ({ many }) => ({
 }));
 
 
@@ -76,7 +77,7 @@ export const tapes = pgTable("tapes", {
     initial: varchar("initial", { length: 255 }).notNull(),
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
 })
-export const tapesRelations = relations(users, ({ many }) => ({
+export const tapesRelations = relations(tapes, ({ many }) => ({
 }));
 
 
@@ -128,8 +129,25 @@ export const usersToCompaniesRelations = relations(usersToCompanies, ({ one }) =
 
 
 
+export const clientRequestStatusEnum = pgEnum("status", ["in-progress", "completed", "cancelled", "on-hold"]);
 
-
+export const clientRequests = pgTable("clientRequests", {
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
+    companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
+    data: json("request").$type<clientRequestDataType>().notNull(),
+    status: clientRequestStatusEnum().notNull(),
+})
+export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
+    user: one(users, {
+        fields: [clientRequests.userId],
+        references: [users.id],
+    }),
+    company: one(companies, {
+        fields: [clientRequests.userId],
+        references: [companies.id],
+    }),
+}));
 
 
 

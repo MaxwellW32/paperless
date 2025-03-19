@@ -81,6 +81,64 @@ export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
 
 
+const requestTypeSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"])
+export type requestType = z.infer<typeof requestTypeSchema>
+
+export const tapeDepositRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.tapeDeposit),
+});
+export type tapeDepositRequestType = z.infer<typeof tapeDepositRequestSchema>
+
+
+
+
+export const tapeWithdrawRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.tapeWithdraw),
+});
+export type tapeWithdrawRequestType = z.infer<typeof tapeWithdrawRequestSchema>
+
+
+
+
+export const equipmentDepositRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.equipmentDeposit),
+});
+export type equipmentDepositRequestType = z.infer<typeof equipmentDepositRequestSchema>
+
+
+
+
+export const equipmentWithdrawRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.equipmentWithdraw),
+});
+export type equipmentWithdrawRequestType = z.infer<typeof equipmentWithdrawRequestSchema>
+
+
+
+
+export const equipmentOtherRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.equipmentOther),
+});
+export type equipmentOtherRequestType = z.infer<typeof equipmentOtherRequestSchema>
+
+
+
+
+export const clientRequestDataSchema = z.union([tapeDepositRequestSchema, tapeWithdrawRequestSchema, equipmentDepositRequestSchema, equipmentWithdrawRequestSchema, equipmentOtherRequestSchema])
+export type clientRequestDataType = z.infer<typeof clientRequestDataSchema>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -155,7 +213,7 @@ export const equipmentSchema = z.object({
     additionalNotes: z.string(),
     powerSupplyCount: z.number(),
     rackUnits: z.number(),
-    companyId: z.string().min(1),
+    companyId: companySchema.shape.id,
 
     amps: z.string().min(1).nullable(),
     weight: z.string().min(1).nullable(),
@@ -180,6 +238,46 @@ export type tape = z.infer<typeof tapeSchema> & {
 
 export const updateTapeSchema = tapeSchema.omit({ id: true })
 export type updateTape = z.infer<typeof updateTapeSchema>
+
+
+
+
+//keep synced with db schema
+export const clientRequestStatusSchema = z.enum(["in-progress", "completed", "cancelled", "on-hold"])
+
+export const clientRequestSchema = z.object({
+    id: z.string().min(1),
+    userId: userSchema.shape.id,
+    companyId: companySchema.shape.id,
+    data: clientRequestDataSchema,
+    status: clientRequestStatusSchema,
+})
+export type clientRequest = z.infer<typeof clientRequestSchema> & {
+    user?: user,
+    company?: company,
+}
+
+export const adminUpdateClientRequestSchema = clientRequestSchema.omit({ id: true, })
+export type adminUpdateClientRequest = z.infer<typeof adminUpdateClientRequestSchema>
+
+export const updateClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, companyId: true })
+export type updateClientRequest = z.infer<typeof updateClientRequestSchema>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -8,29 +8,6 @@
     /* border: 1px solid red !important; */
 }
 
-*::-webkit-scrollbar {
-    width: 7px;
-    height: 10px;
-}
-
-*::-webkit-scrollbar-track {
-    border-radius: 8px;
-    background-color: #e7e7e7;
-    border: 1px solid #cacaca;
-}
-
-*::-webkit-scrollbar-thumb {
-    border-radius: 8px;
-    background-color: rgb(var(--shade1));
-}
-
-/* 
-I believe in classnames
-fonts
-font sizes
-colors being dynamic
-everything else should be stated
-*/
 
 :root {
     --viewColor1: rgb(33, 112, 186);
@@ -53,6 +30,7 @@ everything else should be stated
 
     --fontSizeS: .7rem;
     --fontSizeR: 1rem;
+    --fontSizeM: 1.5rem;
     --fontSizeL: 2rem;
 }
 
@@ -69,11 +47,6 @@ body {
     font-size: var(--fontSizeR);
 }
 
-.big {
-    height: 5000vh;
-    background-color: pink;
-}
-
 label {
     font-weight: bold;
     text-transform: capitalize;
@@ -86,25 +59,6 @@ textarea {
     border: 1px solid rgb(var(--shade1));
 }
 
-input[type="color"] {
-    appearance: none;
-    width: 40px;
-    height: 40px;
-    border: none;
-    cursor: pointer;
-    background: transparent;
-    padding: 0;
-    outline: none;
-}
-
-input[type="color"]::-webkit-color-swatch {
-    border: 2px solid rgb(var(--shade1));
-}
-
-input[type="color"]::-moz-color-swatch {
-    border: 2px solid rgb(var(--shade1));
-}
-
 input:focus,
 textarea:focus {
     background-color: rgb(var(--shade2));
@@ -115,13 +69,17 @@ textarea:focus {
 ::-moz-placeholder {
     white-space: pre-line;
     position: relative;
-    top: -7px;
 }
 
 h1 {
     font-weight: bold;
     text-transform: capitalize;
     font-size: var(--fontSizeL);
+}
+
+h2 {
+    font-weight: bold;
+    font-size: var(--fontSizeM);
 }
 
 h3 {
@@ -145,40 +103,52 @@ section {
     align-content: flex-start;
 }
 
+
+
+
+
+
+
 /* custom classes */
 .noScrollBar::-webkit-scrollbar {
     display: none;
 }
 
-.mainButton {
+.button1 {
     background-color: rgb(var(--shade1));
     color: rgb(var(--shade2));
     padding: .5rem 1rem;
     text-transform: capitalize;
     font-weight: bold;
     justify-self: flex-start;
+}
+
+.button1>* {
     transition: scale 400ms;
 }
 
-.mainButton:hover {
+.button1>*:hover {
     scale: 1.01;
 }
 
-.secondaryButton {
+.button2 {
     background-color: rgb(var(--shade1));
     color: rgb(var(--shade2));
     padding: .2rem;
     font-size: var(--fontSizeS);
     text-transform: capitalize;
     font-weight: bold;
+}
+
+.button2>* {
     transition: scale 400ms;
 }
 
-.secondaryButton:hover {
+.button2>*:hover {
     scale: 1.01;
 }
 
-.tertiaryButton {
+.button3 {
     background-color: rgb(var(--shade1));
     color: rgb(var(--shade2));
     text-transform: capitalize;
@@ -209,8 +179,6 @@ section {
     border: 1px solid rgb(var(--shade1));
     padding: .5rem;
     position: fixed;
-    /* top: 0; */
-    /* left: 50%; */
     translate: var(--translate, 0 -100%);
     margin: 1rem;
     opacity: 0;
@@ -232,10 +200,4 @@ section {
     to {
         opacity: 1;
     }
-}
-
-.reset * {
-    all: unset;
-    display: revert;
-    box-sizing: border-box;
 }
