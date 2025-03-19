@@ -231,7 +231,7 @@ export const tapeSchema = z.object({
     id: z.string().min(1),
     mediaLabel: z.string().min(1),
     initial: z.string().min(1),
-    companyId: z.string().min(1),
+    companyId: companySchema.shape.id,
 })
 export type tape = z.infer<typeof tapeSchema> & {
 }
@@ -289,12 +289,15 @@ export const userDepartmentRoleSchema = z.enum(["head", "elevated", "regular"])
 
 export const userToDepartmentSchema = z.object({
     id: z.string().min(1),
-    userId: z.string().min(1),
-    departmentId: z.string().min(1),
+    userId: userSchema.shape.id,
+    departmentId: departmentSchema.shape.id,
     departmentRole: userDepartmentRoleSchema,
 })
 export type userToDepartment = z.infer<typeof userToDepartmentSchema> & {
 }
+
+export const newUserToDepartmentSchema = userToDepartmentSchema.omit({ id: true })
+export type newUserToDepartment = z.infer<typeof newUserToDepartmentSchema>
 
 export const updateUserToDepartmentSchema = userToDepartmentSchema.omit({ id: true, userId: true, departmentId: true, departmentRole: true })
 export type updateUserToDepartment = z.infer<typeof updateUserToDepartmentSchema>
@@ -307,39 +310,18 @@ export const userCompanyRoleSchema = z.enum(["head", "elevated", "regular"])
 
 export const userToCompanySchema = z.object({
     id: z.string().min(1),
-    userId: z.string().min(1),
-    companyId: z.string().min(1),
+    userId: userSchema.shape.id,
+    companyId: companySchema.shape.id,
     companyRole: userCompanyRoleSchema,
     onAccessList: z.boolean(),
 })
 export type userToCompany = z.infer<typeof userToCompanySchema> & {
 }
 
-export const newUserToCompanySchema = userToCompanySchema.omit({ id: true, userId: true })
+export const newUserToCompanySchema = userToCompanySchema.omit({ id: true, })
 export type newUserToCompany = z.infer<typeof newUserToCompanySchema>
 
-export const updateUserToCompanySchema = userToCompanySchema.omit({ id: true, userId: true, companyId: true, companyRole: true })
+export const updateUserToCompanySchema = userToCompanySchema.omit({ id: true, userId: true, companyId: true })
 export type updateUserToCompany = z.infer<typeof updateUserToCompanySchema>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export type authAcessType = { departmentId?: department["id"], companyId?: company["id"] }

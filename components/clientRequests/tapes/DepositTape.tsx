@@ -4,6 +4,9 @@ import { deepClone } from "@/utility/utility";
 import { Session } from "next-auth"
 import { useEffect, useState } from "react";
 
+//design from client access
+//then do from egov perspective
+
 export default function DepositTape({ seenSession }: { seenSession: Session }) {
     const initialRequestObj: newClientRequest = {
         data: {
