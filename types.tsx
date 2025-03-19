@@ -83,51 +83,7 @@ export type authAcessType = { departmentId?: department["id"], companyId?: compa
 
 
 
-const requestTypeSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"])
-export type requestType = z.infer<typeof requestTypeSchema>
 
-export const tapeDepositRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.tapeDeposit),
-});
-export type tapeDepositRequestType = z.infer<typeof tapeDepositRequestSchema>
-
-
-
-
-export const tapeWithdrawRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.tapeWithdraw),
-});
-export type tapeWithdrawRequestType = z.infer<typeof tapeWithdrawRequestSchema>
-
-
-
-
-export const equipmentDepositRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.equipmentDeposit),
-});
-export type equipmentDepositRequestType = z.infer<typeof equipmentDepositRequestSchema>
-
-
-
-
-export const equipmentWithdrawRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.equipmentWithdraw),
-});
-export type equipmentWithdrawRequestType = z.infer<typeof equipmentWithdrawRequestSchema>
-
-
-
-
-export const equipmentOtherRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.equipmentOther),
-});
-export type equipmentOtherRequestType = z.infer<typeof equipmentOtherRequestSchema>
-
-
-
-
-export const clientRequestDataSchema = z.union([tapeDepositRequestSchema, tapeWithdrawRequestSchema, equipmentDepositRequestSchema, equipmentWithdrawRequestSchema, equipmentOtherRequestSchema])
-export type clientRequestDataType = z.infer<typeof clientRequestDataSchema>
 
 
 
@@ -237,8 +193,78 @@ export const tapeSchema = z.object({
 export type tape = z.infer<typeof tapeSchema> & {
 }
 
+export const newTapeSchema = tapeSchema.omit({ id: true, companyId: true })
+export type newTape = z.infer<typeof newTapeSchema>
+
 export const updateTapeSchema = tapeSchema.omit({ id: true })
 export type updateTape = z.infer<typeof updateTapeSchema>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const requestTypeSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"])
+export type requestType = z.infer<typeof requestTypeSchema>
+
+export const tapeDepositRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.tapeDeposit),
+    newTapes: z.array(newTapeSchema)
+});
+export type tapeDepositRequestType = z.infer<typeof tapeDepositRequestSchema>
+
+
+
+
+
+export const tapeWithdrawRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.tapeWithdraw),
+});
+export type tapeWithdrawRequestType = z.infer<typeof tapeWithdrawRequestSchema>
+
+
+
+
+
+export const equipmentDepositRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.equipmentDeposit),
+});
+export type equipmentDepositRequestType = z.infer<typeof equipmentDepositRequestSchema>
+
+
+
+
+
+export const equipmentWithdrawRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.equipmentWithdraw),
+});
+export type equipmentWithdrawRequestType = z.infer<typeof equipmentWithdrawRequestSchema>
+
+
+
+
+
+export const equipmentOtherRequestSchema = z.object({
+    type: z.literal(requestTypeSchema.Values.equipmentOther),
+});
+export type equipmentOtherRequestType = z.infer<typeof equipmentOtherRequestSchema>
+
+
+
+
+
+export const clientRequestDataSchema = z.union([tapeDepositRequestSchema, tapeWithdrawRequestSchema, equipmentDepositRequestSchema, equipmentWithdrawRequestSchema, equipmentOtherRequestSchema])
+export type clientRequestDataType = z.infer<typeof clientRequestDataSchema>
+
 
 
 
@@ -248,8 +274,8 @@ export const clientRequestStatusSchema = z.enum(["in-progress", "completed", "ca
 
 export const clientRequestSchema = z.object({
     id: z.string().min(1),
-    userId: userSchema.shape.id,
-    companyId: companySchema.shape.id,
+    userId: userSchema.shape.id, //who sent the request
+    companyId: companySchema.shape.id, //what company is it on behalf of
     data: clientRequestDataSchema,
     status: clientRequestStatusSchema,
 })
@@ -266,11 +292,6 @@ export type updateClientRequest = z.infer<typeof updateClientRequestSchema>
 
 export const newClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, status: true })
 export type newClientRequest = z.infer<typeof newClientRequestSchema>
-
-
-
-
-
 
 
 
