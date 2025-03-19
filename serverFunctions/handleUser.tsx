@@ -28,6 +28,18 @@ export async function getUser(userId: user["id"]): Promise<user | undefined> {
 
     const result = await db.query.users.findFirst({
         where: eq(users.id, userId),
+        with: {
+            usersToCompanies: {
+                with: {
+                    company: true,
+                }
+            },
+            usersToDepartments: {
+                with: {
+                    department: true,
+                }
+            }
+        }
     });
 
     return result

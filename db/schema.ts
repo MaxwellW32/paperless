@@ -8,7 +8,6 @@ export const accessLevelEnum = pgEnum("accessLevel", ["admin"]);
 export const users = pgTable("users", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     fromDepartment: boolean("fromDepartment").notNull().default(false),
-    phoneNumbers: json("phoneNumbers").$type<string[]>().notNull().default([]),
     accessLevel: accessLevelEnum(),
 
     name: varchar("name", { length: 255 }),
@@ -28,7 +27,6 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const departments = pgTable("departments", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     name: varchar("name", { length: 255 }).notNull().unique(),
-    //department heads
 })
 export const departmentsRelations = relations(departments, ({ many }) => ({
     usersToDepartments: many(usersToDepartments),
@@ -93,6 +91,8 @@ export const usersToDepartments = pgTable("usersToDepartments", {
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
     departmentId: varchar("departmentId", { length: 255 }).notNull().references(() => departments.id),
     departmentRole: userDepartmentRoleEnum().notNull().default("regular"),
+    contactNumbers: json("contactNumbers").$type<string[]>().notNull(),
+    contactEmails: json("contactEmails").$type<string[]>().notNull(),
 })
 export const usersToDepartmentsRelations = relations(usersToDepartments, ({ one }) => ({
     user: one(users, {
@@ -117,6 +117,8 @@ export const usersToCompanies = pgTable("usersToCompanies", {
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
     companyRole: userCompanyRoleEnum().notNull().default("regular"),
     onAccessList: boolean("onAccessList").notNull().default(false),
+    contactNumbers: json("contactNumbers").$type<string[]>().notNull(),
+    contactEmails: json("contactEmails").$type<string[]>().notNull(),
 })
 export const usersToCompaniesRelations = relations(usersToCompanies, ({ one }) => ({
     user: one(users, {

@@ -59,7 +59,7 @@ export async function getSpecificUsersToCompanies(userId: user["id"], companyId:
     return result
 }
 
-export async function getUsersFromCompany(companyId: company["id"], auth: authAcessType): Promise<userToCompany[]> {
+export async function getUsersFromCompanies(companyId: company["id"], auth: authAcessType): Promise<userToCompany[]> {
     //security check
     await ensureUserHasAccess(auth)
 
@@ -74,4 +74,39 @@ export async function getUsersFromCompany(companyId: company["id"], auth: authAc
     });
 
     return result
+}
+
+export async function getUsersToCompanies(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }, auth: authAcessType): Promise<userToCompany[]> {
+    //security check
+    await ensureUserHasAccess(auth)
+
+    if (option.type === "user") {
+        userSchema.shape.id.parse(option.userId)
+
+        const result = await db.query.usersToCompanies.findMany({
+            where: eq(usersToCompanies.userId, option.userId),
+            with: {
+                user: true,
+                company: true,
+            }
+        });
+
+        return result
+
+    } else if (option.type === "company") {
+        companySchema.shape.id.parse(option.companyId)
+
+        const result = await db.query.usersToCompanies.findMany({
+            where: eq(usersToCompanies.companyId, option.companyId),
+            with: {
+                user: true,
+                company: true,
+            }
+        });
+
+        return result
+
+    } else {
+        throw new Error("invalid selection")
+    }
 }

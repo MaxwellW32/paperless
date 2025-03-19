@@ -79,6 +79,8 @@ export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema
 export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
 export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
+export type authAcessType = { departmentId?: department["id"], companyId?: company["id"] }
+
 
 
 const requestTypeSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"])
@@ -151,7 +153,6 @@ export const userAccessSchema = z.enum(["admin"])
 export const userSchema = z.object({
     id: z.string().min(1),
     fromDepartment: z.boolean(),
-    phoneNumbers: z.array(z.string().min(1)),
 
     accessLevel: userAccessSchema.nullable(),
     name: z.string().min(1).nullable(),
@@ -263,7 +264,7 @@ export type adminUpdateClientRequest = z.infer<typeof adminUpdateClientRequestSc
 export const updateClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, companyId: true })
 export type updateClientRequest = z.infer<typeof updateClientRequestSchema>
 
-export const newClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, companyId: true, status: true })
+export const newClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, status: true })
 export type newClientRequest = z.infer<typeof newClientRequestSchema>
 
 
@@ -292,14 +293,18 @@ export const userToDepartmentSchema = z.object({
     userId: userSchema.shape.id,
     departmentId: departmentSchema.shape.id,
     departmentRole: userDepartmentRoleSchema,
+    contactNumbers: z.array(z.string().min(1)).min(1),
+    contactEmails: z.array(z.string().min(1)).min(1),
 })
 export type userToDepartment = z.infer<typeof userToDepartmentSchema> & {
+    user?: user,
+    department?: department
 }
 
 export const newUserToDepartmentSchema = userToDepartmentSchema.omit({ id: true })
 export type newUserToDepartment = z.infer<typeof newUserToDepartmentSchema>
 
-export const updateUserToDepartmentSchema = userToDepartmentSchema.omit({ id: true, userId: true, departmentId: true, departmentRole: true })
+export const updateUserToDepartmentSchema = userToDepartmentSchema.omit({ id: true, userId: true, departmentId: true })
 export type updateUserToDepartment = z.infer<typeof updateUserToDepartmentSchema>
 
 
@@ -314,8 +319,12 @@ export const userToCompanySchema = z.object({
     companyId: companySchema.shape.id,
     companyRole: userCompanyRoleSchema,
     onAccessList: z.boolean(),
+    contactNumbers: z.array(z.string().min(1)).min(1),
+    contactEmails: z.array(z.string().min(1)).min(1),
 })
 export type userToCompany = z.infer<typeof userToCompanySchema> & {
+    user?: user,
+    company?: company
 }
 
 export const newUserToCompanySchema = userToCompanySchema.omit({ id: true, })
@@ -323,5 +332,3 @@ export type newUserToCompany = z.infer<typeof newUserToCompanySchema>
 
 export const updateUserToCompanySchema = userToCompanySchema.omit({ id: true, userId: true, companyId: true })
 export type updateUserToCompany = z.infer<typeof updateUserToCompanySchema>
-
-export type authAcessType = { departmentId?: department["id"], companyId?: company["id"] }

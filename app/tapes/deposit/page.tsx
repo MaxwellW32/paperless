@@ -1,7 +1,7 @@
 import { auth } from "@/auth/auth"
 import styles from "./page.module.css"
-import DepositTape from "@/components/clientRequests/tapes/DepositTape"
-import { sessionCheckJSX } from "@/utility/sessionCheck"
+import AddEditDepositTape from "@/components/clientRequests/depositTape/DepositTape"
+import { getUser } from "@/serverFunctions/handleUser"
 
 export default async function Page() {
   const session = await auth()
@@ -10,9 +10,12 @@ export default async function Page() {
     return (<p>Please login</p>)
   }
 
+  const seenUser = await getUser(session.user.id)
+  if (seenUser === undefined) {
+    return (<p>not seeing user</p>)
+  }
+
   return (
-    <main className={styles.main}>
-      <DepositTape seenSession={session} />
-    </main>
+    <AddEditDepositTape seenUser={seenUser} />
   )
 }
