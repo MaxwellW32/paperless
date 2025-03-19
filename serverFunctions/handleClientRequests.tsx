@@ -3,7 +3,7 @@ import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
 import { authAcessType, clientRequest, clientRequestSchema, company, companySchema, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { ensureUserHasAccess } from "@/utility/sessionCheck"
-import { and, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest, auth: authAcessType): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
@@ -12,13 +12,13 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, a
     newClientRequestSchema.parse(newClientRequestObj)
 
     //add new request
-    const addedUserToCompany = await db.insert(clientRequests).values({
+    const addedClientRequest = await db.insert(clientRequests).values({
         userId: seenSession.user.id,
         status: "in-progress",
         ...newClientRequestObj,
     }).returning()
 
-    return addedUserToCompany[0]
+    return addedClientRequest[0]
 }
 
 export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, auth: authAcessType) {
@@ -92,3 +92,5 @@ export async function getClientRequests(option: { type: "user", userId: user["id
         throw new Error("invalid selection")
     }
 }
+
+//handle client request status 

@@ -139,7 +139,7 @@ export const clientRequests = pgTable("clientRequests", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
-    data: json("request").$type<clientRequestDataType>().notNull(),
+    requestData: json("requestData").$type<clientRequestDataType>().notNull(),
     status: clientRequestStatusEnum().notNull(),
 })
 export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({

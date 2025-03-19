@@ -218,7 +218,9 @@ export type requestType = z.infer<typeof requestTypeSchema>
 
 export const tapeDepositRequestSchema = z.object({
     type: z.literal(requestTypeSchema.Values.tapeDeposit),
-    newTapes: z.array(newTapeSchema).min(1)
+    data: z.object({
+        newTapes: z.array(newTapeSchema).min(1, "need at least one tape to deposit")
+    })
 });
 export type tapeDepositRequestType = z.infer<typeof tapeDepositRequestSchema>
 
@@ -276,7 +278,7 @@ export const clientRequestSchema = z.object({
     id: z.string().min(1),
     userId: userSchema.shape.id, //who sent the request
     companyId: companySchema.shape.id, //what company is it on behalf of
-    data: clientRequestDataSchema,
+    requestData: clientRequestDataSchema,
     status: clientRequestStatusSchema,
 })
 export type clientRequest = z.infer<typeof clientRequestSchema> & {
