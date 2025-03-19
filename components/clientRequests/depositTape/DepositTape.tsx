@@ -1,4 +1,5 @@
 "use client"
+import { addClientRequests } from "@/serverFunctions/handleClientRequests";
 import { getUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies";
 import { newClientRequest, newTape, tapeDepositRequestType, user, userToCompany } from "@/types";
 import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast";
@@ -12,11 +13,14 @@ import { useEffect, useMemo, useState } from "react";
 //validate them
 
 //roleplay
-//maxwell is admin of app
-//Adrian Dixon is company manager - head
-//christopher is making this request as the client - elevated
-//Danielle is department manager - head
-//Donovan is making this request from egov - elevated
+//maxwell is admin of app - maxwellwedderburn32
+//Adrian Dixon is company manager - head - squaremaxtech@gmail.com
+//christopher is making this request as the client - elevated - uncommonfavour32@gmail.com
+//Danielle is department manager - head - need other email
+//Donovan is making this request from egov - elevated - need other email
+
+//need guardian life to exist
+//need client account christopher
 
 export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
     const [chosenUser, chosenUserSet] = useState<user>(seenUser)
@@ -47,6 +51,7 @@ export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
             }
 
             //send off request
+            await addClientRequests(newClientRequestObj, { companyIdBeingAccessed: activeUserToCompany.companyId })
 
         } catch (error) {
             consoleAndToastError(error)

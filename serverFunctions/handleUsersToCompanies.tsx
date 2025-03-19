@@ -41,32 +41,17 @@ export async function deleteUsersToCompanies(usersToCompaniesId: userToCompany["
     await db.delete(usersToCompanies).where(eq(usersToCompanies.id, usersToCompaniesId));
 }
 
-export async function getSpecificUsersToCompanies(userId: user["id"], companyId: company["id"], auth: authAcessType): Promise<userToCompany | undefined> {
-    //security check
-    await ensureUserHasAccess(auth)
+export async function getSpecificUsersToCompanies(userId: user["id"], companyId: company["id"], auth: authAcessType, runSecurityCheck = true): Promise<userToCompany | undefined> {
+    //security
+    if (runSecurityCheck) {
+        ensureUserHasAccess(auth)
+    }
 
     userSchema.shape.id.parse(userId)
     companySchema.shape.id.parse(companyId)
 
     const result = await db.query.usersToCompanies.findFirst({
         where: and(eq(usersToCompanies.userId, userId), eq(usersToCompanies.companyId, companyId)),
-        with: {
-            user: true,
-            company: true,
-        }
-    });
-
-    return result
-}
-
-export async function getUsersFromCompanies(companyId: company["id"], auth: authAcessType): Promise<userToCompany[]> {
-    //security check
-    await ensureUserHasAccess(auth)
-
-    companySchema.shape.id.parse(companyId)
-
-    const result = await db.query.usersToCompanies.findMany({
-        where: eq(usersToCompanies.companyId, companyId),
         with: {
             user: true,
             company: true,

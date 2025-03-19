@@ -79,7 +79,7 @@ export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema
 export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
 export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
-export type authAcessType = { departmentId?: department["id"], companyId?: company["id"] }
+export type authAcessType = { departmentIdBeingAccessed?: department["id"], companyIdBeingAccessed?: company["id"] }
 
 
 

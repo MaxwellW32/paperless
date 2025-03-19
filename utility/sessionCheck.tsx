@@ -14,7 +14,7 @@ export async function sessionCheckWithError() {
     }
 }
 
-export async function ensureUserHasAccess({ departmentId, companyId }: { departmentId?: department["id"], companyId?: company["id"] }) {
+export async function ensureUserHasAccess({ departmentIdBeingAccessed, companyIdBeingAccessed, allowRegularAccess = false }: { departmentIdBeingAccessed?: department["id"], companyIdBeingAccessed?: company["id"], allowRegularAccess?: boolean }) {
     //security check - ensures only admin or elevated roles can make change
 
     const session = await auth()
@@ -24,21 +24,24 @@ export async function ensureUserHasAccess({ departmentId, companyId }: { departm
     if (session.user.accessLevel !== "admin") {
         //user is from Egov making a change
         if (session.user.fromDepartment) {
-            const validatedDepartmentId = departmentSchema.shape.id.parse(departmentId)
+            const validatedDepartmentIdBeingAccessed = departmentSchema.shape.id.parse(departmentIdBeingAccessed)
 
-            const seenUserToDepartment = await getSpecificUsersToDepartments(session.user.id, validatedDepartmentId)
+            const seenUserToDepartment = await getSpecificUsersToDepartments(session.user.id, validatedDepartmentIdBeingAccessed, { departmentIdBeingAccessed, companyIdBeingAccessed }, false)
             if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
 
-            if (seenUserToDepartment.departmentRole === "regular") throw new Error("no access to make change")
+            if (seenUserToDepartment.departmentRole === "regular" && !allowRegularAccess) throw new Error("no access to make change")
 
-        } else {
+
             //user is a client making a change
-            const validatedCompanyId = companySchema.shape.id.parse(companyId)
+        } else {
+            const validatedCompanyIdBeignAccessed = companySchema.shape.id.parse(companyIdBeingAccessed)
 
-            const seenUserToCompany = await getSpecificUsersToCompanies(session.user.id, validatedCompanyId)
+            const seenUserToCompany = await getSpecificUsersToCompanies(session.user.id, validatedCompanyIdBeignAccessed, { departmentIdBeingAccessed, companyIdBeingAccessed }, false)
             if (seenUserToCompany === undefined) throw new Error("not seeing userToCompany info")
 
-            if (seenUserToCompany.companyRole === "regular") throw new Error("no access to make change")
+            if (seenUserToCompany.companyRole === "regular" && !allowRegularAccess) throw new Error("no access to make change")
         }
     }
+
+    return session
 }
