@@ -17,7 +17,7 @@ export default function Page() {
                 }}
             />
 
-            <button className="mainButton" style={{ justifySelf: "center" }}
+            <button className="button1" style={{ justifySelf: "center" }}
                 onClick={async () => {
                     try {
                         await signIn("nodemailer", {

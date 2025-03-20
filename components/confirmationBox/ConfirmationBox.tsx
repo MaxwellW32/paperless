@@ -6,7 +6,7 @@ export default function ConfirmationBox({ text, confirmationText, successMessage
     const [confirmed, confirmedSet] = useState(false)
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", position: "relative" }}>
-            <button className='mainButton'
+            <button className='button1'
                 onClick={() => {
                     confirmedSet(true)
                 }}
@@ -21,7 +21,7 @@ export default function ConfirmationBox({ text, confirmationText, successMessage
                     <p style={{ fontSize: "var(--fontSizeS)" }}>{confirmationText}</p>
 
                     <div style={{ display: "flex", flexWrap: "wrap", textTransform: "capitalize" }}>
-                        <button className='mainButton'
+                        <button className='button1'
                             onClick={() => {
                                 runAction()
 
@@ -31,7 +31,7 @@ export default function ConfirmationBox({ text, confirmationText, successMessage
                             }}
                         >yes</button>
 
-                        <button className='mainButton'
+                        <button className='button1'
                             onClick={() => { confirmedSet(false) }}
                         >cancel</button>
                     </div>

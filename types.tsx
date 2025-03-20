@@ -220,7 +220,8 @@ export const tapeDepositRequestSchema = z.object({
     type: z.literal(requestTypeSchema.Values.tapeDeposit),
     data: z.object({
         newTapes: z.array(newTapeSchema).min(1, "need at least one tape to deposit")
-    })
+    }),
+    checklist: 
 });
 export type tapeDepositRequestType = z.infer<typeof tapeDepositRequestSchema>
 

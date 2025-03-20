@@ -184,7 +184,7 @@ function RenderForm({ seenForm, seenFormSet, userInteractedSet, seenMoreFormInfo
 
                                                 {isArray && (
                                                     <>
-                                                        <button className='mainButton' style={{ alignSelf: "flex-start" }}
+                                                        <button className='button1' style={{ alignSelf: "flex-start" }}
                                                             onClick={() => {
                                                                 if (seenArrayStarters[seenKeysForFormInfo] === undefined) {
                                                                     toast.error('Array starter for this item not found')
@@ -217,7 +217,7 @@ function RenderForm({ seenForm, seenFormSet, userInteractedSet, seenMoreFormInfo
                                                         >add</button>
 
                                                         {returnToNull && eachValue.length === 0 && (
-                                                            <button className='mainButton'
+                                                            <button className='button1'
                                                                 onClick={() => {
                                                                     seenFormSet(prevForm => {
                                                                         runSameOnAll()
@@ -246,7 +246,7 @@ function RenderForm({ seenForm, seenFormSet, userInteractedSet, seenMoreFormInfo
                                                         )}
 
                                                         {returnToUndefined && eachValue.length === 0 && (
-                                                            <button className='mainButton'
+                                                            <button className='button1'
                                                                 onClick={() => {
                                                                     seenFormSet(prevForm => {
                                                                         runSameOnAll()
@@ -427,7 +427,7 @@ function RenderForm({ seenForm, seenFormSet, userInteractedSet, seenMoreFormInfo
                                                 }}
                                             />
 
-                                            <button className='mainButton' style={{ justifySelf: "flex-start" }}
+                                            <button className='button1' style={{ justifySelf: "flex-start" }}
                                                 onClick={() => {
 
                                                 }}
@@ -472,7 +472,7 @@ function RenderForm({ seenForm, seenFormSet, userInteractedSet, seenMoreFormInfo
 
                             {typeof eachValue === 'boolean' && (
                                 <>
-                                    <button className='mainButton' style={{ backgroundColor: eachValue ? "rgb(var(--color1))" : "" }}
+                                    <button className='button1' style={{ backgroundColor: eachValue ? "rgb(var(--color1))" : "" }}
                                         onClick={() => {
                                             seenFormSet(prevForm => {
                                                 runSameOnAll()
@@ -504,7 +504,7 @@ function RenderForm({ seenForm, seenFormSet, userInteractedSet, seenMoreFormInfo
 
                             {eachValue === null && (
                                 <>
-                                    <button className='mainButton'
+                                    <button className='button1'
                                         onClick={() => {
                                             seenFormSet(prevForm => {
                                                 runSameOnAll()
@@ -541,7 +541,7 @@ function RenderForm({ seenForm, seenFormSet, userInteractedSet, seenMoreFormInfo
 
                             {eachValue === 'undefined' && (
                                 <>
-                                    <button className='mainButton'
+                                    <button className='button1'
                                         onClick={() => {
                                             seenFormSet(prevForm => {
                                                 runSameOnAll()

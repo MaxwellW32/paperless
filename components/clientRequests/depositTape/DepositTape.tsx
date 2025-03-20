@@ -17,6 +17,15 @@ import toast from "react-hot-toast";
 //Danielle is department manager - head - need other email
 //Donovan is making this request from egov - elevated - need other email
 
+//make a checklist of automated and manual events
+//e.g deposit tape checklist
+//email datacenter departments
+//email security department
+//datacenter manual confirmation
+//security manual confirmation
+//add tapes to db
+//close record
+
 export default function AddEditDepositTape({ seenUser }: { seenUser: user }) {
     const [chosenUser,] = useState<user>(seenUser)
     const [activeUserToCompanyId, activeUserToCompanyIdSet] = useState<userToCompany["id"] | undefined>()
