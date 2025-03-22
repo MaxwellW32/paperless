@@ -1,4 +1,5 @@
 .main {
     display: grid;
+    align-content: flex-start;
     overflow: auto;
 }

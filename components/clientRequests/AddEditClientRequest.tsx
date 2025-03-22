@@ -1,14 +1,52 @@
 "use client"
-import { addClientRequests } from "@/serverFunctions/handleClientRequests";
-import { checklistItemFormType, checklistStarter, newClientRequest, newClientRequestSchema, user, userToCompany } from "@/types";
-import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast";
-import { deepClone } from "@/utility/utility";
-import { useEffect, useMemo, useState } from "react";
-import toast from "react-hot-toast";
-import RenderChecklistForm from "./RenderChecklistFormForm";
+import React, { useEffect, useMemo, useState } from 'react'
+import styles from "./style.module.css"
+import TextInput from '../textInput/TextInput'
+import TextArea from '../textArea/TextArea'
+import { deepClone } from '@/utility/utility'
+import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
+import toast from 'react-hot-toast'
+import ConfirmationBox from '../confirmationBox/ConfirmationBox'
+import ShowMore from '../showMore/ShowMore'
+import { checklistItemFormType, checklistStarter, clientRequest, clientRequestSchema, newClientRequest, newClientRequestSchema, updateClientRequestSchema, user, userToCompany } from '@/types'
+import { Session } from 'next-auth'
+import { getSpecificUser } from '@/serverFunctions/handleUser'
+import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 
-export default function AddEditClientRequest({ checklistStarter, seenUser }: { checklistStarter: checklistStarter, seenUser: user }) {
-    const [chosenUser,] = useState<user | undefined>()
+export default function AddEditClientRequest({ checklistStarter, sentClientRequest, seenSession }: { checklistStarter: checklistStarter, sentClientRequest?: clientRequest, seenSession: Session }) {
+    const initialFormObj: newClientRequest = {
+        companyId: "",
+        checklist: checklistStarter.checklist
+    }
+
+    //assign either a new form, or the safe values on an update form
+    const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest !== undefined ? updateClientRequestSchema.parse(sentClientRequest) : initialFormObj))
+    type clientRequestKeys = keyof Partial<clientRequest>
+
+    type moreFormInfoType = Partial<{
+        [key in Partial<clientRequestKeys>]: {
+            label?: string,
+            placeHolder?: string,
+            type?: string,
+            required?: boolean
+            inputType: "input" | "textarea",
+        } }>
+    const [moreFormInfo,] = useState<moreFormInfoType>({
+        "companyId": {
+            label: "type",
+            inputType: "input",
+            placeHolder: "Enter company id",
+        },
+        "checklist": {
+            label: "checklist",
+            inputType: "input",
+            placeHolder: "Enter checklist",
+        },
+    });
+
+    const [formErrors, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
+
+    const [chosenUser, chosenUserSet] = useState<user | undefined>()
     const [activeUserToCompanyId, activeUserToCompanyIdSet] = useState<userToCompany["id"] | undefined>()
 
     const activeUserToCompany = useMemo<userToCompany | undefined>(() => {
@@ -17,43 +55,87 @@ export default function AddEditClientRequest({ checklistStarter, seenUser }: { c
         return chosenUser.usersToCompanies.find(eachUserToCompany => eachUserToCompany.id === activeUserToCompanyId)
     }, [chosenUser?.usersToCompanies, activeUserToCompanyId])
 
-    const initialClientRequest: newClientRequest = {
-        companyId: "",
-        checklist: checklistStarter.checklist,
-    }
+    const [activeChecklistFormIndex,] = useState<number | undefined>(() => {
+        if (formObj.checklist === undefined) return undefined
 
-    const [newClientRequest, newClientRequestSet] = useState<newClientRequest>(deepClone(initialClientRequest))
+        const seendIndex = formObj.checklist.findIndex(eachChecklist => {
+            if (eachChecklist.type === "form") {
+                if (sentClientRequest === undefined) {
+                    //new form 
+                    return eachChecklist
+                } else {
+                    if (!eachChecklist.completed) {
+                        return eachChecklist
+                    }
+                }
+            }
+        })
 
-    const [formErrors, formErrorsSet] = useState<{ [key: string]: string }>({})
+        if (seendIndex < 0) return undefined
+
+        return seendIndex
+    })
+
+    //handle changes from above
+    useEffect(() => {
+        if (sentClientRequest === undefined) return
+
+        formObjSet(deepClone(updateClientRequestSchema.parse(sentClientRequest)))
+
+    }, [sentClientRequest])
 
     //if only one company for user set as active
     useEffect(() => {
-        //only run for clients
-        if (seenUser.fromDepartment) return
-        if (seenUser.usersToCompanies === undefined) return
+        try {
+            const search = async () => {
+                //only run for clients accounts
+                if (seenSession.user.fromDepartment) return
 
-        if (seenUser.usersToCompanies.length === 1) {
-            activeUserToCompanyIdSet(seenUser.usersToCompanies[0].id)
+                const seenUser = await getSpecificUser(seenSession.user.id)
+
+                if (seenUser === undefined || seenUser.usersToCompanies === undefined) return
+
+
+                if (seenUser.usersToCompanies.length === 1) {
+                    activeUserToCompanyIdSet(seenUser.usersToCompanies[0].id)
+                }
+
+                //set user
+                chosenUserSet(seenUser)
+            }
+            search()
+
+        } catch (error) {
+            consoleAndToastError(error)
         }
     }, [])
 
-    function checkIfValid() {
-        formErrorsSet({})
 
-        const seenSchemaResults = newClientRequestSchema.safeParse(newClientRequest)
+    function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
+        // @ts-expect-error type
+        const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
 
-        if (seenSchemaResults.success) {
+        if (testSchema.success) {//worked
+            formErrorsSet(prevObj => {
+                const newObj = { ...prevObj }
+                delete newObj[seenName]
 
-        } else if (seenSchemaResults.error !== undefined) {
-            formErrorsSet(prevFormErrors => {
-                const newFormErrors = { ...prevFormErrors }
+                return newObj
+            })
 
-                seenSchemaResults.error.errors.forEach(eachError => {
-                    const errorKey = eachError.path.join('/')
-                    newFormErrors[errorKey] = eachError.message
+        } else {
+            formErrorsSet(prevObj => {
+                const newObj = { ...prevObj }
+
+                let errorMessage = ""
+
+                JSON.parse(testSchema.error.message).forEach((eachErrorObj: Error) => {
+                    errorMessage += ` ${eachErrorObj.message}`
                 })
 
-                return newFormErrors
+                newObj[seenName] = errorMessage
+
+                return newObj
             })
         }
     }
@@ -63,36 +145,315 @@ export default function AddEditClientRequest({ checklistStarter, seenUser }: { c
             //send off new client request
             if (activeUserToCompany === undefined) throw new Error("active user company undefined")
 
-            //validation
-            newClientRequestSchema.parse(newClientRequest)
+            if (sentClientRequest === undefined) {
+                //make new client request
 
-            //send 
-            await addClientRequests(newClientRequest, { companyIdBeingAccessed: activeUserToCompany.companyId })
+                formObj.companyId = activeUserToCompany.companyId
 
-            toast.success("submitted")
+                //validate
+                const validatedNewClientRequest: newClientRequest = newClientRequestSchema.parse(formObj)
+
+                //send up to server
+                await addClientRequests(validatedNewClientRequest, { companyIdBeingAccessed: activeUserToCompany.companyId })
+
+                toast.success("submitted")
+                formObjSet(deepClone(initialFormObj))
+
+            } else {
+                //validate
+                const validatedUpdatedClientRequest = updateClientRequestSchema.parse(formObj)
+
+                //update
+                await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, { companyIdBeingAccessed: activeUserToCompany.companyId })
+
+                toast.success("request updated")
+            }
 
         } catch (error) {
             consoleAndToastError(error)
         }
     }
 
-    const [activeChecklistFormIndex, activeChecklistFormIndexSet] = useState<number | undefined>(() => {
-        const seendIndex = newClientRequest.checklist.findIndex(eachChecklist => eachChecklist.type === "form" && !eachChecklist.completed)
-        if (seendIndex < 0) return undefined
-
-        return seendIndex
-    })
-
     return (
-        <form style={{ display: "grid", alignContent: "flex-start", gap: "1rem", overflowY: "auto" }} action={() => { }}>
-            {activeChecklistFormIndex !== undefined && (
-                <RenderChecklistForm seenForm={newClientRequest.checklist[activeChecklistFormIndex] as checklistItemFormType} newClientRequestSet={newClientRequestSet} activeChecklistFormIndex={activeChecklistFormIndex}
-                />
-            )}
+        <form className={styles.form} action={() => { }}>
+            {Object.entries(formObj).map(eachEntry => {
+                const eachKey = eachEntry[0] as clientRequestKeys
 
-            <button className="button1"
+                if (moreFormInfo[eachKey] === undefined) return null
+
+                if (eachKey === "checklist") {
+                    const seenChecklist = formObj[eachKey]
+                    if (seenChecklist === undefined) return null
+
+
+                    return (
+                        <React.Fragment key={eachKey}>
+                            {activeChecklistFormIndex !== undefined && formObj.checklist !== undefined && formObj.checklist[activeChecklistFormIndex].type === "form" && (
+                                <RecursiveEditChecklistForm seenForm={formObj.checklist[activeChecklistFormIndex].data} sentKeys=''
+                                    handleFormUpdate={(seenLatestForm) => {
+                                        formObjSet(prevFormObj => {
+                                            const newFormObj = { ...prevFormObj }
+                                            if (newFormObj.checklist === undefined) return prevFormObj
+
+                                            //edit new checklist item
+                                            const newChecklistItem = { ...newFormObj.checklist[activeChecklistFormIndex] }
+                                            if (newChecklistItem.type !== "form") return prevFormObj
+
+                                            newChecklistItem.data = seenLatestForm as checklistItemFormType["data"]
+
+                                            newFormObj.checklist[activeChecklistFormIndex] = newChecklistItem
+
+                                            return newFormObj
+                                        })
+                                    }}
+                                />
+                            )}
+                        </React.Fragment >
+                    )
+                }
+
+                if (eachKey === "companyId") {
+                    if (seenSession.user.fromDepartment) {
+                        //more options to come
+                        return null
+
+                    } else {
+                        return null
+                    }
+                }
+                return (
+                    <React.Fragment key={eachKey}>
+                        {moreFormInfo[eachKey].inputType === "input" ? (
+                            <TextInput
+                                name={eachKey}
+                                value={`${formObj[eachKey]}`}
+                                type={moreFormInfo[eachKey].type}
+                                label={moreFormInfo[eachKey].label}
+                                placeHolder={moreFormInfo[eachKey].placeHolder}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                    formObjSet(prevFormObj => {
+                                        const newFormObj = { ...prevFormObj }
+                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company") return prevFormObj
+
+                                        newFormObj[eachKey] = e.target.value
+
+                                        return newFormObj
+                                    })
+                                }}
+                                onBlur={() => { checkIfValid(formObj, eachKey, clientRequestSchema) }}
+                                errors={formErrors[eachKey]}
+                            />
+                        ) : moreFormInfo[eachKey].inputType === "textarea" ? (
+                            <TextArea
+                                name={eachKey}
+                                value={`${formObj[eachKey]}`}
+                                label={moreFormInfo[eachKey].label}
+                                placeHolder={moreFormInfo[eachKey].placeHolder}
+                                onInput={(e) => {
+                                    formObjSet(prevFormObj => {
+                                        const newFormObj = { ...prevFormObj }
+                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company") return prevFormObj
+
+                                        // @ts-expect-error type
+                                        newFormObj[eachKey] = e.target.value
+
+                                        return newFormObj
+                                    })
+                                }}
+                                onBlur={() => { checkIfValid(formObj, eachKey, clientRequestSchema) }}
+                                errors={formErrors[eachKey]}
+                            />
+                        ) : null}
+                    </React.Fragment>
+                )
+            })}
+
+            <button className='button1' style={{ justifySelf: "center" }}
                 onClick={handleSubmit}
-            >submit new request</button>
+            >{sentClientRequest ? "update" : "submit"}</button>
         </form>
     )
 }
+
+
+
+
+function RecursiveEditChecklistForm({ seenForm, handleFormUpdate, parentArrayName, sentKeys, ...elProps }: { seenForm: object, handleFormUpdate: (latestForm: object) => void, parentArrayName?: string, sentKeys: string } & React.HTMLAttributes<HTMLDivElement>) {
+    //recursively view whats there
+    //update any level with a key value combo
+    //later update the form to handle different data types
+
+    function runSameOnAll() {
+
+    }
+
+    return (
+        <div {...elProps} style={{ display: "grid", gap: "1rem", ...(parentArrayName ? { gridAutoColumns: "90%", gridAutoFlow: "column" } : { alignContent: "flex-start" }), overflow: "auto", ...elProps?.style }} className={`${parentArrayName ? "snap" : ""} ${elProps?.className}`}>
+            {Object.entries(seenForm).map(eachEntry => {
+                const eachKey = eachEntry[0]
+                const eachValue = eachEntry[1]
+                const seenKeys = sentKeys === "" ? eachKey : `${sentKeys}/${eachKey}`
+
+                const arrayRemoveButton = (
+                    <ConfirmationBox text='remove' confirmationText='are you sure you want to remove?' successMessage='removed!' float={true}
+                        runAction={async () => {
+                            runSameOnAll()
+                            const newForm: checklistItemFormType = JSON.parse(JSON.stringify(seenForm))
+                            const keyArray = seenKeys.split('/')
+
+                            let tempForm = newForm
+                            const indexToDelete = parseInt(keyArray[keyArray.length - 1])
+
+                            for (let i = 0; i < keyArray.length; i++) {
+                                const subKey = keyArray[i]
+
+                                if (i === keyArray.length - 2) {
+                                    // @ts-expect-error type
+                                    tempForm[subKey] = tempForm[subKey].filter((each, eachIndex) => eachIndex !== indexToDelete)
+
+                                } else {
+                                    // @ts-expect-error type
+                                    tempForm = tempForm[subKey]
+                                }
+                            }
+
+                            handleFormUpdate(newForm)
+                        }}
+                    />
+                )
+
+                //replace camelcase key names with spaces and capitalize first letter
+                const niceKeyName = eachKey.replace(/([A-Z])/g, ' $1').replace(/^./, function (str) { return str.toUpperCase(); })
+                let label = niceKeyName
+
+                const parsedNumberKey = parseInt(eachKey)
+                if (!isNaN(parsedNumberKey) && parentArrayName !== undefined) {
+                    label = `${parentArrayName.replace(/([A-Z])/g, ' $1').replace(/^./, function (str) { return str.toUpperCase(); })} ${parsedNumberKey + 1}`
+                }
+
+                const placeHolder = `Enter a starter value for ${label}`
+
+                if (typeof eachValue === 'object' && eachValue !== null) {
+                    const isArray = Array.isArray(eachValue)
+
+                    return (
+                        <div key={eachKey} style={{ display: "grid", alignContent: "flex-start", }}>
+                            <ShowMore
+                                label={label}
+                                content={(
+                                    <>
+                                        {parentArrayName && (
+                                            arrayRemoveButton
+                                        )}
+
+                                        {isArray && (
+                                            <>
+
+                                                <button className='button1' style={{ alignSelf: "flex-start" }}
+                                                    onClick={() => {
+
+                                                    }}
+                                                >add</button>
+                                            </>
+                                        )}
+
+                                        <RecursiveEditChecklistForm seenForm={eachValue} sentKeys={seenKeys} style={{ marginLeft: "1rem" }} parentArrayName={isArray ? eachKey : undefined} handleFormUpdate={handleFormUpdate} />
+                                    </>
+                                )}
+                            />
+                        </div>
+                    )
+
+                } else {
+
+                    return (
+                        <div key={seenKeys} style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", width: "100%" }}>
+                            {parentArrayName && arrayRemoveButton}
+
+                            <label htmlFor={seenKeys}>{label}</label>
+
+
+                            {(typeof eachValue === 'string' || typeof eachValue === 'number') && (
+                                <>
+                                    <input id={seenKeys} type={"text"} value={eachValue} placeholder={placeHolder}
+                                        onChange={(e) => {
+                                            runSameOnAll()
+
+                                            const newForm: checklistItemFormType = JSON.parse(JSON.stringify(seenForm))
+                                            const keyArray = seenKeys.split('/')
+
+                                            let tempForm = newForm
+
+                                            for (let i = 0; i < keyArray.length; i++) {
+                                                const subKey = keyArray[i]
+
+                                                if (i === keyArray.length - 1) {
+                                                    const inputVal: string | number = e.target.value
+
+                                                    // @ts-expect-error type
+                                                    tempForm[subKey] = inputVal
+
+                                                } else {
+                                                    // @ts-expect-error type
+                                                    tempForm = tempForm[subKey]
+                                                }
+                                            }
+
+                                            handleFormUpdate(newForm)
+                                        }}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    )
+                }
+            })}
+        </div>
+    )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -85,7 +85,8 @@ export const tapesRelations = relations(tapes, ({ many }) => ({
 // export const clientRequestTypeEnum = pgEnum("type", ["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"]);
 
 export const checklistStarters = pgTable("checklistStarters", {
-    type: varchar("type", { length: 255 }).primaryKey(), //not null, unique
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    type: varchar("type", { length: 255 }).notNull().unique(),
     checklist: json("checklist").$type<checklistItemType[]>().notNull(),
 })
 export const checklistStartersRelations = relations(checklistStarters, ({ one }) => ({

@@ -235,15 +235,16 @@ export type updateTape = z.infer<typeof updateTapeSchema>
 // export type clientRequestType = z.infer<typeof clientRequestTypeSchema>
 
 export const checklistStarterSchema = z.object({
+    id: z.string().min(1),
     type: z.string().min(1),
-    checklist: z.array(checklistItemSchema), //who sent the request
+    checklist: z.array(checklistItemSchema),
 })
 export type checklistStarter = z.infer<typeof checklistStarterSchema>
 
-export const newChecklistStarterSchema = checklistStarterSchema.omit({})
+export const newChecklistStarterSchema = checklistStarterSchema.omit({ id: true })
 export type newChecklistStarter = z.infer<typeof newChecklistStarterSchema>
 
-export const updateChecklistStarterSchema = checklistStarterSchema.omit({})
+export const updateChecklistStarterSchema = checklistStarterSchema.omit({ id: true })
 export type updateChecklistStarter = z.infer<typeof updateChecklistStarterSchema>
 
 

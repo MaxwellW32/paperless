@@ -17,7 +17,7 @@ export async function addChecklistStarters(newChecklistStartersObj: newChecklist
     return addedChecklistStarter
 }
 
-export async function updateChecklistStarters(checklistStarterType: checklistStarter["type"], updatedChecklistStarterObj: Partial<updateChecklistStarter>): Promise<checklistStarter> {
+export async function updateChecklistStarters(checklistStarterId: checklistStarter["id"], updatedChecklistStarterObj: Partial<updateChecklistStarter>): Promise<checklistStarter> {
     //admin check
     await ensureUserIsAdmin()
 
@@ -28,7 +28,7 @@ export async function updateChecklistStarters(checklistStarterType: checklistSta
         .set({
             ...updatedChecklistStarterObj
         })
-        .where(eq(checklistStarters.type, checklistStarterType)).returning()
+        .where(eq(checklistStarters.id, checklistStarterId)).returning()
 
     return result
 }

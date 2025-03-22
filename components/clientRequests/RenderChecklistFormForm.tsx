@@ -28,7 +28,7 @@ export default function RenderChecklistForm({ seenForm, newClientRequestSet, act
                 )
             })}
 
-            <button
+            <button className='button1'
                 onClick={() => {
                     newClientRequestSet(prevNewClientRequest => {
                         const newNewClientRequest = { ...prevNewClientRequest }
