@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { array, z } from "zod";
 
 // regular types
 
@@ -81,13 +81,41 @@ export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
 export type authAcessType = { departmentIdBeingAccessed?: department["id"], companyIdBeingAccessed?: company["id"] }
 
+//simple input
+//label - enter mefia label
+//data - string response
 
+//array of inputs
+//starter value
+//delete options
+//display in map
 
+export const checklistItemFormSchema = z.object({
+    type: z.literal("form"),
+    //array of form elements to ask user
+    data: z.record(z.string().min(1), z.string()),
+    completed: z.boolean(),
+})
+export type checklistItemFormType = z.infer<typeof checklistItemFormSchema>
 
+export const checklistItemEmailSchema = z.object({
+    type: z.literal("email"),
+    to: z.string().min(1),
+    subject: z.string().min(1),
+    email: z.string().min(1),
+    completed: z.boolean(),
+})
+export type checklistItemEmailType = z.infer<typeof checklistItemEmailSchema>
 
+export const checklistItemManualSchema = z.object({
+    type: z.literal("manual"),
+    prompt: z.string().min(1),
+    completed: z.boolean(),
+})
+export type checklistItemManualType = z.infer<typeof checklistItemManualSchema>
 
-
-
+export const checklistItemSchema = z.union([checklistItemFormSchema, checklistItemEmailSchema, checklistItemManualSchema])
+export type checklistItemType = z.infer<typeof checklistItemSchema>
 
 
 
@@ -202,6 +230,21 @@ export type updateTape = z.infer<typeof updateTapeSchema>
 
 
 
+//keep synced with db schema
+// export const clientRequestTypeSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"])
+// export type clientRequestType = z.infer<typeof clientRequestTypeSchema>
+
+export const checklistStarterSchema = z.object({
+    type: z.string().min(1),
+    checklist: z.array(checklistItemSchema), //who sent the request
+})
+export type checklistStarter = z.infer<typeof checklistStarterSchema>
+
+export const newChecklistStarterSchema = checklistStarterSchema.omit({})
+export type newChecklistStarter = z.infer<typeof newChecklistStarterSchema>
+
+export const updateChecklistStarterSchema = checklistStarterSchema.omit({})
+export type updateChecklistStarter = z.infer<typeof updateChecklistStarterSchema>
 
 
 
@@ -213,74 +256,58 @@ export type updateTape = z.infer<typeof updateTapeSchema>
 
 
 
-const requestTypeSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"])
-export type requestType = z.infer<typeof requestTypeSchema>
-
-export const tapeDepositRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.tapeDeposit),
-    data: z.object({
-        newTapes: z.array(newTapeSchema).min(1, "need at least one tape to deposit")
-    }),
-    checklist: 
-});
-export type tapeDepositRequestType = z.infer<typeof tapeDepositRequestSchema>
 
 
 
 
 
-export const tapeWithdrawRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.tapeWithdraw),
-});
-export type tapeWithdrawRequestType = z.infer<typeof tapeWithdrawRequestSchema>
 
 
 
+// export const tapeDepositRequestSchema = z.object({
+//     type: z.literal(clientRequestTypeSchema.Values.tapeDeposit),
+//     data: z.object({
+//         newTapes: z.array(newTapeSchema).min(1, "need at least one tape to deposit")
+//     }),
+// });
+// export type tapeDepositRequestType = z.infer<typeof tapeDepositRequestSchema>
 
+// export const tapeWithdrawRequestSchema = z.object({
+//     type: z.literal(clientRequestTypeSchema.Values.tapeWithdraw),
+// });
+// export type tapeWithdrawRequestType = z.infer<typeof tapeWithdrawRequestSchema>
 
-export const equipmentDepositRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.equipmentDeposit),
-});
-export type equipmentDepositRequestType = z.infer<typeof equipmentDepositRequestSchema>
+// export const equipmentDepositRequestSchema = z.object({
+//     type: z.literal(clientRequestTypeSchema.Values.equipmentDeposit),
+// });
+// export type equipmentDepositRequestType = z.infer<typeof equipmentDepositRequestSchema>
 
+// export const equipmentWithdrawRequestSchema = z.object({
+//     type: z.literal(clientRequestTypeSchema.Values.equipmentWithdraw),
+// });
+// export type equipmentWithdrawRequestType = z.infer<typeof equipmentWithdrawRequestSchema>
 
+// export const equipmentOtherRequestSchema = z.object({
+//     type: z.literal(clientRequestTypeSchema.Values.equipmentOther),
+// });
+// export type equipmentOtherRequestType = z.infer<typeof equipmentOtherRequestSchema>
 
-
-
-export const equipmentWithdrawRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.equipmentWithdraw),
-});
-export type equipmentWithdrawRequestType = z.infer<typeof equipmentWithdrawRequestSchema>
-
-
-
-
-
-export const equipmentOtherRequestSchema = z.object({
-    type: z.literal(requestTypeSchema.Values.equipmentOther),
-});
-export type equipmentOtherRequestType = z.infer<typeof equipmentOtherRequestSchema>
-
-
-
-
-
-export const clientRequestDataSchema = z.union([tapeDepositRequestSchema, tapeWithdrawRequestSchema, equipmentDepositRequestSchema, equipmentWithdrawRequestSchema, equipmentOtherRequestSchema])
-export type clientRequestDataType = z.infer<typeof clientRequestDataSchema>
-
+// export const clientRequestDataSchema = z.union([tapeDepositRequestSchema, tapeWithdrawRequestSchema, equipmentDepositRequestSchema, equipmentWithdrawRequestSchema, equipmentOtherRequestSchema])
+// export type clientRequestDataType = z.infer<typeof clientRequestDataSchema>
 
 
 
 
 //keep synced with db schema
 export const clientRequestStatusSchema = z.enum(["in-progress", "completed", "cancelled", "on-hold"])
+export type clientRequestStatusType = z.infer<typeof clientRequestStatusSchema>
 
 export const clientRequestSchema = z.object({
     id: z.string().min(1),
     userId: userSchema.shape.id, //who sent the request
     companyId: companySchema.shape.id, //what company is it on behalf of
-    requestData: clientRequestDataSchema,
     status: clientRequestStatusSchema,
+    checklist: z.array(checklistItemSchema).min(1),
 })
 export type clientRequest = z.infer<typeof clientRequestSchema> & {
     user?: user,
@@ -295,6 +322,11 @@ export type updateClientRequest = z.infer<typeof updateClientRequestSchema>
 
 export const newClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, status: true })
 export type newClientRequest = z.infer<typeof newClientRequestSchema>
+
+
+
+
+
 
 
 

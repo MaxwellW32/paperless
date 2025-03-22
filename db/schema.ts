@@ -1,4 +1,4 @@
-import { clientRequestDataType } from "@/types";
+import { checklistItemType } from "@/types";
 import { relations } from "drizzle-orm";
 import { timestamp, pgTable, text, primaryKey, integer, varchar, pgEnum, json, index, boolean } from "drizzle-orm/pg-core"
 import type { AdapterAccountType } from "next-auth/adapters"
@@ -82,6 +82,42 @@ export const tapesRelations = relations(tapes, ({ many }) => ({
 
 
 
+// export const clientRequestTypeEnum = pgEnum("type", ["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"]);
+
+export const checklistStarters = pgTable("checklistStarters", {
+    type: varchar("type", { length: 255 }).primaryKey(), //not null, unique
+    checklist: json("checklist").$type<checklistItemType[]>().notNull(),
+})
+export const checklistStartersRelations = relations(checklistStarters, ({ one }) => ({
+}));
+
+
+
+export const clientRequestStatusEnum = pgEnum("status", ["in-progress", "completed", "cancelled", "on-hold"]);
+
+export const clientRequests = pgTable("clientRequests", {
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
+    companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
+    status: clientRequestStatusEnum().notNull(),
+    checklist: json("checklist").$type<checklistItemType[]>().notNull(),
+})
+export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
+    user: one(users, {
+        fields: [clientRequests.userId],
+        references: [users.id],
+    }),
+    company: one(companies, {
+        fields: [clientRequests.companyId],
+        references: [companies.id],
+    }),
+}));
+
+
+
+
+
+
 
 
 export const userDepartmentRoleEnum = pgEnum("departmentRole", ["head", "elevated", "regular"]);
@@ -130,33 +166,6 @@ export const usersToCompaniesRelations = relations(usersToCompanies, ({ one }) =
         references: [companies.id],
     }),
 }));
-
-
-
-export const clientRequestStatusEnum = pgEnum("status", ["in-progress", "completed", "cancelled", "on-hold"]);
-
-export const clientRequests = pgTable("clientRequests", {
-    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
-    companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
-    requestData: json("requestData").$type<clientRequestDataType>().notNull(),
-    status: clientRequestStatusEnum().notNull(),
-})
-export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
-    user: one(users, {
-        fields: [clientRequests.userId],
-        references: [users.id],
-    }),
-    company: one(companies, {
-        fields: [clientRequests.companyId],
-        references: [companies.id],
-    }),
-}));
-
-
-
-
-
 
 
 

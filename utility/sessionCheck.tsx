@@ -45,3 +45,14 @@ export async function ensureUserHasAccess({ departmentIdBeingAccessed, companyId
 
     return session
 }
+
+export async function ensureUserIsAdmin() {
+    //security check - ensures only admin
+    const session = await auth()
+    if (session === null) throw new Error("need session")
+
+    //security
+    if (session.user.accessLevel !== "admin") throw new Error("not authorised to make change, need to be admin")
+
+    return session
+}

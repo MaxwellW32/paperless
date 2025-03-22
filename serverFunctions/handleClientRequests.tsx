@@ -44,8 +44,11 @@ export async function deleteClientRequests(clientRequestId: clientRequest["id"],
     await db.delete(clientRequests).where(eq(clientRequests.id, clientRequestId));
 }
 
-export async function getSpecificClientRequests(clientRequestId: clientRequest["id"]): Promise<clientRequest | undefined> {
+export async function getSpecificClientRequests(clientRequestId: clientRequest["id"], auth: authAcessType): Promise<clientRequest | undefined> {
     clientRequestSchema.shape.id.parse(clientRequestId)
+
+    //security check
+    await ensureUserHasAccess(auth)
 
     const result = await db.query.clientRequests.findFirst({
         where: eq(clientRequests.id, clientRequestId),
