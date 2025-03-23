@@ -6,27 +6,21 @@ import ShowMore from "../showMore/ShowMore";
 
 export default function Test() {
     const [formData, setFormData] = useState<formType>({
-        userForm: {
-            type: "object",
-            label: "User Form",
-            data: {
-                name: { type: "input", label: "Name", placeholder: "Enter name", data: { type: "string", value: "Maxwell" } },
-                age: { type: "input", label: "Age", placeholder: "Enter age", data: { type: "number", value: 0 } },
-                address: {
-                    type: "object",
-                    label: "Address",
-                    data: {
-                        street: { type: "input", label: "Street", placeholder: "Enter street", data: { type: "string", value: "" } },
-                        city: { type: "input", label: "City", placeholder: "Enter city", data: { type: "string", value: "" } }
-                    }
-                },
-                contacts: {
-                    type: "array",
-                    label: "Contacts",
-                    data: []
-                }
-            }
-        }
+        //     name: { type: "input", label: "Name", placeholder: "Enter name", data: { type: "string", value: "Maxwell" } },
+        //     age: { type: "input", label: "Age", placeholder: "Enter age", data: { type: "number", value: 0 } },
+        //     address: {
+        //         type: "object",
+        //         label: "Address",
+        //         data: {
+        //             street: { type: "input", label: "Street", placeholder: "Enter street", data: { type: "string", value: "" } },
+        //             city: { type: "input", label: "City", placeholder: "Enter city", data: { type: "string", value: "" } }
+        //         }
+        //     },
+        //     contacts: {
+        //         type: "array",
+        //         label: "Contacts",
+        //         data: []
+        //     }
     });
 
     return (
@@ -42,10 +36,6 @@ export default function Test() {
 
 
 function RecursiveForm({ formData, setFormData, sentKeys = "", parentArrayName, ...elProps }: { formData: formType, setFormData: React.Dispatch<React.SetStateAction<formType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
-    const [newKeyName, newKeyNameSet] = useState("");
-    const fieldTypeOptions: formType[string]["type"][] = ["input", "object", "array"];
-    const inputTypeOptions: formInputType["data"]["type"][] = ["string", "number", "boolean", "date"];
-    const [inputTypeSelection, inputTypeSelectionSet] = useState<formInputType["data"]["type"]>("string")
 
     const handleChange = (path: string, value: unknown) => {
         setFormData(prev => {
@@ -72,7 +62,7 @@ function RecursiveForm({ formData, setFormData, sentKeys = "", parentArrayName, 
         });
     };
 
-    const addField = (path: string, parentType: formType[string]["type"], typeToAdd: formType[string]["type"]) => {
+    const addField = (path: string, parentType: formType[string]["type"], newKeyName: string, typeToAdd: formType[string]["type"], inputTypeSelection: formInputType["data"]["type"]) => {
         setFormData(prev => {
             const newData = deepClone(prev);
 
@@ -84,26 +74,28 @@ function RecursiveForm({ formData, setFormData, sentKeys = "", parentArrayName, 
 
             let tempForm = newData
 
+            //recursive search
             for (let i = 0; i < keyArray.length; i++) {
                 const subKey = keyArray[i]
 
                 if (i === keyArray.length - 1) {
-                    if (parentType === "input") {
-                        // @ts-expect-error type
-                        tempForm[subKey] = newFormDataToAdd;
-
-                    } else if (parentType === "object") {
+                    if (subKey === "") {
                         if (newKeyName === "") {
-                            toast.error("Add a valid key name.");
-                            return prev;
+                            toast.error("add valid keyname")
+                            return prev
                         }
 
-                        //@ts-expect-error type
-                        tempForm[subKey].data[newKeyName] = newFormDataToAdd;
+                        // @ts-expect-error type
+                        tempForm[newKeyName] = newFormDataToAdd;
 
-                    } else if (parentType === "array") {
-                        //@ts-expect-error type
-                        tempForm[subKey].data.push(newFormDataToAdd);
+                    } else {
+                        if (newKeyName === "") {
+                            toast.error("add valid keyname")
+                            return prev
+                        }
+
+                        // @ts-expect-error type
+                        tempForm[subKey][newKeyName] = newFormDataToAdd;
                     }
 
                 } else {
@@ -112,38 +104,9 @@ function RecursiveForm({ formData, setFormData, sentKeys = "", parentArrayName, 
                 }
             }
 
-            newKeyNameSet("");
-
             return newData
         });
     };
-
-
-    function ButtonSelectionOptions({ seenKeys, addFieldType }: { seenKeys: string, addFieldType: "object" | "array" }) {
-        return (
-            <div>
-                <div style={{ display: "flex", flexWrap: "wrap" }}>
-                    {inputTypeOptions.map(eachInputTypeOption => (
-                        <button key={eachInputTypeOption} className="button2" style={{ backgroundColor: eachInputTypeOption === inputTypeSelection ? "rgb(var(--color1))" : "" }}
-                            onClick={() => inputTypeSelectionSet(eachInputTypeOption)}
-                        >
-                            {eachInputTypeOption}
-                        </button>
-                    ))}
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap" }}>
-                    {fieldTypeOptions.map(eachFieldTypeOption => (
-                        <button key={eachFieldTypeOption} className="button2"
-                            onClick={() => addField(seenKeys, addFieldType, eachFieldTypeOption)}
-                        >
-                            {eachFieldTypeOption}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        )
-    }
 
     return (
         <div  {...elProps} style={{ display: "grid", gap: "1rem", ...(parentArrayName ? { gridAutoColumns: "90%", gridAutoFlow: "column" } : { alignContent: "flex-start" }), overflow: "auto", ...elProps?.style }} className={`${parentArrayName ? "snap" : ""} ${elProps?.className ?? ""}`}>
@@ -197,17 +160,6 @@ function RecursiveForm({ formData, setFormData, sentKeys = "", parentArrayName, 
                                     content={(
                                         <>
                                             <RecursiveForm key={eachKey} formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} style={{ marginLeft: "2rem" }} />
-
-                                            <label>Add key to {niceKeyName}</label>
-
-                                            <input
-                                                type="text"
-                                                placeholder="Enter new key"
-                                                value={newKeyName}
-                                                onChange={(e) => newKeyNameSet(e.target.value.replace(/ /g, ""))}
-                                            />
-
-                                            <ButtonSelectionOptions seenKeys={seenKeys} addFieldType="object" />
                                         </>
                                     )}
                                 />
@@ -220,19 +172,72 @@ function RecursiveForm({ formData, setFormData, sentKeys = "", parentArrayName, 
                                     label={`${niceKeyName}:`}
                                     content={(
                                         <>
-                                            {/* @ts-expect-error types */}
-                                            <RecursiveForm formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} parentArrayName={eachKey} />
-
-                                            <ButtonSelectionOptions seenKeys={seenKeys} addFieldType="array" />
+                                            <RecursiveForm formData={eachFormDataValue.arrayStarter} setFormData={setFormData} sentKeys={`${seenKeys}/arrayStarter`} parentArrayName={eachKey} />
                                         </>
                                     )}
                                 />
+
+                                <button>show in array</button>
                             </>
                         )}
                     </div>
                 )
             })}
+
+            <ButtonSelectionOptions seenKeys={sentKeys} parentType={parentArrayName !== undefined ? "array" : "object"} addField={addField} parentArrayName={parentArrayName} />
         </div>
     );
 }
 
+function ButtonSelectionOptions({ seenKeys, parentType, addField, parentArrayName }: {
+    seenKeys: string, parentType: formType[string]["type"], addField: (path: string, parentType: formType[string]["type"], newKeyName: string, typeToAdd: formType[string]["type"], inputTypeSelection: formInputType["data"]["type"]) => void, parentArrayName?: string
+}) {
+    const fieldTypeOptions: formType[string]["type"][] = ["input", "object", "array"];
+    const [fieldTypeSelection, fieldTypeSelectionSet] = useState<formType[string]["type"]>("input")
+    const inputTypeOptions: formInputType["data"]["type"][] = ["string", "number", "boolean", "date"];
+    const [inputTypeSelection, inputTypeSelectionSet] = useState<formInputType["data"]["type"]>("string")
+    const [newKeyName, newKeyNameSet] = useState("");
+
+    return (
+        <div style={{ display: "grid", alignContent: "flex-start" }}>
+            {parentArrayName === undefined && (
+                <input
+                    type="text"
+                    placeholder="Enter new key"
+                    value={newKeyName}
+                    onChange={(e) => newKeyNameSet(e.target.value.replace(/ /g, ""))}
+                />
+            )}
+
+            <div style={{ display: "flex", flexWrap: "wrap" }}>
+                {fieldTypeOptions.map(eachFieldTypeOption => (
+                    <button key={eachFieldTypeOption} className="button2" style={{ backgroundColor: eachFieldTypeOption === fieldTypeSelection ? "rgb(var(--color1))" : "" }}
+                        onClick={() => {
+                            fieldTypeSelectionSet(eachFieldTypeOption)
+                        }}
+                    >
+                        {eachFieldTypeOption}
+                    </button>
+                ))}
+            </div>
+
+            <div style={{ display: fieldTypeSelection === "input" ? "flex" : "none", flexWrap: "wrap" }}>
+                {inputTypeOptions.map(eachInputTypeOption => (
+                    <button key={eachInputTypeOption} className="button2" style={{ backgroundColor: eachInputTypeOption === inputTypeSelection ? "rgb(var(--color1))" : "" }}
+                        onClick={() => inputTypeSelectionSet(eachInputTypeOption)}
+                    >
+                        {eachInputTypeOption}
+                    </button>
+                ))}
+            </div>
+
+            <button className="button1"
+                onClick={() => {
+                    addField(seenKeys, parentType, newKeyName, fieldTypeSelection, inputTypeSelection)
+
+                    newKeyNameSet("");
+                }}
+            >Add</button>
+        </div>
+    )
+}

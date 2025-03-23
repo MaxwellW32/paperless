@@ -4,21 +4,21 @@ import { checklistStarter } from '@/types'
 import React, { useEffect, useMemo, useState } from 'react'
 import ShowMore from '../showMore/ShowMore'
 import AddEditChecklistStarter from '../checklistStarters/AddEditChecklistStarter'
-// import Test from '../checklistStarters/Test'
+import Test from '../checklistStarters/Test'
 
 export default function Admin() {
     // const [screenSelection, screenSelectionSet] = useState<"checklistStarters">("checklistStarters")
 
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", overflow: "auto" }}>
-            <ShowMore
+            {/* <ShowMore
                 label='checklist starters'
                 content={
                     <ChecklistStartersScreen />
                 }
-            />
+            /> */}
 
-            {/* <Test /> */}
+            <Test />
         </div>
     )
 }

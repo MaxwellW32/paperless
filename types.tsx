@@ -102,6 +102,7 @@ export type formInputObjType = {
 export type formInputArrType = {
     type: "array";
     label: string;
+    arrayStarter: formType,
     data: formType[];
 };
 
@@ -133,6 +134,7 @@ export const formInputObjSchema = z.object({
 export const formInputArrSchema = z.object({
     type: z.literal("array"),
     label: z.string(),
+    arrayStarter: formSchema,
     data: z.array(formSchema),
 });
 
