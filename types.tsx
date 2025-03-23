@@ -81,14 +81,70 @@ export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
 export type authAcessType = { departmentIdBeingAccessed?: department["id"], companyIdBeingAccessed?: company["id"] }
 
-//simple input
-//label - enter mefia label
-//data - string response
 
-//array of inputs
-//starter value
-//delete options
-//display in map
+
+export type formInputType = {
+    type: "input";
+    label: string;
+    placeholder: string;
+    data: { type: "string"; value: string }
+    | { type: "number"; value: number }
+    | { type: "boolean"; value: boolean }
+    | { type: "date"; value: string };
+};
+
+export type formInputObjType = {
+    type: "object";
+    label: string;
+    data: formType;
+};
+
+export type formInputArrType = {
+    type: "array";
+    label: string;
+    data: formType[];
+};
+
+export type formType = { [key: string]: formInputType | formInputObjType | formInputArrType; }
+
+
+export const formSchema: z.ZodType<formType> = z.lazy(() =>
+    z.record(z.string(), z.union([formInputSchema, formInputObjSchema, formInputArrSchema]))
+);
+
+export const formInputSchema = z.object({
+    type: z.literal("input"),
+    label: z.string(),
+    placeholder: z.string(),
+    data: z.union([
+        z.object({ type: z.literal("string"), value: z.string().min(1) }),
+        z.object({ type: z.literal("number"), value: z.number() }),
+        z.object({ type: z.literal("boolean"), value: z.boolean() }),
+        z.object({ type: z.literal("date"), value: z.string().min(1) }),
+    ]),
+});
+
+export const formInputObjSchema = z.object({
+    type: z.literal("object"),
+    label: z.string(),
+    data: formSchema,
+});
+
+export const formInputArrSchema = z.object({
+    type: z.literal("array"),
+    label: z.string(),
+    data: z.array(formSchema),
+});
+
+
+
+
+
+
+
+
+
+
 
 export const checklistItemFormSchema = z.object({
     type: z.literal("form"),
