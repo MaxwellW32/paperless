@@ -1,8 +1,8 @@
 import { auth } from "@/auth/auth"
 import styles from "./page.module.css"
-import Link from "next/link"
 import { getChecklistStartersTypes } from "@/serverFunctions/handleChecklistStarters"
 import { checklistStarter } from "@/types"
+import HomeComp from "@/components/home/Home"
 
 //design from client access
 //then do from egov perspective
@@ -22,20 +22,7 @@ export default async function Home() {
     <main className={styles.main}>
       {session !== null && (
         <>
-          <h3>Welcome {session.user.name}</h3>
-
-          <h3>new request</h3>
-
-          <ul style={{ display: "flex", flexWrap: "wrap", padding: "1rem", gap: "1rem" }}>
-            {checklistStarterTypes.map((eachRequestType, eachRequestTypeIndex) => {
-              return (
-                <Link key={eachRequestTypeIndex} href={`clientRequests/${eachRequestType}`}
-                >
-                  <button className="button1">{eachRequestType}</button>
-                </Link>
-              )
-            })}
-          </ul>
+          <HomeComp session={session} checklistStarterTypes={checklistStarterTypes} />
         </>
       )}
     </main>

@@ -79,7 +79,40 @@ export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema
 export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
 export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
-export type authAcessType = { departmentIdBeingAccessed?: department["id"], companyIdBeingAccessed?: company["id"] }
+export type authAcessType = { departmentIdBeingAccessed?: department["id"], companyIdBeingAccessed?: company["id"], allowRegularAccess?: boolean }
+
+
+export type departmentCompanySelection = {
+    type: "department",
+    departmentId: string
+} | {
+    type: "company",
+    companyId: string
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -141,16 +174,6 @@ export const formInputArrSchema = z.object({
     arrayStarter: formSchema,
     data: z.array(formSchema),
 });
-
-
-
-
-
-
-
-
-
-
 
 export const checklistItemFormSchema = z.object({
     type: z.literal("form"),
@@ -370,16 +393,18 @@ export const clientRequestSchema = z.object({
     companyId: companySchema.shape.id, //what company is it on behalf of
     status: clientRequestStatusSchema,
     checklist: z.array(checklistItemSchema).min(1),
+    checklistStarterId: checklistStarterSchema.shape.id,
 })
 export type clientRequest = z.infer<typeof clientRequestSchema> & {
     user?: user,
     company?: company,
+    checklistStarter?: checklistStarter
 }
 
 export const adminUpdateClientRequestSchema = clientRequestSchema.omit({ id: true, })
 export type adminUpdateClientRequest = z.infer<typeof adminUpdateClientRequestSchema>
 
-export const updateClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, companyId: true })
+export const updateClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, companyId: true, checklistStarterId: true })
 export type updateClientRequest = z.infer<typeof updateClientRequestSchema>
 
 export const newClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, status: true })

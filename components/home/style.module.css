@@ -1,0 +1,20 @@
+.main {
+    position: relative;
+    display: grid;
+}
+
+.mainContent {
+    padding: 1rem;
+}
+
+.sideBar {
+    display: grid;
+    padding: 1rem;
+    gap: 1rem;
+    align-content: flex-start;
+    background-color: rgb(var(--color3));
+    width: min(500px, 80%);
+    position: absolute;
+    top: 0;
+    left: 0;
+}

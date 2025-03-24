@@ -102,6 +102,7 @@ export const clientRequests = pgTable("clientRequests", {
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
     status: clientRequestStatusEnum().notNull(),
     checklist: json("checklist").$type<checklistItemType[]>().notNull(),
+    checklistStarterId: varchar("checklistStarterId", { length: 255 }).notNull().references(() => checklistStarters.id),
 })
 export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
     user: one(users, {
@@ -111,6 +112,10 @@ export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
     company: one(companies, {
         fields: [clientRequests.companyId],
         references: [companies.id],
+    }),
+    checklistStarter: one(checklistStarters, {
+        fields: [clientRequests.checklistStarterId],
+        references: [checklistStarters.id],
     }),
 }));
 

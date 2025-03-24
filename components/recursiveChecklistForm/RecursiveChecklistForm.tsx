@@ -6,14 +6,14 @@ import ChecklistShowMore from "./checklistShowMore/ChecklistShowMore";
 import styles from "./style.module.css"
 
 export function MakeRecursiveChecklistForm({ seenForm, handleFormUpdate }: { seenForm: formType, handleFormUpdate: (updatedForm: formType) => void }) {
-    const [formData, setFormData] = useState<formType>(deepClone(seenForm));
+    const [formData, formDataSet] = useState<formType>(deepClone(seenForm));
     const updating = useRef(false)
 
     //react to changes from above
     useEffect(() => {
         updating.current = true
 
-        setFormData(deepClone(seenForm))
+        formDataSet(deepClone(seenForm))
 
     }, [seenForm])
 
@@ -31,15 +31,15 @@ export function MakeRecursiveChecklistForm({ seenForm, handleFormUpdate }: { see
 
     return (
         <>
-            <RecursiveMakeChecklistForm formData={formData} setFormData={setFormData} />
+            <RecursiveMakeChecklistForm formData={formData} formDataSet={formDataSet} />
 
             {/* <pre>{JSON.stringify(formData, null, 2)}</pre> */}
         </>
     );
 }
-function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", parentArrayName, ...elProps }: { formData: formType, setFormData: React.Dispatch<React.SetStateAction<formType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
+function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", parentArrayName, ...elProps }: { formData: formType, formDataSet: React.Dispatch<React.SetStateAction<formType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
     const handleChange = (path: string, value: unknown) => {
-        setFormData(prev => {
+        formDataSet(prev => {
             const newData = deepClone(prev);
 
             const keyArray = path.split('/')
@@ -64,7 +64,7 @@ function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", pare
     };
 
     const addField = (path: string, newKeyName: string, typeToAdd: formType[string]["type"], inputTypeSelection: formInputType["data"]["type"]) => {
-        setFormData(prev => {
+        formDataSet(prev => {
             const newData = deepClone(prev);
 
             const keyArray = path.split('/')
@@ -273,7 +273,7 @@ function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", pare
                                                 )}
                                             />
 
-                                            <RecursiveMakeChecklistForm formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} style={{ marginTop: "2rem" }} />
+                                            <RecursiveMakeChecklistForm formData={eachFormDataValue.data} formDataSet={formDataSet} sentKeys={`${seenKeys}/data`} style={{ marginTop: "2rem" }} />
                                         </>
                                     )}
                                 />
@@ -311,7 +311,7 @@ function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", pare
                                                 )}
                                             />
 
-                                            <RecursiveMakeChecklistForm style={{ marginTop: "2rem" }} formData={eachFormDataValue.arrayStarter} setFormData={setFormData} sentKeys={`${seenKeys}/arrayStarter`} parentArrayName={eachKey} />
+                                            <RecursiveMakeChecklistForm style={{ marginTop: "2rem" }} formData={eachFormDataValue.arrayStarter} formDataSet={formDataSet} sentKeys={`${seenKeys}/arrayStarter`} parentArrayName={eachKey} />
                                         </>
                                     )}
                                 />

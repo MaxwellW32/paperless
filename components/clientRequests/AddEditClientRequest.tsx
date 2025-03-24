@@ -15,7 +15,8 @@ import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveC
 export default function AddEditClientRequest({ checklistStarter, sentClientRequest, seenSession }: { checklistStarter: checklistStarter, sentClientRequest?: clientRequest, seenSession: Session }) {
     const initialFormObj: newClientRequest = {
         companyId: "",
-        checklist: checklistStarter.checklist
+        checklist: checklistStarter.checklist,
+        checklistStarterId: checklistStarter.id
     }
 
     //assign either a new form, or the safe values on an update form
@@ -261,7 +262,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     formObjSet(prevFormObj => {
                                         const newFormObj = { ...prevFormObj }
-                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company") return prevFormObj
+                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company" || eachKey === "checklistStarter") return prevFormObj
 
                                         newFormObj[eachKey] = e.target.value
 

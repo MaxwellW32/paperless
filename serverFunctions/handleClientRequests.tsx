@@ -55,8 +55,7 @@ export async function getSpecificClientRequests(clientRequestId: clientRequest["
     const result = await db.query.clientRequests.findFirst({
         where: eq(clientRequests.id, clientRequestId),
         with: {
-            user: true,
-            company: true,
+            checklistStarter: true
         }
     });
 
@@ -73,8 +72,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
         const result = await db.query.clientRequests.findMany({
             where: eq(clientRequests.userId, option.userId),
             with: {
-                user: true,
-                company: true,
+                checklistStarter: true
             }
         });
 
@@ -86,8 +84,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
         const result = await db.query.clientRequests.findMany({
             where: eq(clientRequests.companyId, option.companyId),
             with: {
-                user: true,
-                company: true,
+                checklistStarter: true
             }
         });
 
