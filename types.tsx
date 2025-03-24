@@ -86,22 +86,24 @@ export type authAcessType = { departmentIdBeingAccessed?: department["id"], comp
 export type formInputType = {
     type: "input";
     label: string;
-    placeholder: string;
-    data: { type: "string"; value: string }
-    | { type: "number"; value: number }
+    required: boolean,
+    data: { type: "string"; value: string, placeholder: string, useTextArea: boolean }
+    | { type: "number", placeholder: string, value: number, isFloat: boolean }
     | { type: "boolean"; value: boolean }
-    | { type: "date"; value: string };
+    | { type: "date"; value: string },
 };
 
 export type formInputObjType = {
     type: "object";
     label: string;
+    required: boolean,
     data: formType;
 };
 
 export type formInputArrType = {
     type: "array";
     label: string;
+    required: boolean,
     arrayStarter: formType,
     data: formType[];
 };
@@ -116,24 +118,26 @@ export const formSchema: z.ZodType<formType> = z.lazy(() =>
 export const formInputSchema = z.object({
     type: z.literal("input"),
     label: z.string(),
-    placeholder: z.string(),
+    required: z.boolean(),
     data: z.union([
-        z.object({ type: z.literal("string"), value: z.string().min(1) }),
-        z.object({ type: z.literal("number"), value: z.number() }),
+        z.object({ type: z.literal("string"), value: z.string(), placeholder: z.string(), useTextArea: z.boolean() }),
+        z.object({ type: z.literal("number"), value: z.number(), placeholder: z.string(), isFloat: z.boolean() }),
         z.object({ type: z.literal("boolean"), value: z.boolean() }),
-        z.object({ type: z.literal("date"), value: z.string().min(1) }),
+        z.object({ type: z.literal("date"), value: z.string() }),
     ]),
 });
 
 export const formInputObjSchema = z.object({
     type: z.literal("object"),
     label: z.string(),
+    required: z.boolean(),
     data: formSchema,
 });
 
 export const formInputArrSchema = z.object({
     type: z.literal("array"),
     label: z.string(),
+    required: z.boolean(),
     arrayStarter: formSchema,
     data: z.array(formSchema),
 });
@@ -150,8 +154,7 @@ export const formInputArrSchema = z.object({
 
 export const checklistItemFormSchema = z.object({
     type: z.literal("form"),
-    //array of form elements to ask user
-    data: z.record(z.string().min(1), z.string()),
+    data: formSchema,
     completed: z.boolean(),
 })
 export type checklistItemFormType = z.infer<typeof checklistItemFormSchema>

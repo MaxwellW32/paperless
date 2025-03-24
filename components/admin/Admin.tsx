@@ -4,21 +4,18 @@ import { checklistStarter } from '@/types'
 import React, { useEffect, useMemo, useState } from 'react'
 import ShowMore from '../showMore/ShowMore'
 import AddEditChecklistStarter from '../checklistStarters/AddEditChecklistStarter'
-import Test from '../checklistStarters/Test'
 
 export default function Admin() {
     // const [screenSelection, screenSelectionSet] = useState<"checklistStarters">("checklistStarters")
 
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", overflow: "auto" }}>
-            {/* <ShowMore
+            <ShowMore
                 label='checklist starters'
                 content={
                     <ChecklistStartersScreen />
                 }
-            /> */}
-
-            <Test />
+            />
         </div>
     )
 }
@@ -36,25 +33,28 @@ function ChecklistStartersScreen() {
 
 
     useEffect(() => {
-        const search = async () => {
-            const results = await getChecklistStarters()
-            checklistStartersSet(results)
-        }
-        search()
+        handleGetChecklistStarters()
+
     }, [])
 
+    async function handleGetChecklistStarters() {
+        const results = await getChecklistStarters()
+        checklistStartersSet(results)
+    }
 
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
             <ShowMore
                 label='add checklist starter'
                 content={
-                    <AddEditChecklistStarter />
+                    <AddEditChecklistStarter
+                        submissionAction={handleGetChecklistStarters}
+                    />
                 }
             />
 
             {checklistStarters !== undefined && checklistStarters.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
                     {checklistStarters.map(eachChecklistStarter => {
                         return (
                             <button key={eachChecklistStarter.type} className='button1' style={{ backgroundColor: eachChecklistStarter.type === activeChecklistStarter?.type ? "rgb(var(--color1))" : "" }}
@@ -71,7 +71,9 @@ function ChecklistStartersScreen() {
                 <ShowMore
                     label='edit checklist starter'
                     content={
-                        <AddEditChecklistStarter sentChecklistStarter={activeChecklistStarter} />
+                        <AddEditChecklistStarter sentChecklistStarter={activeChecklistStarter}
+                            submissionAction={handleGetChecklistStarters}
+                        />
                     }
                 />
             )}

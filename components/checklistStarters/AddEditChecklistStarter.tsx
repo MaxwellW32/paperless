@@ -6,13 +6,12 @@ import TextArea from '../textArea/TextArea'
 import { deepClone } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistItemFormType, checklistItemType, checklistStarter, checklistStarterSchema, newChecklistStarter, newChecklistStarterSchema, updateChecklistStarterSchema } from '@/types'
+import { checklistItemType, checklistStarter, checklistStarterSchema, newChecklistStarter, newChecklistStarterSchema, updateChecklistStarterSchema } from '@/types'
 import { addChecklistStarters, updateChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
-import { refreshAdminPath } from '@/serverFunctions/handleServer'
 import ConfirmationBox from '../confirmationBox/ConfirmationBox'
-import ShowMore from '../showMore/ShowMore'
+import { MakeRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 
-export default function AddEditChecklistStarter({ sentChecklistStarter, ...elProps }: { sentChecklistStarter?: checklistStarter, } & HTMLAttributes<HTMLFormElement>) {
+export default function AddEditChecklistStarter({ sentChecklistStarter, submissionAction, ...elProps }: { sentChecklistStarter?: checklistStarter, submissionAction?: () => void } & HTMLAttributes<HTMLFormElement>) {
     const initialFormObj: newChecklistStarter = {
         type: "",
         checklist: []
@@ -110,8 +109,9 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, ...elPro
                 toast.success("checklist starter updated")
             }
 
-            //show latest changes
-            await refreshAdminPath()
+            if (submissionAction !== undefined) {
+                submissionAction()
+            }
 
         } catch (error) {
             consoleAndToastError(error)
@@ -139,9 +139,8 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, ...elPro
                     const seenChecklist = formObj[eachKey]
                     if (seenChecklist === undefined) return null
 
-
                     return (
-                        <div key={eachKey} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                        <div key={eachKey} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", marginTop: "1rem" }}>
                             <label>Checklist</label>
 
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
@@ -200,11 +199,11 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, ...elPro
                                                 <label>{eachChecklistItem.type}</label>
 
                                                 {eachChecklistItem.type === "form" && (
-                                                    <RecursiveAddToChecklistForm seenForm={eachChecklistItem.data} sentKeys=''
+                                                    <MakeRecursiveChecklistForm seenForm={eachChecklistItem.data}
                                                         handleFormUpdate={(seenLatestForm) => {
                                                             //edit new checklist item
                                                             const newChecklistItem = { ...eachChecklistItem }
-                                                            newChecklistItem.data = seenLatestForm as checklistItemFormType["data"]
+                                                            newChecklistItem.data = seenLatestForm
 
                                                             //edit new checklist at index
                                                             const newChecklist = [...seenChecklist]
@@ -336,202 +335,5 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, ...elPro
                 onClick={handleSubmit}
             >{sentChecklistStarter ? "update" : "submit"}</button>
         </form>
-    )
-}
-
-function RecursiveAddToChecklistForm({ seenForm, handleFormUpdate, parentArrayName, sentKeys, ...elProps }: { seenForm: object, handleFormUpdate: (latestForm: object) => void, parentArrayName?: string, sentKeys: string } & React.HTMLAttributes<HTMLDivElement>) {
-    //recursively view whats there
-    //update any level with a key value combo
-    //later update the form to handle different data types
-    const [newKeyName, newKeyNameSet] = useState("")
-
-    function runSameOnAll() {
-
-    }
-
-    return (
-        <div {...elProps} style={{ display: "grid", gap: "1rem", ...(parentArrayName ? { gridAutoColumns: "90%", gridAutoFlow: "column" } : { alignContent: "flex-start" }), overflow: "auto", ...elProps?.style }} className={`${parentArrayName ? "snap" : ""} ${elProps?.className}`}>
-            {Object.entries(seenForm).map(eachEntry => {
-                const eachKey = eachEntry[0]
-                const eachValue = eachEntry[1]
-                const seenKeys = sentKeys === "" ? eachKey : `${sentKeys}/${eachKey}`
-
-                const arrayRemoveButton = (
-                    <ConfirmationBox text='remove' confirmationText='are you sure you want to remove?' successMessage='removed!' float={true}
-                        runAction={async () => {
-                            runSameOnAll()
-                            const newForm: checklistItemFormType = JSON.parse(JSON.stringify(seenForm))
-                            const keyArray = seenKeys.split('/')
-
-                            let tempForm = newForm
-                            const indexToDelete = parseInt(keyArray[keyArray.length - 1])
-
-                            for (let i = 0; i < keyArray.length; i++) {
-                                const subKey = keyArray[i]
-
-                                if (i === keyArray.length - 2) {
-                                    // @ts-expect-error type
-                                    tempForm[subKey] = tempForm[subKey].filter((each, eachIndex) => eachIndex !== indexToDelete)
-
-                                } else {
-                                    // @ts-expect-error type
-                                    tempForm = tempForm[subKey]
-                                }
-                            }
-
-                            handleFormUpdate(newForm)
-                        }}
-                    />
-                )
-
-                const objectKeyRemoveButton = (
-                    <ConfirmationBox text='' confirmationText='are you sure you want to remove?' successMessage='removed!'
-                        icon={
-                            <svg style={{ fill: "rgb(var(--shade2))" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
-                        }
-
-                        buttonProps={{ style: { justifySelf: "flex-end" } }}
-                        runAction={async () => {
-                            const newForm: checklistItemFormType = JSON.parse(JSON.stringify(seenForm))
-                            const keyArray = seenKeys.split('/')
-
-                            let tempForm = newForm
-
-                            for (let i = 0; i < keyArray.length; i++) {
-                                const subKey = keyArray[i]
-
-                                if (i === keyArray.length - 1) {
-                                    // @ts-expect-error type
-                                    delete tempForm[subKey]
-
-                                } else {
-                                    // @ts-expect-error type
-                                    tempForm = tempForm[subKey]
-                                }
-                            }
-
-                            handleFormUpdate(newForm)
-                        }}
-                    />
-                )
-
-                //replace camelcase key names with spaces and capitalize first letter
-                const niceKeyName = eachKey.replace(/([A-Z])/g, ' $1').replace(/^./, function (str) { return str.toUpperCase(); })
-                let label = niceKeyName
-
-                const parsedNumberKey = parseInt(eachKey)
-                if (!isNaN(parsedNumberKey) && parentArrayName !== undefined) {
-                    label = `${parentArrayName.replace(/([A-Z])/g, ' $1').replace(/^./, function (str) { return str.toUpperCase(); })} ${parsedNumberKey + 1}`
-                }
-
-                if (typeof eachValue === 'object' && eachValue !== null) {
-                    const isArray = Array.isArray(eachValue)
-
-                    return (
-                        <div key={eachKey} style={{ display: "grid", alignContent: "flex-start", }}>
-                            <ShowMore
-                                label={label}
-                                content={(
-                                    <>
-                                        {objectKeyRemoveButton}
-
-                                        {parentArrayName && (
-                                            arrayRemoveButton
-                                        )}
-
-                                        {isArray && (
-                                            <>
-
-                                                <button className='button1' style={{ alignSelf: "flex-start" }}
-                                                    onClick={() => {
-
-                                                    }}
-                                                >add</button>
-                                            </>
-                                        )}
-
-                                        <RecursiveAddToChecklistForm seenForm={eachValue} sentKeys={seenKeys} style={{ marginLeft: "1rem" }} parentArrayName={isArray ? eachKey : undefined} handleFormUpdate={handleFormUpdate} />
-                                    </>
-                                )}
-                            />
-                        </div>
-                    )
-
-                } else {
-
-                    return (
-                        <div key={seenKeys} style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", width: "100%" }}>
-                            {objectKeyRemoveButton}
-
-                            {parentArrayName && arrayRemoveButton}
-
-                            <label htmlFor={seenKeys}>{label} - type: {typeof eachValue}</label>
-
-
-                            {/* {(typeof eachValue === 'string' || typeof eachValue === 'number') && (
-                                <>
-                                    <input id={seenKeys} type={"text"} value={eachValue} placeholder={placeHolder}
-                                        onChange={(e) => {
-                                            runSameOnAll()
-
-                                            const newForm: checklistItemFormType = JSON.parse(JSON.stringify(seenForm))
-                                            const keyArray = seenKeys.split('/')
-
-                                            let tempForm = newForm
-
-                                            for (let i = 0; i < keyArray.length; i++) {
-                                                const subKey = keyArray[i]
-
-                                                if (i === keyArray.length - 1) {
-                                                    let inputVal: string | number | null | undefined = e.target.value
-
-                                                    // @ts-expect-error type
-                                                    tempForm[subKey] = inputVal
-
-                                                } else {
-                                                    // @ts-expect-error type
-                                                    tempForm = tempForm[subKey]
-                                                }
-                                            }
-
-                                            handleFormUpdate(newForm)
-                                        }}
-                                    />
-                                </>
-                            )} */}
-                        </div>
-                    )
-                }
-            })}
-
-            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                <input type='text' value={newKeyName} placeholder='enter key name'
-                    onChange={(e) => {
-                        const seenNewKeyText = e.target.value.replace(/ /g, "")
-
-                        newKeyNameSet(seenNewKeyText)
-                    }}
-                />
-
-                <button className='button1'
-                    onClick={() => {
-                        if (newKeyName === "") {
-                            toast.error("need to add a key name")
-                            return
-                        }
-
-                        const newForm = { ...seenForm }
-
-                        //@ts-expect-error type
-                        newForm[newKeyName] = ""
-
-                        handleFormUpdate(newForm)
-
-                        //reset
-                        newKeyNameSet("")
-                    }}
-                >add key</button>
-            </div>
-        </div>
     )
 }

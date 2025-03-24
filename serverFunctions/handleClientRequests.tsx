@@ -11,6 +11,8 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, a
 
     newClientRequestSchema.parse(newClientRequestObj)
 
+    //one global function to handle checklist automtions
+
     //add new request
     const addedClientRequest = await db.insert(clientRequests).values({
         userId: seenSession.user.id,

@@ -6,12 +6,11 @@ import TextArea from '../textArea/TextArea'
 import { deepClone } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import ConfirmationBox from '../confirmationBox/ConfirmationBox'
-import ShowMore from '../showMore/ShowMore'
-import { checklistItemFormType, checklistStarter, clientRequest, clientRequestSchema, newClientRequest, newClientRequestSchema, updateClientRequestSchema, user, userToCompany } from '@/types'
+import { checklistStarter, clientRequest, clientRequestSchema, newClientRequest, newClientRequestSchema, updateClientRequestSchema, user, userToCompany } from '@/types'
 import { Session } from 'next-auth'
 import { getSpecificUser } from '@/serverFunctions/handleUser'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
+import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 
 export default function AddEditClientRequest({ checklistStarter, sentClientRequest, seenSession }: { checklistStarter: checklistStarter, sentClientRequest?: clientRequest, seenSession: Session }) {
     const initialFormObj: newClientRequest = {
@@ -189,7 +188,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                     return (
                         <React.Fragment key={eachKey}>
                             {activeChecklistFormIndex !== undefined && formObj.checklist !== undefined && formObj.checklist[activeChecklistFormIndex].type === "form" && (
-                                <RecursiveEditChecklistForm seenForm={formObj.checklist[activeChecklistFormIndex].data} sentKeys=''
+                                <ReadRecursiveChecklistForm seenForm={formObj.checklist[activeChecklistFormIndex].data}
                                     handleFormUpdate={(seenLatestForm) => {
                                         formObjSet(prevFormObj => {
                                             const newFormObj = { ...prevFormObj }
@@ -199,7 +198,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                                             const newChecklistItem = { ...newFormObj.checklist[activeChecklistFormIndex] }
                                             if (newChecklistItem.type !== "form") return prevFormObj
 
-                                            newChecklistItem.data = seenLatestForm as checklistItemFormType["data"]
+                                            newChecklistItem.data = seenLatestForm
 
                                             newFormObj.checklist[activeChecklistFormIndex] = newChecklistItem
 
@@ -274,144 +273,6 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
         </form>
     )
 }
-
-
-
-
-function RecursiveEditChecklistForm({ seenForm, handleFormUpdate, parentArrayName, sentKeys, ...elProps }: { seenForm: object, handleFormUpdate: (latestForm: object) => void, parentArrayName?: string, sentKeys: string } & React.HTMLAttributes<HTMLDivElement>) {
-    //recursively view whats there
-    //update any level with a key value combo
-    //later update the form to handle different data types
-
-    function runSameOnAll() {
-
-    }
-
-    return (
-        <div {...elProps} style={{ display: "grid", gap: "1rem", ...(parentArrayName ? { gridAutoColumns: "90%", gridAutoFlow: "column" } : { alignContent: "flex-start" }), overflow: "auto", ...elProps?.style }} className={`${parentArrayName ? "snap" : ""} ${elProps?.className}`}>
-            {Object.entries(seenForm).map(eachEntry => {
-                const eachKey = eachEntry[0]
-                const eachValue = eachEntry[1]
-                const seenKeys = sentKeys === "" ? eachKey : `${sentKeys}/${eachKey}`
-
-                const arrayRemoveButton = (
-                    <ConfirmationBox text='remove' confirmationText='are you sure you want to remove?' successMessage='removed!' float={true}
-                        runAction={async () => {
-                            runSameOnAll()
-                            const newForm: checklistItemFormType = JSON.parse(JSON.stringify(seenForm))
-                            const keyArray = seenKeys.split('/')
-
-                            let tempForm = newForm
-                            const indexToDelete = parseInt(keyArray[keyArray.length - 1])
-
-                            for (let i = 0; i < keyArray.length; i++) {
-                                const subKey = keyArray[i]
-
-                                if (i === keyArray.length - 2) {
-                                    // @ts-expect-error type
-                                    tempForm[subKey] = tempForm[subKey].filter((each, eachIndex) => eachIndex !== indexToDelete)
-
-                                } else {
-                                    // @ts-expect-error type
-                                    tempForm = tempForm[subKey]
-                                }
-                            }
-
-                            handleFormUpdate(newForm)
-                        }}
-                    />
-                )
-
-                //replace camelcase key names with spaces and capitalize first letter
-                const niceKeyName = eachKey.replace(/([A-Z])/g, ' $1').replace(/^./, function (str) { return str.toUpperCase(); })
-                let label = niceKeyName
-
-                const parsedNumberKey = parseInt(eachKey)
-                if (!isNaN(parsedNumberKey) && parentArrayName !== undefined) {
-                    label = `${parentArrayName.replace(/([A-Z])/g, ' $1').replace(/^./, function (str) { return str.toUpperCase(); })} ${parsedNumberKey + 1}`
-                }
-
-                const placeHolder = `Enter a starter value for ${label}`
-
-                if (typeof eachValue === 'object' && eachValue !== null) {
-                    const isArray = Array.isArray(eachValue)
-
-                    return (
-                        <div key={eachKey} style={{ display: "grid", alignContent: "flex-start", }}>
-                            <ShowMore
-                                label={label}
-                                content={(
-                                    <>
-                                        {parentArrayName && (
-                                            arrayRemoveButton
-                                        )}
-
-                                        {isArray && (
-                                            <>
-
-                                                <button className='button1' style={{ alignSelf: "flex-start" }}
-                                                    onClick={() => {
-
-                                                    }}
-                                                >add</button>
-                                            </>
-                                        )}
-
-                                        <RecursiveEditChecklistForm seenForm={eachValue} sentKeys={seenKeys} style={{ marginLeft: "1rem" }} parentArrayName={isArray ? eachKey : undefined} handleFormUpdate={handleFormUpdate} />
-                                    </>
-                                )}
-                            />
-                        </div>
-                    )
-
-                } else {
-
-                    return (
-                        <div key={seenKeys} style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", width: "100%" }}>
-                            {parentArrayName && arrayRemoveButton}
-
-                            <label htmlFor={seenKeys}>{label}</label>
-
-
-                            {(typeof eachValue === 'string' || typeof eachValue === 'number') && (
-                                <>
-                                    <input id={seenKeys} type={"text"} value={eachValue} placeholder={placeHolder}
-                                        onChange={(e) => {
-                                            runSameOnAll()
-
-                                            const newForm: checklistItemFormType = JSON.parse(JSON.stringify(seenForm))
-                                            const keyArray = seenKeys.split('/')
-
-                                            let tempForm = newForm
-
-                                            for (let i = 0; i < keyArray.length; i++) {
-                                                const subKey = keyArray[i]
-
-                                                if (i === keyArray.length - 1) {
-                                                    const inputVal: string | number = e.target.value
-
-                                                    // @ts-expect-error type
-                                                    tempForm[subKey] = inputVal
-
-                                                } else {
-                                                    // @ts-expect-error type
-                                                    tempForm = tempForm[subKey]
-                                                }
-                                            }
-
-                                            handleFormUpdate(newForm)
-                                        }}
-                                    />
-                                </>
-                            )}
-                        </div>
-                    )
-                }
-            })}
-        </div>
-    )
-}
-
 
 
 
