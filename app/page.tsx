@@ -24,7 +24,9 @@ export default async function Home() {
         <>
           <h3>Welcome {session.user.name}</h3>
 
-          <ul style={{ display: "flex", flexWrap: "wrap", padding: "1rem" }}>
+          <h3>new request</h3>
+
+          <ul style={{ display: "flex", flexWrap: "wrap", padding: "1rem", gap: "1rem" }}>
             {checklistStarterTypes.map((eachRequestType, eachRequestTypeIndex) => {
               return (
                 <Link key={eachRequestTypeIndex} href={`clientRequests/${eachRequestType}`}

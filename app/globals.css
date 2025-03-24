@@ -13,6 +13,7 @@
     --viewColor1: rgb(33, 112, 186);
     --viewColor2: rgb(245, 245, 220);
     --viewColor3: rgb(240, 248, 255);
+    --viewColor4: rgb(152, 0, 0);
 
     --viewShade1: #171717;
     --viewShade2: #ffffff;
@@ -22,6 +23,7 @@
     --color1: 33, 112, 186;
     --color2: 245, 245, 220;
     --color3: 240, 248, 255;
+    --color4: 152, 0, 0;
 
     --shade1: 23, 23, 23;
     --shade2: 255, 255, 255;

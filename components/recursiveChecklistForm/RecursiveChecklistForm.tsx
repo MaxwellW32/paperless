@@ -3,7 +3,7 @@ import { deepClone } from "@/utility/utility";
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ChecklistShowMore from "./checklistShowMore/ChecklistShowMore";
-
+import styles from "./style.module.css"
 
 export function MakeRecursiveChecklistForm({ seenForm, handleFormUpdate }: { seenForm: formType, handleFormUpdate: (updatedForm: formType) => void }) {
     const [formData, setFormData] = useState<formType>(deepClone(seenForm));
@@ -132,10 +132,12 @@ function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", pare
                                 <label>{niceKeyName}</label>
 
                                 <ChecklistShowMore
-                                    label="input settings"
+                                    label={(
+                                        <label>settings</label>
+                                    )}
                                     content={(
                                         <>
-                                            <label>label</label>
+                                            <label>set label</label>
 
                                             <input type="text" value={eachFormDataValue.label} placeholder="set label client will see"
                                                 onChange={(e) => {
@@ -145,7 +147,7 @@ function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", pare
 
                                             {(eachFormDataValue.data.type === "string" || eachFormDataValue.data.type === "number") && (
                                                 <>
-                                                    <label>placeholder</label>
+                                                    <label>set placeholder</label>
 
                                                     <input type="text" value={eachFormDataValue.data.placeholder} placeholder="set placeholder text"
                                                         onChange={(e) => {
@@ -165,83 +167,96 @@ function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", pare
                                                 >{eachFormDataValue.data.useTextArea ? "textarea" : "input"}</button>
                                             )}
 
+                                            <label>value</label>
+
+                                            {eachFormDataValue.data.type === "string" ? (
+                                                <>
+                                                    {eachFormDataValue.data.useTextArea ? (
+                                                        <textarea rows={5} placeholder={`${niceKeyName} starter value here`}
+                                                            value={eachFormDataValue.data.value}
+                                                            onChange={(e) => {
+                                                                handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: e.target.value } })
+                                                            }}
+                                                        />
+
+                                                    ) : (
+                                                        <input
+                                                            type={"text"}
+                                                            value={eachFormDataValue.data.value}
+                                                            placeholder={`${niceKeyName} starter value here`}
+                                                            onChange={(e) => {
+                                                                handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: e.target.value } })
+                                                            }}
+                                                        />
+                                                    )}
+                                                </>
+
+                                            ) : eachFormDataValue.data.type === "number" ? (
+                                                <input
+                                                    type={"number"}
+                                                    value={eachFormDataValue.data.value}
+                                                    onChange={(e) => {
+                                                        //@ts-expect-error type
+                                                        let newValue = eachFormDataValue.data.isFloat ? parseFloat(e.target.value) : parseInt(e.target.value)
+
+                                                        if (isNaN(newValue)) {
+                                                            newValue = 0
+                                                        }
+
+                                                        handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: newValue } })
+                                                    }}
+                                                />
+
+                                            ) : eachFormDataValue.data.type === "boolean" ? (
+                                                <button className="button1" style={{ backgroundColor: eachFormDataValue.data.value ? "rgb(var(--color1))" : "" }}
+                                                    onClick={() => handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: !eachFormDataValue.data.value } })}>
+                                                    Toggle
+                                                </button>
+
+                                            ) : eachFormDataValue.data.type === "date" ? (
+                                                <input
+                                                    type="date"
+                                                    value={eachFormDataValue.data.value}
+                                                    onChange={(e) => handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: new Date(e.target.value).toISOString().split('T')[0] } })}
+                                                />
+
+                                            ) : null}
+
+                                            {eachFormDataValue.data.type === "number" && (
+                                                <button className="button1"
+                                                    onClick={() => {
+                                                        //@ts-expect-error type
+                                                        handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, isFloat: !eachFormDataValue.data.isFloat } })
+                                                    }}
+                                                >{eachFormDataValue.data.isFloat ? "float" : "integer"}</button>
+                                            )}
+
                                             <button className="button1" style={{ backgroundColor: eachFormDataValue.required ? "rgb(var(--color1))" : "" }}
                                                 onClick={() => {
                                                     handleChange(seenKeys, { ...eachFormDataValue, required: !eachFormDataValue.required })
                                                 }}
-                                            >{eachFormDataValue.required ? "is required" : "not required"}</button>
+                                            >{eachFormDataValue.required ? "required" : "not required"}</button>
                                         </>
                                     )}
                                 />
-
-                                <label>value</label>
-
-                                {eachFormDataValue.data.type === "string" ? (
-                                    <>
-                                        {eachFormDataValue.data.useTextArea ? (
-                                            <textarea rows={5} placeholder={`${niceKeyName} value here`}
-                                                value={eachFormDataValue.data.value}
-                                                onChange={(e) => {
-                                                    handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: e.target.value } })
-                                                }}
-                                            />
-
-                                        ) : (
-                                            <input
-                                                type={"text"}
-                                                value={eachFormDataValue.data.value}
-                                                placeholder={`${niceKeyName} value here`}
-                                                onChange={(e) => {
-                                                    handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: e.target.value } })
-                                                }}
-                                            />
-                                        )}
-                                    </>
-
-                                ) : eachFormDataValue.data.type === "number" ? (
-                                    <input
-                                        type={"number"}
-                                        value={eachFormDataValue.data.value}
-                                        onChange={(e) => {
-                                            //@ts-expect-error type
-                                            let newValue = eachFormDataValue.data.isFloat ? parseFloat(e.target.value) : parseInt(e.target.value)
-
-                                            if (isNaN(newValue)) {
-                                                newValue = 0
-                                            }
-
-                                            handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: newValue } })
-                                        }}
-                                    />
-
-                                ) : eachFormDataValue.data.type === "boolean" ? (
-                                    <button className="button1" style={{ backgroundColor: eachFormDataValue.data.value ? "rgb(var(--color1))" : "" }}
-                                        onClick={() => handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: !eachFormDataValue.data.value } })}>
-                                        Toggle
-                                    </button>
-
-                                ) : eachFormDataValue.data.type === "date" ? (
-                                    <input
-                                        type="date"
-                                        value={eachFormDataValue.data.value}
-                                        onChange={(e) => handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: new Date(e.target.value).toISOString().split('T')[0] } })}
-                                    />
-
-                                ) : null}
                             </>
                         )}
 
                         {eachFormDataValue.type === "object" && (
                             <>
                                 <ChecklistShowMore
-                                    label={`${niceKeyName}`}
+                                    label={(
+                                        <label>{niceKeyName}</label>
+                                    )}
                                     content={(
                                         <>
                                             <ChecklistShowMore
-                                                label="obj settings"
+                                                label={(
+                                                    <label>object settings</label>
+                                                )}
                                                 content={(
                                                     <>
-                                                        <label>label</label>
+                                                        <label>set label</label>
 
                                                         <input type="text" value={eachFormDataValue.label} placeholder="set label client will see"
                                                             onChange={(e) => {
@@ -253,12 +268,12 @@ function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", pare
                                                             onClick={() => {
                                                                 handleChange(seenKeys, { ...eachFormDataValue, required: !eachFormDataValue.required })
                                                             }}
-                                                        >{eachFormDataValue.required ? "is required" : "not required"}</button>
+                                                        >{eachFormDataValue.required ? "required" : "not required"}</button>
                                                     </>
                                                 )}
                                             />
 
-                                            <RecursiveMakeChecklistForm key={eachKey} formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} style={{ marginLeft: "2rem" }} />
+                                            <RecursiveMakeChecklistForm formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} style={{ marginTop: "2rem" }} />
                                         </>
                                     )}
                                 />
@@ -268,14 +283,18 @@ function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", pare
                         {eachFormDataValue.type === "array" && (
                             <>
                                 <ChecklistShowMore
-                                    label={`${niceKeyName}`}
+                                    label={(
+                                        <label>{niceKeyName}</label>
+                                    )}
                                     content={(
                                         <>
                                             <ChecklistShowMore
-                                                label="array settings"
+                                                label={(
+                                                    <label>array settings</label>
+                                                )}
                                                 content={(
                                                     <>
-                                                        <label>label</label>
+                                                        <label>set label</label>
 
                                                         <input type="text" value={eachFormDataValue.label} placeholder="set label client will see"
                                                             onChange={(e) => {
@@ -287,12 +306,12 @@ function RecursiveMakeChecklistForm({ formData, setFormData, sentKeys = "", pare
                                                             onClick={() => {
                                                                 handleChange(seenKeys, { ...eachFormDataValue, required: !eachFormDataValue.required })
                                                             }}
-                                                        >{eachFormDataValue.required ? "is required" : "not required"}</button>
+                                                        >{eachFormDataValue.required ? "required" : "not required"}</button>
                                                     </>
                                                 )}
                                             />
 
-                                            <RecursiveMakeChecklistForm formData={eachFormDataValue.arrayStarter} setFormData={setFormData} sentKeys={`${seenKeys}/arrayStarter`} parentArrayName={eachKey} />
+                                            <RecursiveMakeChecklistForm style={{ marginTop: "2rem" }} formData={eachFormDataValue.arrayStarter} setFormData={setFormData} sentKeys={`${seenKeys}/arrayStarter`} parentArrayName={eachKey} />
                                         </>
                                     )}
                                 />
@@ -444,7 +463,7 @@ function RecursiveReadChecklistForm({ formData, setFormData, sentKeys = "", pare
                     <div key={eachKey} style={{ display: "grid", alignContent: "flex-start", }}>
                         {eachFormDataValue.type === "input" && (
                             <>
-                                <label>{eachFormDataValue.label} {eachFormDataValue.required ? "required" : ""}</label>
+                                <label className={styles.labelCont}>{eachFormDataValue.label} {eachFormDataValue.required ? <p className={styles.required}>required</p> : ""}</label>
 
                                 {eachFormDataValue.data.type === "string" ? (
                                     <>
@@ -505,7 +524,9 @@ function RecursiveReadChecklistForm({ formData, setFormData, sentKeys = "", pare
                         {eachFormDataValue.type === "object" && (
                             <>
                                 <ChecklistShowMore
-                                    label={`${eachFormDataValue.label} ${eachFormDataValue.required ? "required" : ""}`}
+                                    label={(
+                                        <label className={styles.labelCont}>{eachFormDataValue.label} {eachFormDataValue.required ? <p className={styles.required}>required</p> : ""}</label>
+                                    )}
                                     content={(
                                         <>
                                             <RecursiveReadChecklistForm key={eachKey} formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} style={{ marginLeft: "2rem" }} />
@@ -518,7 +539,9 @@ function RecursiveReadChecklistForm({ formData, setFormData, sentKeys = "", pare
                         {eachFormDataValue.type === "array" && (
                             <>
                                 <ChecklistShowMore
-                                    label={`${eachFormDataValue.label} ${eachFormDataValue.required ? "required" : ""}`}
+                                    label={(
+                                        <label className={styles.labelCont}>{eachFormDataValue.label} {eachFormDataValue.required ? <p className={styles.required}>required</p> : ""}</label>
+                                    )}
                                     content={(
                                         <>
                                             <div className="snap" style={{ display: "grid", gridAutoColumns: "min(400px, 90%)", gridAutoFlow: "column", gap: "1rem", overflow: "auto", paddingBlock: "1rem" }} >

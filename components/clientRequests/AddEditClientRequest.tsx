@@ -60,8 +60,8 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
         const seendIndex = formObj.checklist.findIndex(eachChecklist => {
             if (eachChecklist.type === "form") {
                 if (sentClientRequest === undefined) {
-                    //new form 
                     return eachChecklist
+
                 } else {
                     if (!eachChecklist.completed) {
                         return eachChecklist
@@ -147,10 +147,25 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
             if (sentClientRequest === undefined) {
                 //make new client request
 
+                //add on company id
                 formObj.companyId = activeUserToCompany.companyId
 
                 //validate
                 const validatedNewClientRequest: newClientRequest = newClientRequestSchema.parse(formObj)
+
+                //mark as complete
+                validatedNewClientRequest.checklist = validatedNewClientRequest.checklist.map((eachChecklist, eachChecklistIndex) => {
+                    if (eachChecklist.type === "form") {
+                        //ensure checklist form present
+                        if (activeChecklistFormIndex === undefined) throw new Error("checklist form not selected")
+
+                        if (eachChecklistIndex === activeChecklistFormIndex) {
+                            eachChecklist.completed = true
+                        }
+                    }
+
+                    return eachChecklist
+                })
 
                 //send up to server
                 await addClientRequests(validatedNewClientRequest, { companyIdBeingAccessed: activeUserToCompany.companyId })
@@ -161,6 +176,20 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
             } else {
                 //validate
                 const validatedUpdatedClientRequest = updateClientRequestSchema.parse(formObj)
+
+                //mark as complete
+                validatedUpdatedClientRequest.checklist = validatedUpdatedClientRequest.checklist.map((eachChecklist, eachChecklistIndex) => {
+                    if (eachChecklist.type === "form") {
+                        //ensure checklist form present
+                        if (activeChecklistFormIndex === undefined) throw new Error("checklist form not selected")
+
+                        if (eachChecklistIndex === activeChecklistFormIndex) {
+                            eachChecklist.completed = true
+                        }
+                    }
+
+                    return eachChecklist
+                })
 
                 //update
                 await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, { companyIdBeingAccessed: activeUserToCompany.companyId })

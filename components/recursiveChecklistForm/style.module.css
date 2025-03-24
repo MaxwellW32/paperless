@@ -3,3 +3,14 @@
     align-content: flex-start;
     gap: 1rem;
 }
+
+.labelCont {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.required {
+    color: rgb(var(--color1));
+    font-size: var(--fontSizeS);
+}
