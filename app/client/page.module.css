@@ -1,0 +1,30 @@
+.main {
+    display: grid;
+    align-content: flex-start;
+    overflow: auto;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr;
+}
+
+.sidebar {
+    display: grid;
+    align-content: flex-start;
+    overflow: auto;
+    width: 250px
+}
+
+.mainContent {
+    display: grid;
+    align-content: flex-start;
+    overflow: auto;
+}
+
+@media only screen and (max-width: 600px) {
+    .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%
+    }
+
+}

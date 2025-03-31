@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Nav from "@/components/nav/Nav";
-import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
+import { auth } from "@/auth/auth";
+import SessionProviderComponent from "@/components/SessionProviderComponent";
 
 const geist = localFont({
   src: "./fonts/Geist.ttf",
@@ -30,18 +31,19 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const seenSession = await auth()
 
   return (
     <html lang="en">
       <body
         className={`${geist.variable} antialiased`}
       >
-        <SessionProvider>
+        <SessionProviderComponent seenSession={seenSession}>
           <Toaster position="top-center" reverseOrder={false} />
           <Nav />
 
           {children}
-        </SessionProvider>
+        </SessionProviderComponent>
       </body>
     </html>
   );

@@ -7,12 +7,14 @@ import { deepClone } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import { checklistStarter, clientRequest, clientRequestSchema, newClientRequest, newClientRequestSchema, updateClientRequestSchema, user, userToCompany } from '@/types'
-import { Session } from 'next-auth'
 import { getSpecificUser } from '@/serverFunctions/handleUser'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
+import { useSession } from 'next-auth/react'
 
-export default function AddEditClientRequest({ checklistStarter, sentClientRequest, seenSession }: { checklistStarter: checklistStarter, sentClientRequest?: clientRequest, seenSession: Session }) {
+export default function AddEditClientRequest({ checklistStarter, sentClientRequest }: { checklistStarter: checklistStarter, sentClientRequest?: clientRequest }) {
+    const { data: session } = useSession()
+
     const initialFormObj: newClientRequest = {
         companyId: "",
         checklist: checklistStarter.checklist,
@@ -89,9 +91,9 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
         try {
             const search = async () => {
                 //only run for clients accounts
-                if (seenSession.user.fromDepartment) return
+                if (session === null || session.user.fromDepartment) return
 
-                const seenUser = await getSpecificUser(seenSession.user.id)
+                const seenUser = await getSpecificUser(session.user.id)
 
                 if (seenUser === undefined || seenUser.usersToCompanies === undefined) return
 
@@ -241,8 +243,8 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                     )
                 }
 
-                if (eachKey === "companyId") {
-                    if (seenSession.user.fromDepartment) {
+                if (eachKey === "companyId" && session !== null) {
+                    if (session.user.fromDepartment) {
                         //more options to come
                         return null
 

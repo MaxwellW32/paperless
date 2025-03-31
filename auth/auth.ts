@@ -22,6 +22,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         authorized: async ({ auth }) => {
             return !!auth
         },
+        jwt({ token, user }) {
+            if (user) {
+                token.id = user.id; // Store user ID in the token
+            }
+
+            return token;
+        },
+        session({ session, token }) {
+            if (token?.id) {
+                // @ts-expect-error type
+                session.user.id = token.id; // Pass the user ID to the session
+            }
+
+            return session;
+        }
     },
     pages: {
         signIn: "/login"
