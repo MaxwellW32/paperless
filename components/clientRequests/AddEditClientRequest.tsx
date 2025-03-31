@@ -3,17 +3,21 @@ import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '../textInput/TextInput'
 import TextArea from '../textArea/TextArea'
-import { deepClone } from '@/utility/utility'
+import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, clientRequestSchema, newClientRequest, newClientRequestSchema, updateClientRequestSchema, user, userToCompany } from '@/types'
+import { checklistStarter, clientRequest, clientRequestSchema, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, user, userToCompany } from '@/types'
 import { getSpecificUser } from '@/serverFunctions/handleUser'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { useSession } from 'next-auth/react'
+import { useAtom } from 'jotai'
+import { refreshObjGlobal } from '@/utility/globalState'
 
 export default function AddEditClientRequest({ checklistStarter, sentClientRequest }: { checklistStarter: checklistStarter, sentClientRequest?: clientRequest }) {
     const { data: session } = useSession()
+
+    const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
 
     const initialFormObj: newClientRequest = {
         companyId: "",
@@ -199,6 +203,10 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
                 toast.success("request updated")
             }
+
+            refreshObjSet(prevRefreshObj => {
+                return updateRefreshObj(prevRefreshObj, "clientRequests")
+            })
 
         } catch (error) {
             consoleAndToastError(error)

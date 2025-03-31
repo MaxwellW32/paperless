@@ -90,6 +90,7 @@ export type departmentCompanySelection = {
     companyId: string
 }
 
+export type refreshObjType = { [key: string]: boolean }
 
 
 

@@ -1,8 +1,4 @@
-import { auth } from "@/auth/auth"
 import styles from "./page.module.css"
-import { getChecklistStartersTypes } from "@/serverFunctions/handleChecklistStarters"
-import { checklistStarter } from "@/types"
-import HomeComp from "@/components/home/Home"
 
 //design from client access
 //then do from egov perspective
@@ -14,17 +10,13 @@ import HomeComp from "@/components/home/Home"
 //Danielle is department manager - head - need other email
 //Donovan is making this request from egov - elevated - need other email
 
+//ensure checklist only shows the forms to the client nothing else
+
 export default async function Home() {
-  const session = await auth()
-  const checklistStarterTypes: checklistStarter["type"][] = await getChecklistStartersTypes()
 
   return (
     <main className={styles.main}>
-      {session !== null && (
-        <>
-          <HomeComp session={session} checklistStarterTypes={checklistStarterTypes} />
-        </>
-      )}
+      <h1>Paperless</h1>
     </main>
   )
 }

@@ -407,8 +407,6 @@ export function ReadRecursiveChecklistForm({ seenForm, handleFormUpdate }: { see
         handleFormUpdate(formData)
     }, [formData])
 
-    console.log(`$formData`, formData);
-
     return (
         <>
             <RecursiveReadChecklistForm formData={formData} setFormData={setFormData} />

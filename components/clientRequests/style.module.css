@@ -1,5 +1,5 @@
 .form {
     display: grid;
     align-content: flex-start;
-    overflow: auto;
+    gap: 1rem;
 }

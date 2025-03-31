@@ -10,7 +10,20 @@
     display: grid;
     align-content: flex-start;
     overflow: auto;
-    width: 250px
+    gap: 1rem;
+    width: 300px;
+    background-color: rgb(var(--color3));
+    padding: 1rem;
+}
+
+.newRequest {
+    display: grid;
+    align-content: flex-start;
+}
+
+.clientRequests {
+    display: grid;
+    align-content: flex-start;
 }
 
 .mainContent {
