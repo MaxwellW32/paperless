@@ -10,7 +10,7 @@ export default function Admin() {
 
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", overflow: "auto" }}>
-            this is an admin Page
+            <h3>this admin Page</h3>
 
             <ShowMore
                 label='checklist starters'

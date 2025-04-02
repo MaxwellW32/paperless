@@ -1,7 +1,7 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { authAcessType, clientRequest, clientRequestSchema, clientRequestStatusType, company, companySchema, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { authAcessType, checklistItemType, clientRequest, clientRequestSchema, clientRequestStatusType, company, companySchema, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { ensureUserHasAccess } from "@/utility/sessionCheck"
 import { eq, and, ne } from "drizzle-orm"
 
@@ -47,7 +47,7 @@ export async function deleteClientRequests(clientRequestId: clientRequest["id"],
     await db.delete(clientRequests).where(eq(clientRequests.id, clientRequestId));
 }
 
-export async function getSpecificClientRequests(clientRequestId: clientRequest["id"], auth: authAcessType): Promise<clientRequest | undefined> {
+export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], auth: authAcessType): Promise<clientRequest | undefined> {
     clientRequestSchema.shape.id.parse(clientRequestId)
 
     //security check
@@ -100,5 +100,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
     }
 }
 
-//handle client request status
-// export async function handleClientRequestChecklist(){}
+export async function runChecklistAutomation(checklist: checklistItemType[]) {
+    //send emails
+    //check the latest cimplete index in list
+}

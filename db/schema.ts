@@ -23,10 +23,12 @@ export const usersRelations = relations(users, ({ many }) => ({
 
 
 
-//egov department
+//egov departments
 export const departments = pgTable("departments", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     name: varchar("name", { length: 255 }).notNull().unique(),
+    emails: json("emails").$type<string[]>().notNull(),
+    phones: json("phones").$type<string[]>().notNull(),
 })
 export const departmentsRelations = relations(departments, ({ many }) => ({
     usersToDepartments: many(usersToDepartments),

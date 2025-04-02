@@ -248,6 +248,8 @@ export type updateUser = z.infer<typeof updateUserSchema>
 export const departmentSchema = z.object({
     id: z.string().min(1),
     name: z.string().min(1),
+    emails: z.array(z.string().min(1)).min(1),
+    phones: z.array(z.string().min(1)).min(1),
 })
 export type department = z.infer<typeof departmentSchema> & {
     usersToDepartments?: userToDepartment[],
@@ -255,6 +257,9 @@ export type department = z.infer<typeof departmentSchema> & {
 
 export const updateDepartmentSchema = departmentSchema.omit({ id: true })
 export type updateDepartment = z.infer<typeof updateDepartmentSchema>
+
+export const newDepartmentSchema = departmentSchema.omit({ id: true })
+export type newDepartment = z.infer<typeof newDepartmentSchema>
 
 
 
@@ -273,6 +278,9 @@ export type company = z.infer<typeof companySchema> & {
 
 export const updateCompanySchema = companySchema.omit({ id: true })
 export type updateCompany = z.infer<typeof updateCompanySchema>
+
+export const newCompanySchema = companySchema.omit({ id: true })
+export type newCompany = z.infer<typeof newCompanySchema>
 
 
 

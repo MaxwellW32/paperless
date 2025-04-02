@@ -153,9 +153,10 @@ section {
 .button3 {
     background-color: rgb(var(--shade1));
     color: rgb(var(--shade2));
-    text-transform: capitalize;
-    font-weight: bold;
     padding: .5rem;
+    font-size: var(--fontSizeS);
+    border-radius: .5rem;
+    font-weight: bold;
 }
 
 .tag {

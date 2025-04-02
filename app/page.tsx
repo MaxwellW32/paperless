@@ -16,9 +16,9 @@ import styles from "./page.module.css"
 //from there the checklist of it gets updated
 //departments interact with manual switches
 //emails are sent automatically
-//client can edit their form
 //
-//
+//change up manual checks to be assigned by department
+//same with email - choose department/company screens - hod filter
 //
 //
 
