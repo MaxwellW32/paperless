@@ -100,10 +100,18 @@ export const clientRequests = pgTable("clientRequests", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
+    dateSubmitted: timestamp("dateSubmitted", { mode: "date" }).notNull(),
     status: clientRequestStatusEnum().notNull(),
     checklist: json("checklist").$type<checklistItemType[]>().notNull(),
     checklistStarterId: varchar("checklistStarterId", { length: 255 }).notNull().references(() => checklistStarters.id),
-})
+},
+    (t) => {
+        return {
+            statusIndex: index("statusIndex").on(t.status),
+            companyIdIndex: index("companyIdIndex").on(t.companyId),
+            dateSubmittedIndex: index("dateSubmittedIndex").on(t.dateSubmitted),
+        };
+    })
 export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
     user: one(users, {
         fields: [clientRequests.userId],

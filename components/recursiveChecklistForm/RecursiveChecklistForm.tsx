@@ -71,7 +71,7 @@ function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", pare
 
             const newFormDataToAdd = typeToAdd === "input" ? { type: "input", label: "", data: inputTypeSelection === "string" ? { type: "string", value: "", placeholder: "", useTextArea: false } : inputTypeSelection === "number" ? { type: "number", value: 0, placeholder: "", isFloat: false } : inputTypeSelection === "boolean" ? { type: "boolean", value: false } : { type: "date", value: (new Date).toISOString().split('T')[0] }, required: false }
                 : typeToAdd === "object" ? { type: "object", label: "", data: {}, required: false }
-                    : { type: "array", label: "", arrayStarter: {}, data: [], required: false };
+                    : { type: "array", label: "", arrayStarter: {}, arrayAddLabel: "", data: [], required: false };
 
             let tempForm = newData
 
@@ -299,6 +299,14 @@ function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", pare
                                                         <input type="text" value={eachFormDataValue.label} placeholder="set label client will see"
                                                             onChange={(e) => {
                                                                 handleChange(seenKeys, { ...eachFormDataValue, label: e.target.value })
+                                                            }}
+                                                        />
+
+                                                        <label>Add to array button label</label>
+
+                                                        <input type="text" value={eachFormDataValue.arrayAddLabel} placeholder={`E.g "Add tape"`}
+                                                            onChange={(e) => {
+                                                                handleChange(seenKeys, { ...eachFormDataValue, arrayAddLabel: e.target.value })
                                                             }}
                                                         />
 
@@ -554,7 +562,7 @@ function RecursiveReadChecklistForm({ formData, setFormData, sentKeys = "", pare
                                                 onClick={() => {
                                                     handleChange(seenKeys, { ...eachFormDataValue, data: [...eachFormDataValue.data, eachFormDataValue.arrayStarter] })
                                                 }}
-                                            >Add to {niceKeyName}</button>
+                                            >{eachFormDataValue.arrayAddLabel !== "" ? eachFormDataValue.arrayAddLabel : `Add to ${niceKeyName}`}</button>
                                         </>
                                     )}
                                 />

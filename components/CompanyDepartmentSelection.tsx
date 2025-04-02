@@ -16,8 +16,7 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
 
         if (seenUser.fromDepartment) {
             //employee
-            if (seenUser.usersToDepartments === undefined) return undefined
-            if (departmentCompanySelection.type === "company") return undefined
+            if (seenUser.usersToDepartments === undefined || departmentCompanySelection.type !== "department") return undefined
 
             const seenUserDepartment = seenUser.usersToDepartments.find(eachUserToDepartment => eachUserToDepartment.departmentId === departmentCompanySelection.departmentId)
             if (seenUserDepartment === undefined || seenUserDepartment.department === undefined) return undefined
@@ -26,8 +25,7 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
 
         } else {
             //company
-            if (seenUser.usersToCompanies === undefined) return undefined
-            if (departmentCompanySelection.type === "department") return undefined
+            if (seenUser.usersToCompanies === undefined || departmentCompanySelection.type !== "company") return undefined
 
             const seenUserCompany = seenUser.usersToCompanies.find(eachUserToCompany => eachUserToCompany.companyId === departmentCompanySelection.companyId)
             if (seenUserCompany === undefined || seenUserCompany.company === undefined) return undefined

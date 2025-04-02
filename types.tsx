@@ -139,6 +139,7 @@ export type formInputArrType = {
     label: string;
     required: boolean,
     arrayStarter: formType,
+    arrayAddLabel: string,
     data: formType[];
 };
 
@@ -173,6 +174,7 @@ export const formInputArrSchema = z.object({
     label: z.string(),
     required: z.boolean(),
     arrayStarter: formSchema,
+    arrayAddLabel: z.string(),
     data: z.array(formSchema),
 });
 
@@ -392,6 +394,7 @@ export const clientRequestSchema = z.object({
     id: z.string().min(1),
     userId: userSchema.shape.id, //who sent the request
     companyId: companySchema.shape.id, //what company is it on behalf of
+    dateSubmitted: z.date(),
     status: clientRequestStatusSchema,
     checklist: z.array(checklistItemSchema).min(1),
     checklistStarterId: checklistStarterSchema.shape.id,
@@ -402,13 +405,10 @@ export type clientRequest = z.infer<typeof clientRequestSchema> & {
     checklistStarter?: checklistStarter
 }
 
-export const adminUpdateClientRequestSchema = clientRequestSchema.omit({ id: true, })
-export type adminUpdateClientRequest = z.infer<typeof adminUpdateClientRequestSchema>
-
-export const updateClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, companyId: true, checklistStarterId: true })
+export const updateClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, companyId: true, checklistStarterId: true, dateSubmitted: true })
 export type updateClientRequest = z.infer<typeof updateClientRequestSchema>
 
-export const newClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, status: true })
+export const newClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, status: true, dateSubmitted: true })
 export type newClientRequest = z.infer<typeof newClientRequestSchema>
 
 

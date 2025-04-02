@@ -6,23 +6,23 @@ import TextArea from '../textArea/TextArea'
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, clientRequestSchema, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, user, userToCompany } from '@/types'
-import { getSpecificUser } from '@/serverFunctions/handleUser'
+import { checklistStarter, clientRequest, clientRequestSchema, company, departmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { useSession } from 'next-auth/react'
 import { useAtom } from 'jotai'
-import { refreshObjGlobal } from '@/utility/globalState'
+import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
 
-export default function AddEditClientRequest({ checklistStarter, sentClientRequest }: { checklistStarter: checklistStarter, sentClientRequest?: clientRequest }) {
+export default function AddEditClientRequest({ checklistStarter, sentClientRequest }: { checklistStarter?: checklistStarter, sentClientRequest?: clientRequest }) {
     const { data: session } = useSession()
+    const [departmentCompanySelection,] = useAtom<departmentCompanySelection | null>(departmentCompanySelectionGlobal)
 
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
 
     const initialFormObj: newClientRequest = {
         companyId: "",
-        checklist: checklistStarter.checklist,
-        checklistStarterId: checklistStarter.id
+        checklist: checklistStarter !== undefined ? checklistStarter.checklist : [],
+        checklistStarterId: checklistStarter !== undefined ? checklistStarter.id : ""
     }
 
     //assign either a new form, or the safe values on an update form
@@ -52,35 +52,34 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
 
-    const [chosenUser, chosenUserSet] = useState<user | undefined>()
-    const [activeUserToCompanyId, activeUserToCompanyIdSet] = useState<userToCompany["id"] | undefined>()
+    const [activeCompanyId, activeCompanyIdSet] = useState<company["id"] | undefined>()
 
-    const activeUserToCompany = useMemo<userToCompany | undefined>(() => {
-        if (chosenUser === undefined || chosenUser.usersToCompanies === undefined || activeUserToCompanyId === undefined) return undefined
+    const [activeChecklistFormIndex, activeChecklistFormIndexSet] = useState<number | undefined>()
 
-        return chosenUser.usersToCompanies.find(eachUserToCompany => eachUserToCompany.id === activeUserToCompanyId)
-    }, [chosenUser?.usersToCompanies, activeUserToCompanyId])
+    const editableChecklistFormIndexes = useMemo<number[]>(() => {
+        if (formObj.checklist === undefined) return []
 
-    const [activeChecklistFormIndex,] = useState<number | undefined>(() => {
-        if (formObj.checklist === undefined) return undefined
+        const newNumArray: number[] = []
 
-        const seendIndex = formObj.checklist.findIndex(eachChecklist => {
-            if (eachChecklist.type === "form") {
-                if (sentClientRequest === undefined) {
-                    return eachChecklist
+        formObj.checklist.map((eachChecklist, eachChecklistIndex) => {
+            if (eachChecklist.type !== "form") return
+            if (formObj.checklist === undefined) return
 
-                } else {
-                    if (!eachChecklist.completed) {
-                        return eachChecklist
-                    }
-                }
+            const previousIsComplete = eachChecklistIndex !== 0 ? formObj.checklist[eachChecklistIndex - 1].completed : true
+
+            //if checklist item is a form and previous items are complete, make available to the client to edit
+            if (previousIsComplete) {
+                newNumArray.push(eachChecklistIndex)
             }
         })
 
-        if (seendIndex < 0) return undefined
+        if (newNumArray.length === 1) {
+            activeChecklistFormIndexSet(newNumArray[0])
+        }
 
-        return seendIndex
-    })
+        return newNumArray
+
+    }, [formObj.checklist])
 
     //handle changes from above
     useEffect(() => {
@@ -94,28 +93,19 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
     useEffect(() => {
         try {
             const search = async () => {
+                if (departmentCompanySelection === null) return
+
                 //only run for clients accounts
-                if (session === null || session.user.fromDepartment) return
+                if (departmentCompanySelection.type !== "company") return
 
-                const seenUser = await getSpecificUser(session.user.id)
-
-                if (seenUser === undefined || seenUser.usersToCompanies === undefined) return
-
-
-                if (seenUser.usersToCompanies.length === 1) {
-                    activeUserToCompanyIdSet(seenUser.usersToCompanies[0].id)
-                }
-
-                //set user
-                chosenUserSet(seenUser)
+                activeCompanyIdSet(departmentCompanySelection.companyId)
             }
             search()
 
         } catch (error) {
             consoleAndToastError(error)
         }
-    }, [])
-
+    }, [departmentCompanySelection])
 
     function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
         // @ts-expect-error type
@@ -149,16 +139,18 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
     async function handleSubmit() {
         try {
             //send off new client request
-            if (activeUserToCompany === undefined) throw new Error("active user company undefined")
+            if (activeCompanyId === undefined) throw new Error("not seeing company id")
 
             if (sentClientRequest === undefined) {
                 //make new client request
 
                 //add on company id
-                formObj.companyId = activeUserToCompany.companyId
+                formObj.companyId = activeCompanyId
 
                 //validate
                 const validatedNewClientRequest: newClientRequest = newClientRequestSchema.parse(formObj)
+
+                //validate the forms, then mark as complete
 
                 //mark as complete
                 validatedNewClientRequest.checklist = validatedNewClientRequest.checklist.map((eachChecklist, eachChecklistIndex) => {
@@ -166,7 +158,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                         //ensure checklist form present
                         if (activeChecklistFormIndex === undefined) throw new Error("checklist form not selected")
 
-                        if (eachChecklistIndex === activeChecklistFormIndex) {
+                        if (editableChecklistFormIndexes.includes(eachChecklistIndex)) {
                             eachChecklist.completed = true
                         }
                     }
@@ -175,7 +167,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 })
 
                 //send up to server
-                await addClientRequests(validatedNewClientRequest, { companyIdBeingAccessed: activeUserToCompany.companyId })
+                await addClientRequests(validatedNewClientRequest, { companyIdBeingAccessed: activeCompanyId })
 
                 toast.success("submitted")
                 formObjSet(deepClone(initialFormObj))
@@ -190,7 +182,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                         //ensure checklist form present
                         if (activeChecklistFormIndex === undefined) throw new Error("checklist form not selected")
 
-                        if (eachChecklistIndex === activeChecklistFormIndex) {
+                        if (editableChecklistFormIndexes.includes(eachChecklistIndex)) {
                             eachChecklist.completed = true
                         }
                     }
@@ -199,7 +191,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 })
 
                 //update
-                await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, { companyIdBeingAccessed: activeUserToCompany.companyId })
+                await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, { companyIdBeingAccessed: activeCompanyId })
 
                 toast.success("request updated")
             }
@@ -224,9 +216,26 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                     const seenChecklist = formObj[eachKey]
                     if (seenChecklist === undefined) return null
 
-
                     return (
                         <React.Fragment key={eachKey}>
+                            {editableChecklistFormIndexes.length > 1 && (
+                                <div>
+                                    <label>choose active form</label>
+
+                                    <div style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: "50px" }}>
+                                        {editableChecklistFormIndexes.map(eachEditableFormIndex => {
+                                            return (
+                                                <button className='button2' key={eachEditableFormIndex}
+                                                    onClick={() => {
+                                                        activeChecklistFormIndexSet(eachEditableFormIndex)
+                                                    }}
+                                                ></button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             {activeChecklistFormIndex !== undefined && formObj.checklist !== undefined && formObj.checklist[activeChecklistFormIndex].type === "form" && (
                                 <ReadRecursiveChecklistForm seenForm={formObj.checklist[activeChecklistFormIndex].data}
                                     handleFormUpdate={(seenLatestForm) => {
@@ -272,7 +281,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     formObjSet(prevFormObj => {
                                         const newFormObj = { ...prevFormObj }
-                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company" || eachKey === "checklistStarter") return prevFormObj
+                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company" || eachKey === "checklistStarter" || eachKey === "dateSubmitted") return prevFormObj
 
                                         newFormObj[eachKey] = e.target.value
 
@@ -291,7 +300,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                                 onInput={(e) => {
                                     formObjSet(prevFormObj => {
                                         const newFormObj = { ...prevFormObj }
-                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company") return prevFormObj
+                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company" || eachKey === "checklistStarter" || eachKey === "dateSubmitted") return prevFormObj
 
                                         // @ts-expect-error type
                                         newFormObj[eachKey] = e.target.value

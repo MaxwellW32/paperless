@@ -1,9 +1,9 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { authAcessType, clientRequest, clientRequestSchema, company, companySchema, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { authAcessType, clientRequest, clientRequestSchema, clientRequestStatusType, company, companySchema, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { ensureUserHasAccess } from "@/utility/sessionCheck"
-import { eq } from "drizzle-orm"
+import { eq, and, ne } from "drizzle-orm"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest, auth: authAcessType): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
@@ -17,6 +17,7 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, a
     const addedClientRequest = await db.insert(clientRequests).values({
         userId: seenSession.user.id,
         status: "in-progress",
+        dateSubmitted: new Date,
         ...newClientRequestObj,
     }).returning()
 
@@ -62,7 +63,7 @@ export async function getSpecificClientRequests(clientRequestId: clientRequest["
     return result
 }
 
-export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }, auth: authAcessType): Promise<clientRequest[]> {
+export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }, status: clientRequestStatusType, getOppositeOfStatus: boolean, auth: authAcessType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
     await ensureUserHasAccess(auth)
 
@@ -70,10 +71,12 @@ export async function getClientRequests(option: { type: "user", userId: user["id
         userSchema.shape.id.parse(option.userId)
 
         const result = await db.query.clientRequests.findMany({
-            where: eq(clientRequests.userId, option.userId),
+            where: and(eq(clientRequests.userId, option.userId), getOppositeOfStatus ? ne(clientRequests.status, status) : eq(clientRequests.status, status)),
             with: {
                 checklistStarter: true
-            }
+            },
+            limit: limit,
+            offset: offset
         });
 
         return result
@@ -82,10 +85,12 @@ export async function getClientRequests(option: { type: "user", userId: user["id
         companySchema.shape.id.parse(option.companyId)
 
         const result = await db.query.clientRequests.findMany({
-            where: eq(clientRequests.companyId, option.companyId),
+            where: and(eq(clientRequests.companyId, option.companyId), getOppositeOfStatus ? ne(clientRequests.status, status) : eq(clientRequests.status, status)),
             with: {
                 checklistStarter: true
-            }
+            },
+            limit: limit,
+            offset: offset
         });
 
         return result

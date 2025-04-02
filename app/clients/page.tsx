@@ -7,6 +7,7 @@ import ChooseChecklistStarter from '@/components/checklistStarters/ChooseCheckli
 import { useAtom } from 'jotai'
 import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
 import { getClientRequests } from '@/serverFunctions/handleClientRequests'
+import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
 
 export default function Page() {
     const [showingSideBar, showingSideBarSet] = useState(false)
@@ -17,13 +18,15 @@ export default function Page() {
         type: "newRequest",
         activeChecklistStarterType: checklistStarter["type"] | undefined
     } | {
-        type: "history"
+        type: "editRequest",
+        oldClientRequest: clientRequest
     }
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>()
 
     const [refreshObj,] = useAtom<refreshObjType>(refreshObjGlobal)
     const [departmentCompanySelection,] = useAtom<departmentCompanySelection | null>(departmentCompanySelectionGlobal)
-    const [clientRequests, clientRequestsSet] = useState<clientRequest[]>([])
+    const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
+    const [clientRequestsHistory, clientRequestsHistorySet] = useState<clientRequest[]>([])
 
     //get checklist starters
     useEffect(() => {
@@ -41,19 +44,14 @@ export default function Page() {
     async function handleSearchClientRequests() {
         if (departmentCompanySelection === null || departmentCompanySelection.type !== "company") return
 
-        clientRequestsSet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, { companyIdBeingAccessed: departmentCompanySelection.companyId, allowRegularAccess: true }))
+        activeClientRequestsSet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', false, { companyIdBeingAccessed: departmentCompanySelection.companyId, allowRegularAccess: true }))
+
+        //get everything that is not in progress - request history
+        clientRequestsHistorySet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', true, { companyIdBeingAccessed: departmentCompanySelection.companyId, allowRegularAccess: true }))
     }
 
     return (
-        <main className={styles.main}>
-            {!showingSideBar && (
-                <button className='button1' style={{ alignSelf: "flex-start" }}
-                    onClick={() => {
-                        showingSideBarSet(true)
-                    }}
-                >open</button>
-            )}
-
+        <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
             <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
                 <button className='button1'
                     onClick={() => {
@@ -73,6 +71,8 @@ export default function Page() {
                                         type: "newRequest",
                                         activeChecklistStarterType: undefined
                                     })
+                                } else {
+                                    activeScreenSet(undefined)
                                 }
 
                                 return newBool
@@ -86,8 +86,6 @@ export default function Page() {
                                 if (event.target.value === "") return
 
                                 const eachStarterType = event.target.value
-
-                                console.log(`$eachStarterType`, eachStarterType);
 
                                 activeScreenSet({
                                     type: "newRequest",
@@ -110,20 +108,60 @@ export default function Page() {
                     )}
                 </div>
 
-                {clientRequests.length > 0 && (
-                    <div className={styles.clientRequests}>
-                        {/* show submitted requests - status, allow editing */}
-                        <h3>Submitted requests</h3>
+                {activeClientRequests.length > 0 && (
+                    <div className={styles.activeClientRequests}>
+                        <h3>Active requests</h3>
 
                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                            {clientRequests.map(eachClientRequest => {
+                            {activeClientRequests.map(eachActiveClientRequest => {
                                 return (
-                                    <div key={eachClientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
-                                        {eachClientRequest.checklistStarter !== undefined && (
-                                            <h3>{eachClientRequest.checklistStarter.type}</h3>
+                                    <div key={eachActiveClientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
+                                        {eachActiveClientRequest.checklistStarter !== undefined && (
+                                            <h3>{eachActiveClientRequest.checklistStarter.type}</h3>
                                         )}
 
-                                        <label style={{ backgroundColor: "rgb(var(--shade1))", color: "rgb(var(--shade2))", padding: "1rem", justifySelf: "flex-start", borderRadius: ".5rem" }}>{eachClientRequest.status}</label>
+                                        <label style={{ backgroundColor: "rgb(var(--shade1))", color: "rgb(var(--shade2))", padding: "1rem", justifySelf: "flex-start", borderRadius: ".5rem" }}>{eachActiveClientRequest.status}</label>
+
+                                        <div style={{ display: "flex", gap: ".5rem", fontSize: "var(--fontSizeS)" }}>
+                                            <p>{eachActiveClientRequest.dateSubmitted.toLocaleDateString()}</p>
+
+                                            <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
+                                        </div>
+
+                                        <button className='button2' style={{ justifySelf: "flex-end" }}
+                                            onClick={() => {
+                                                activeScreenSet({
+                                                    type: "editRequest",
+                                                    oldClientRequest: eachActiveClientRequest
+                                                })
+                                            }}
+                                        >edit</button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {clientRequestsHistory.length > 0 && (
+                    <div className={styles.activeClientRequests}>
+                        <h3>request history</h3>
+
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                            {clientRequestsHistory.map(eachHistoryCientRequest => {
+                                return (
+                                    <div key={eachHistoryCientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
+                                        {eachHistoryCientRequest.checklistStarter !== undefined && (
+                                            <h3>{eachHistoryCientRequest.checklistStarter.type}</h3>
+                                        )}
+
+                                        <div style={{ display: "flex", gap: ".5rem", fontSize: "var(--fontSizeS)" }}>
+                                            <p>{eachHistoryCientRequest.dateSubmitted.toLocaleDateString()}</p>
+
+                                            <p>{eachHistoryCientRequest.dateSubmitted.toLocaleTimeString()}</p>
+                                        </div>
+
+                                        <label style={{ backgroundColor: "rgb(var(--shade1))", color: "rgb(var(--shade2))", padding: "1rem", justifySelf: "flex-start", borderRadius: ".5rem" }}>{eachHistoryCientRequest.status}</label>
                                     </div>
                                 )
                             })}
@@ -133,10 +171,22 @@ export default function Page() {
             </div>
 
             <div className={styles.mainContent}>
+                {!showingSideBar && (
+                    <button className='button1' style={{ alignSelf: "flex-start" }}
+                        onClick={() => {
+                            showingSideBarSet(true)
+                        }}
+                    >open</button>
+                )}
+
                 {activeScreen !== undefined ? (
                     <>
                         {activeScreen.type === "newRequest" && activeScreen.activeChecklistStarterType !== undefined && (
                             <ChooseChecklistStarter seenChecklistStarterType={activeScreen.activeChecklistStarterType} />
+                        )}
+
+                        {activeScreen.type === "editRequest" && (
+                            <AddEditClientRequest sentClientRequest={activeScreen.oldClientRequest} />
                         )}
                     </>
 

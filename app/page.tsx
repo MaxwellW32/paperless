@@ -12,6 +12,16 @@ import styles from "./page.module.css"
 
 //ensure checklist only shows the forms to the client nothing else
 
+//client request is sent to the server
+//from there the checklist of it gets updated
+//departments interact with manual switches
+//emails are sent automatically
+//client can edit their form
+//
+//
+//
+//
+
 export default async function Home() {
 
   return (
