@@ -9,7 +9,6 @@ import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/gl
 import { getClientRequests, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
-import { updateRefreshObj } from '@/utility/utility'
 
 export default function Page() {
     const [showingSideBar, showingSideBarSet] = useState(false)
