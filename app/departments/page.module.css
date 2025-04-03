@@ -1,0 +1,45 @@
+.main {
+    display: grid;
+    align-content: flex-start;
+    overflow: auto;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr;
+    position: relative;
+}
+
+.sidebar {
+    display: grid;
+    align-content: flex-start;
+    overflow: auto;
+    gap: 1rem;
+    width: 300px;
+    background-color: rgb(var(--color3));
+    padding: 1rem;
+}
+
+.newRequest {
+    display: grid;
+    align-content: flex-start;
+}
+
+.activeClientRequests {
+    display: grid;
+    align-content: flex-start;
+}
+
+.mainContent {
+    display: grid;
+    align-content: flex-start;
+    overflow: auto;
+    padding: 1rem;
+}
+
+@media only screen and (max-width: 600px) {
+    .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%
+    }
+
+}

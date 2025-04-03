@@ -5,8 +5,8 @@ import styles from "./page.module.css"
 
 //roles
 //maxwell is admin of app - maxwellwedderburn32
-//Adrian Dixon is company manager - head - squaremaxtech@gmail.com
 //christopher Masters is making this request as the client - elevated - uncommonfavour32@gmail.com
+//Adrian Dixon is in the security department - squaremaxtech@gmail.com
 //Danielle is department manager - head - need other email
 //Donovan is making this request from egov - elevated - need other email
 
@@ -19,7 +19,7 @@ import styles from "./page.module.css"
 //
 //change up manual checks to be assigned by department
 //same with email - choose department/company screens - hod filter
-//
+//need department has manage abilities check
 //
 
 export default async function Home() {

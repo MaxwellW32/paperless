@@ -9,8 +9,11 @@ import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/gl
 import { getClientRequests, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
+import { useSession } from 'next-auth/react'
 
 export default function Page() {
+    const { data: session } = useSession()
+
     const [showingSideBar, showingSideBarSet] = useState(false)
     const [makingNewRequest, makingNewRequestSet] = useState(false)
     const [checklistStarterTypes, checklistStarterTypesSet] = useState<checklistStarter["type"][] | undefined>()
@@ -51,6 +54,12 @@ export default function Page() {
         search()
 
     }, [departmentCompanySelection, refreshObj["clientRequests"]])
+
+    if (session !== null && session.user.accessLevel !== "admin" && session.user.fromDepartment) {
+        return (
+            <p>page for clients only</p>
+        )
+    }
 
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
@@ -118,12 +127,8 @@ export default function Page() {
                             {activeClientRequests.map(eachActiveClientRequest => {
                                 //furthest non complete item
                                 const activeChecklistItemIndex = eachActiveClientRequest.checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
-                                console.log(`$activeChecklistItemIndex`, activeChecklistItemIndex);
 
-                                const activeChecklistItem: checklistItemType = eachActiveClientRequest.checklist[activeChecklistItemIndex]
-                                console.log(`$activeChecklistItem`, activeChecklistItem);
-
-                                console.log(`$eachActiveClientRequest.checklist`, eachActiveClientRequest.checklist);
+                                const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachActiveClientRequest.checklist[activeChecklistItemIndex] : undefined
 
                                 return (
                                     <div key={eachActiveClientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
@@ -139,7 +144,7 @@ export default function Page() {
                                             <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
                                         </div>
 
-                                        {activeChecklistItem.type === "manual" && activeChecklistItem.for.type === "company" && activeChecklistItem.for.companyId === eachActiveClientRequest.companyId && (
+                                        {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && activeChecklistItem.for.type === "company" && activeChecklistItem.for.companyId === eachActiveClientRequest.companyId && (
                                             <div>
                                                 <label>{activeChecklistItem.prompt}</label>
 
