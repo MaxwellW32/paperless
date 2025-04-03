@@ -260,6 +260,7 @@ export const departmentSchema = z.object({
     name: z.string().min(1),
     emails: z.array(z.string().min(1)).min(1),
     phones: z.array(z.string().min(1)).min(1),
+    canManageRequests: z.boolean(),
 })
 export type department = z.infer<typeof departmentSchema> & {
     usersToDepartments?: userToDepartment[],

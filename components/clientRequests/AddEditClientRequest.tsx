@@ -6,14 +6,15 @@ import TextArea from '../textArea/TextArea'
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, clientRequestSchema, company, departmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
+import { checklistStarter, clientRequest, clientRequestSchema, company, department, departmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { useSession } from 'next-auth/react'
 import { useAtom } from 'jotai'
 import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
+import { getCompanies } from '@/serverFunctions/handleCompanies'
 
-export default function AddEditClientRequest({ checklistStarter, sentClientRequest }: { checklistStarter?: checklistStarter, sentClientRequest?: clientRequest }) {
+export default function AddEditClientRequest({ checklistStarter, sentClientRequest, department }: { checklistStarter?: checklistStarter, sentClientRequest?: clientRequest, department?: department }) {
     const { data: session } = useSession()
     const [departmentCompanySelection,] = useAtom<departmentCompanySelection | null>(departmentCompanySelectionGlobal)
 
@@ -29,32 +30,13 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest !== undefined ? updateClientRequestSchema.parse(sentClientRequest) : initialFormObj))
     type clientRequestKeys = keyof Partial<clientRequest>
 
-    type moreFormInfoType = Partial<{
-        [key in Partial<clientRequestKeys>]: {
-            label?: string,
-            placeHolder?: string,
-            type?: string,
-            required?: boolean
-            inputType: "input" | "textarea",
-        } }>
-    const [moreFormInfo,] = useState<moreFormInfoType>({
-        "companyId": {
-            label: "type",
-            inputType: "input",
-            placeHolder: "Enter company id",
-        },
-        "checklist": {
-            label: "checklist",
-            inputType: "input",
-            placeHolder: "Enter checklist",
-        },
-    });
-
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
 
     const [activeCompanyId, activeCompanyIdSet] = useState<company["id"] | undefined>()
 
     const [activeChecklistFormIndex, activeChecklistFormIndexSet] = useState<number | undefined>()
+
+    const [companies, companiesSet] = useState<company[]>([])
 
     const editableChecklistFormIndexes = useMemo<number[]>(() => {
         if (formObj.checklist === undefined) return []
@@ -89,7 +71,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
     }, [sentClientRequest])
 
-    //if only one company for user set as active
+    //if only one company for client set as active
     useEffect(() => {
         try {
             const search = async () => {
@@ -167,7 +149,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 })
 
                 //send up to server
-                await addClientRequests(validatedNewClientRequest, { companyIdBeingAccessed: activeCompanyId })
+                await addClientRequests(validatedNewClientRequest, department !== undefined && department.canManageRequests ? { departmentIdBeingAccessed: department.id } : { companyIdBeingAccessed: activeCompanyId })
 
                 toast.success("submitted")
                 formObjSet(deepClone(initialFormObj))
@@ -191,7 +173,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 })
 
                 //update
-                await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, { companyIdBeingAccessed: activeCompanyId })
+                await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, department !== undefined && department.canManageRequests ? { departmentIdBeingAccessed: department.id } : { companyIdBeingAccessed: activeCompanyId })
 
                 toast.success("request updated")
             }
@@ -207,114 +189,74 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
     return (
         <form className={styles.form} action={() => { }}>
-            {Object.entries(formObj).map(eachEntry => {
-                const eachKey = eachEntry[0] as clientRequestKeys
+            {department !== undefined && department.canManageRequests && (
+                <>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                        <button className='button1'
+                            onClick={async () => {
+                                toast.success("searching")
 
-                if (moreFormInfo[eachKey] === undefined) return null
+                                companiesSet(await getCompanies({}))
+                            }}
+                        >get companies</button>
 
-                if (eachKey === "checklist") {
-                    const seenChecklist = formObj[eachKey]
-                    if (seenChecklist === undefined) return null
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                            {companies.map(eachCompany => {
+                                return (
+                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                        <h3>{eachCompany.name}</h3>
 
-                    return (
-                        <React.Fragment key={eachKey}>
-                            {editableChecklistFormIndexes.length > 1 && (
-                                <div>
-                                    <label>choose active form</label>
-
-                                    <div style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: "50px" }}>
-                                        {editableChecklistFormIndexes.map(eachEditableFormIndex => {
-                                            return (
-                                                <button className='button2' key={eachEditableFormIndex}
-                                                    onClick={() => {
-                                                        activeChecklistFormIndexSet(eachEditableFormIndex)
-                                                    }}
-                                                ></button>
-                                            )
-                                        })}
+                                        <button className='button3'
+                                            onClick={() => {
+                                                activeCompanyIdSet(eachCompany.id)
+                                            }}
+                                        >select</button>
                                     </div>
-                                </div>
-                            )}
+                                )
+                            })}
+                        </div>
+                    </div>
+                </>
+            )}
 
-                            {activeChecklistFormIndex !== undefined && formObj.checklist !== undefined && formObj.checklist[activeChecklistFormIndex].type === "form" && (
-                                <ReadRecursiveChecklistForm seenForm={formObj.checklist[activeChecklistFormIndex].data}
-                                    handleFormUpdate={(seenLatestForm) => {
-                                        formObjSet(prevFormObj => {
-                                            const newFormObj = { ...prevFormObj }
-                                            if (newFormObj.checklist === undefined) return prevFormObj
+            {editableChecklistFormIndexes.length > 1 && (
+                <>
+                    <label>choose active form</label>
 
-                                            //edit new checklist item
-                                            const newChecklistItem = { ...newFormObj.checklist[activeChecklistFormIndex] }
-                                            if (newChecklistItem.type !== "form") return prevFormObj
-
-                                            newChecklistItem.data = seenLatestForm
-
-                                            newFormObj.checklist[activeChecklistFormIndex] = newChecklistItem
-
-                                            return newFormObj
-                                        })
+                    <div style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: "50px" }}>
+                        {editableChecklistFormIndexes.map(eachEditableFormIndex => {
+                            return (
+                                <button className='button2' key={eachEditableFormIndex}
+                                    onClick={() => {
+                                        activeChecklistFormIndexSet(eachEditableFormIndex)
                                     }}
-                                />
-                            )}
-                        </React.Fragment >
-                    )
-                }
+                                ></button>
+                            )
+                        })}
+                    </div>
+                </>
+            )}
 
-                if (eachKey === "companyId" && session !== null) {
-                    if (session.user.fromDepartment) {
-                        //more options to come
-                        return null
+            {activeChecklistFormIndex !== undefined && formObj.checklist !== undefined && formObj.checklist[activeChecklistFormIndex].type === "form" && (
+                <ReadRecursiveChecklistForm seenForm={formObj.checklist[activeChecklistFormIndex].data}
+                    handleFormUpdate={(seenLatestForm) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.checklist === undefined) return prevFormObj
 
-                    } else {
-                        return null
-                    }
-                }
-                return (
-                    <React.Fragment key={eachKey}>
-                        {moreFormInfo[eachKey].inputType === "input" ? (
-                            <TextInput
-                                name={eachKey}
-                                value={`${formObj[eachKey]}`}
-                                type={moreFormInfo[eachKey].type}
-                                label={moreFormInfo[eachKey].label}
-                                placeHolder={moreFormInfo[eachKey].placeHolder}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                    formObjSet(prevFormObj => {
-                                        const newFormObj = { ...prevFormObj }
-                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company" || eachKey === "checklistStarter" || eachKey === "dateSubmitted") return prevFormObj
+                            //edit new checklist item
+                            const newChecklistItem = { ...newFormObj.checklist[activeChecklistFormIndex] }
+                            if (newChecklistItem.type !== "form") return prevFormObj
 
-                                        newFormObj[eachKey] = e.target.value
+                            newChecklistItem.data = seenLatestForm
 
-                                        return newFormObj
-                                    })
-                                }}
-                                onBlur={() => { checkIfValid(formObj, eachKey, clientRequestSchema) }}
-                                errors={formErrors[eachKey]}
-                            />
-                        ) : moreFormInfo[eachKey].inputType === "textarea" ? (
-                            <TextArea
-                                name={eachKey}
-                                value={`${formObj[eachKey]}`}
-                                label={moreFormInfo[eachKey].label}
-                                placeHolder={moreFormInfo[eachKey].placeHolder}
-                                onInput={(e) => {
-                                    formObjSet(prevFormObj => {
-                                        const newFormObj = { ...prevFormObj }
-                                        if (eachKey === "status" || eachKey === "user" || eachKey === "company" || eachKey === "checklistStarter" || eachKey === "dateSubmitted") return prevFormObj
+                            newFormObj.checklist[activeChecklistFormIndex] = newChecklistItem
 
-                                        // @ts-expect-error type
-                                        newFormObj[eachKey] = e.target.value
-
-                                        return newFormObj
-                                    })
-                                }}
-                                onBlur={() => { checkIfValid(formObj, eachKey, clientRequestSchema) }}
-                                errors={formErrors[eachKey]}
-                            />
-                        ) : null}
-                    </React.Fragment>
-                )
-            })}
+                            return newFormObj
+                        })
+                    }}
+                />
+            )}
 
             <button className='button1' style={{ justifySelf: "center" }}
                 onClick={handleSubmit}

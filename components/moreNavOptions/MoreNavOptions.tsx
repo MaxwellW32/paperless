@@ -20,6 +20,8 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                 <ul className={styles.moreItemsMenu}
                     onClick={() => { showingNavSet(false) }}
                 >
+                    <li style={{ padding: ".5rem" }}>{session.user.name}</li>
+
                     <li className={styles.moreIntemsItem}
                     >
                         <Link href={session.user.fromDepartment ? "/departments" : "/clients"}>dashboard</Link>

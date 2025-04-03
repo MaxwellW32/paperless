@@ -1,26 +1,22 @@
 import styles from "./page.module.css"
 
+//remember
 //design from client access
 //then do from egov perspective
-
-//roles
-//maxwell is admin of app - maxwellwedderburn32
-//christopher Masters is making this request as the client - elevated - uncommonfavour32@gmail.com
-//Adrian Dixon is in the security department - squaremaxtech@gmail.com
-//Danielle is department manager - head - need other email
-//Donovan is making this request from egov - elevated - need other email
-
 //ensure checklist only shows the forms to the client nothing else
 
-//client request is sent to the server
-//from there the checklist of it gets updated
-//departments interact with manual switches
+//roles
+//admin - admin - maxwellwedderburn@outlook.com
+//christopher Masters - client - elevated - uncommonfavour32@gmail.com
+//maxwell wedderburn - datacenter department - maxwellwedderburn32@gmail.com
+//Adrian Dixon - security department - squaremaxtech@gmail.com
+//Danielle is department manager - head - need other email
+
+//to do
 //emails are sent automatically
-//
-//change up manual checks to be assigned by department
-//same with email - choose department/company screens - hod filter
-//need department has manage abilities check
-//
+//change client request to be manual form
+//then make edit client request checklist its own form 
+//then make interacting with client reuests more server based
 
 export default async function Home() {
 

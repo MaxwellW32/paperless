@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./page.module.css"
-import { checklistItemType, checklistStarter, clientRequest, departmentCompanySelection, refreshObjType } from '@/types'
+import { checklistItemType, checklistStarter, clientRequest, department, departmentCompanySelection, refreshObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
@@ -9,6 +9,7 @@ import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/gl
 import { getClientRequestsForDepartments, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 import { useSession } from 'next-auth/react'
+import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -29,6 +30,7 @@ export default function Page() {
     const [refreshObj,] = useAtom<refreshObjType>(refreshObjGlobal)
     const [departmentCompanySelection,] = useAtom<departmentCompanySelection | null>(departmentCompanySelectionGlobal)
     const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
+    const [seenDepartment, seenDepartmentSet] = useState<department | undefined>()
 
     //get checklist starters
     useEffect(() => {
@@ -50,6 +52,17 @@ export default function Page() {
 
     }, [departmentCompanySelection, refreshObj["clientRequests"]])
 
+    //search department
+    useEffect(() => {
+        const search = async () => {
+            if (departmentCompanySelection === null || departmentCompanySelection.type !== "department") return
+
+            seenDepartmentSet(await getSpecificDepartment(departmentCompanySelection.departmentId, { departmentIdBeingAccessed: departmentCompanySelection.departmentId }))
+        }
+        search()
+
+    }, [departmentCompanySelection])
+
     if (session !== null && session.user.accessLevel !== "admin" && !session.user.fromDepartment) {
         return (
             <p>page for departments only</p>
@@ -65,54 +78,58 @@ export default function Page() {
                     }}
                 >close</button>
 
-                <div className={styles.newRequest}>
-                    <button className='button1'
-                        onClick={() => {
-                            makingNewRequestSet(prev => {
-                                const newBool = !prev
+                {seenDepartment !== undefined && seenDepartment.canManageRequests && (
+                    <>
+                        <div className={styles.newRequest}>
+                            <button className='button1'
+                                onClick={() => {
+                                    makingNewRequestSet(prev => {
+                                        const newBool = !prev
 
-                                if (newBool) {
-                                    //making a new request
-                                    activeScreenSet({
-                                        type: "newRequest",
-                                        activeChecklistStarterType: undefined
+                                        if (newBool) {
+                                            //making a new request
+                                            activeScreenSet({
+                                                type: "newRequest",
+                                                activeChecklistStarterType: undefined
+                                            })
+                                        } else {
+                                            activeScreenSet(undefined)
+                                        }
+
+                                        return newBool
                                     })
-                                } else {
-                                    activeScreenSet(undefined)
-                                }
+                                }}
+                            >{makingNewRequest ? "cancel" : "new request"}</button>
 
-                                return newBool
-                            })
-                        }}
-                    >{makingNewRequest ? "cancel" : "new request"}</button>
+                            {makingNewRequest && activeScreen !== undefined && activeScreen.type === "newRequest" && (
+                                <select value={activeScreen.activeChecklistStarterType}
+                                    onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
+                                        if (event.target.value === "") return
 
-                    {makingNewRequest && activeScreen !== undefined && activeScreen.type === "newRequest" && (
-                        <select value={activeScreen.activeChecklistStarterType}
-                            onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
-                                if (event.target.value === "") return
+                                        const eachStarterType = event.target.value
 
-                                const eachStarterType = event.target.value
+                                        activeScreenSet({
+                                            type: "newRequest",
+                                            activeChecklistStarterType: eachStarterType
+                                        })
+                                    }}
+                                >
+                                    <option value={''}
+                                    >select a request</option>
 
-                                activeScreenSet({
-                                    type: "newRequest",
-                                    activeChecklistStarterType: eachStarterType
-                                })
-                            }}
-                        >
-                            <option value={''}
-                            >select a request</option>
+                                    {checklistStarterTypes !== undefined && checklistStarterTypes.map(eachStarterType => {
 
-                            {checklistStarterTypes !== undefined && checklistStarterTypes.map(eachStarterType => {
+                                        return (
+                                            <option key={eachStarterType} value={eachStarterType}
 
-                                return (
-                                    <option key={eachStarterType} value={eachStarterType}
-
-                                    >{eachStarterType}</option>
-                                )
-                            })}
-                        </select>
-                    )}
-                </div>
+                                            >{eachStarterType}</option>
+                                        )
+                                    })}
+                                </select>
+                            )}
+                        </div>
+                    </>
+                )}
 
                 {activeClientRequests.length > 0 && (
                     <div className={styles.activeClientRequests}>
@@ -190,8 +207,8 @@ export default function Page() {
 
                 {activeScreen !== undefined ? (
                     <>
-                        {activeScreen.type === "newRequest" && activeScreen.activeChecklistStarterType !== undefined && (
-                            <ChooseChecklistStarter seenChecklistStarterType={activeScreen.activeChecklistStarterType} />
+                        {activeScreen.type === "newRequest" && activeScreen.activeChecklistStarterType !== undefined && seenDepartment !== undefined && (
+                            <ChooseChecklistStarter seenChecklistStarterType={activeScreen.activeChecklistStarterType} seenDepartment={seenDepartment} />
                         )}
                     </>
 

@@ -1,11 +1,11 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import AddEditClientRequest from '../clientRequests/AddEditClientRequest'
-import { checklistStarter } from '@/types'
+import { checklistStarter, department } from '@/types'
 import { getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 
-export default function ChooseChecklistStarter({ seenChecklistStarterType }: { seenChecklistStarterType: checklistStarter["type"] }) {
+export default function ChooseChecklistStarter({ seenChecklistStarterType, seenDepartment }: { seenChecklistStarterType: checklistStarter["type"], seenDepartment?: department }) {
     const [chosenChecklistStarter, chosenChecklistStarterSet] = useState<checklistStarter | undefined>()
 
     //set the chosen checklist
@@ -31,6 +31,6 @@ export default function ChooseChecklistStarter({ seenChecklistStarterType }: { s
     if (chosenChecklistStarter === undefined) return null
 
     return (
-        <AddEditClientRequest checklistStarter={chosenChecklistStarter} />
+        <AddEditClientRequest checklistStarter={chosenChecklistStarter} department={seenDepartment} />
     )
 }

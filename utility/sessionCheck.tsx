@@ -22,6 +22,9 @@ export async function ensureUserHasAccess({ departmentIdBeingAccessed, companyId
 
     //security
     if (session.user.accessLevel !== "admin") {
+        //allow regular access
+        if (allowRegularAccess) return session
+
         //user is from Egov making a change
         if (session.user.fromDepartment) {
             const validatedDepartmentIdBeingAccessed = departmentSchema.shape.id.parse(departmentIdBeingAccessed)
@@ -29,7 +32,7 @@ export async function ensureUserHasAccess({ departmentIdBeingAccessed, companyId
             const seenUserToDepartment = await getSpecificUsersToDepartments(session.user.id, validatedDepartmentIdBeingAccessed, { departmentIdBeingAccessed, companyIdBeingAccessed }, false)
             if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
 
-            if (seenUserToDepartment.departmentRole === "regular" && !allowRegularAccess) throw new Error("no access to make change")
+            if (seenUserToDepartment.departmentRole === "regular") throw new Error("no access to make change")
 
 
             //user is a client making a change
@@ -39,7 +42,7 @@ export async function ensureUserHasAccess({ departmentIdBeingAccessed, companyId
             const seenUserToCompany = await getSpecificUsersToCompanies(session.user.id, validatedCompanyIdBeignAccessed, { departmentIdBeingAccessed, companyIdBeingAccessed }, false)
             if (seenUserToCompany === undefined) throw new Error("not seeing userToCompany info")
 
-            if (seenUserToCompany.companyRole === "regular" && !allowRegularAccess) throw new Error("no access to make change")
+            if (seenUserToCompany.companyRole === "regular") throw new Error("no access to make change")
         }
     }
 

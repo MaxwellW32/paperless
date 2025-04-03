@@ -189,6 +189,19 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                             {seenChecklist.length > 0 && (
                                 <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                     {seenChecklist.map((eachChecklistItem, eachChecklistItemIndex) => {
+                                        let foundCompany: company | undefined = undefined
+                                        let foundDepartment: department | undefined = undefined
+
+                                        if (eachChecklistItem.type === "manual") {
+                                            if (eachChecklistItem.for.type === "company" && companies.length > 0) {
+                                                foundCompany = companies.find(eachCompany => eachChecklistItem.for.type === "company" && eachCompany.id === eachChecklistItem.for.companyId)
+                                            }
+
+                                            if (eachChecklistItem.for.type === "department" && departments.length > 0) {
+                                                foundDepartment = departments.find(eachDepartment => eachChecklistItem.for.type === "department" && eachDepartment.id === eachChecklistItem.for.departmenId)
+                                            }
+                                        }
+
                                         return (
                                             <div key={eachChecklistItemIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade4))", padding: "1rem" }}>
                                                 <ConfirmationBox text='remove' confirmationText='are you sure you want to remove?' successMessage='removed!'
@@ -569,8 +582,12 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                 )}
                                                             </div>
 
-                                                            {((eachChecklistItem.for.type === "department" && eachChecklistItem.for.departmenId !== "") || (eachChecklistItem.for.type === "company" && eachChecklistItem.for.companyId !== "")) && (
-                                                                <h3>manual check set for {eachChecklistItem.for.type}</h3>
+                                                            {(eachChecklistItem.for.type === "department" && eachChecklistItem.for.departmenId !== "") && (
+                                                                <h3>manual check set for {eachChecklistItem.for.type}: {foundDepartment !== undefined && foundDepartment.name}</h3>
+                                                            )}
+
+                                                            {(eachChecklistItem.for.type === "company" && eachChecklistItem.for.companyId !== "") && (
+                                                                <h3>manual check set for {eachChecklistItem.for.type}: {foundCompany !== undefined && foundCompany.name}</h3>
                                                             )}
                                                         </div>
 
