@@ -1,21 +1,17 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./style.module.css"
-import TextInput from '../textInput/TextInput'
-import TextArea from '../textArea/TextArea'
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, clientRequestSchema, company, department, departmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
+import { checklistStarter, clientRequest, company, department, departmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
-import { useSession } from 'next-auth/react'
 import { useAtom } from 'jotai'
 import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 
 export default function AddEditClientRequest({ checklistStarter, sentClientRequest, department }: { checklistStarter?: checklistStarter, sentClientRequest?: clientRequest, department?: department }) {
-    const { data: session } = useSession()
     const [departmentCompanySelection,] = useAtom<departmentCompanySelection | null>(departmentCompanySelectionGlobal)
 
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
@@ -28,9 +24,9 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest !== undefined ? updateClientRequestSchema.parse(sentClientRequest) : initialFormObj))
-    type clientRequestKeys = keyof Partial<clientRequest>
+    // type clientRequestKeys = keyof Partial<clientRequest>
 
-    const [formErrors, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
+    // const [, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
 
     const [activeCompanyId, activeCompanyIdSet] = useState<company["id"] | undefined>()
 
@@ -89,34 +85,34 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
         }
     }, [departmentCompanySelection])
 
-    function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
-        // @ts-expect-error type
-        const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
+    // function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
+    //     // @ts-expect-error type
+    //     const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
 
-        if (testSchema.success) {//worked
-            formErrorsSet(prevObj => {
-                const newObj = { ...prevObj }
-                delete newObj[seenName]
+    //     if (testSchema.success) {//worked
+    //         formErrorsSet(prevObj => {
+    //             const newObj = { ...prevObj }
+    //             delete newObj[seenName]
 
-                return newObj
-            })
+    //             return newObj
+    //         })
 
-        } else {
-            formErrorsSet(prevObj => {
-                const newObj = { ...prevObj }
+    //     } else {
+    //         formErrorsSet(prevObj => {
+    //             const newObj = { ...prevObj }
 
-                let errorMessage = ""
+    //             let errorMessage = ""
 
-                JSON.parse(testSchema.error.message).forEach((eachErrorObj: Error) => {
-                    errorMessage += ` ${eachErrorObj.message}`
-                })
+    //             JSON.parse(testSchema.error.message).forEach((eachErrorObj: Error) => {
+    //                 errorMessage += ` ${eachErrorObj.message}`
+    //             })
 
-                newObj[seenName] = errorMessage
+    //             newObj[seenName] = errorMessage
 
-                return newObj
-            })
-        }
-    }
+    //             return newObj
+    //         })
+    //     }
+    // }
 
     async function handleSubmit() {
         try {
@@ -196,7 +192,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                             onClick={async () => {
                                 toast.success("searching")
 
-                                companiesSet(await getCompanies({}))
+                                companiesSet(await getCompanies({ departmentIdBeingAccessed: department.id }))
                             }}
                         >get companies</button>
 
@@ -208,6 +204,8 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
                                         <button className='button3'
                                             onClick={() => {
+                                                toast.success(`selected`)
+
                                                 activeCompanyIdSet(eachCompany.id)
                                             }}
                                         >select</button>
