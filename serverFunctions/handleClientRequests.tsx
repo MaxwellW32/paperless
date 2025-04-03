@@ -24,17 +24,44 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, a
     return addedClientRequest[0]
 }
 
-export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, auth: authAcessType) {
+export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, auth: authAcessType): Promise<clientRequest> {
     //security check
     await ensureUserHasAccess(auth)
 
     updateClientRequestSchema.partial().parse(updatedClientRequestObj)
 
-    await db.update(clientRequests)
+    const [updatedClientRequest] = await db.update(clientRequests)
         .set({
             ...updatedClientRequestObj
         })
-        .where(eq(clientRequests.id, clientRequestId));
+        .where(eq(clientRequests.id, clientRequestId)).returning()
+
+    return updatedClientRequest
+}
+
+export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, auth: authAcessType) {
+    //security check
+    await ensureUserHasAccess(auth)
+
+    clientRequestSchema.shape.id.parse(clientRequestId)
+
+    //get client request
+    const seenClientRequest = await getSpecificClientRequest(clientRequestId, auth)
+    if (seenClientRequest === undefined) throw new Error("not seeing client request")
+
+    //validation
+    if (seenClientRequest.checklist[indexToUpdate] !== undefined && seenClientRequest.checklist[indexToUpdate].type === updatedChecklistItem.type) {
+        seenClientRequest.checklist[indexToUpdate] = updatedChecklistItem
+    }
+
+    const [updatedClientRequest] = await db.update(clientRequests)
+        .set({
+            checklist: seenClientRequest.checklist
+        })
+        .where(eq(clientRequests.id, clientRequestId)).returning()
+
+    return updatedClientRequest
+
 }
 
 export async function deleteClientRequests(clientRequestId: clientRequest["id"], auth: authAcessType) {

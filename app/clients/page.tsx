@@ -1,13 +1,15 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./page.module.css"
-import { checklistStarter, clientRequest, departmentCompanySelection, refreshObjType } from '@/types'
+import { checklistItemType, checklistStarter, clientRequest, departmentCompanySelection, refreshObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
 import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
-import { getClientRequests } from '@/serverFunctions/handleClientRequests'
+import { getClientRequests, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
+import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
+import { updateRefreshObj } from '@/utility/utility'
 
 export default function Page() {
     const [showingSideBar, showingSideBarSet] = useState(false)
@@ -38,17 +40,18 @@ export default function Page() {
 
     //search requests from company
     useEffect(() => {
-        handleSearchClientRequests()
+        const search = async () => {
+            if (departmentCompanySelection === null || departmentCompanySelection.type !== "company") return
+
+            //get active requests
+            activeClientRequestsSet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', false, { companyIdBeingAccessed: departmentCompanySelection.companyId, allowRegularAccess: true }))
+
+            //get everything that is not in progress - request history
+            clientRequestsHistorySet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', true, { companyIdBeingAccessed: departmentCompanySelection.companyId, allowRegularAccess: true }))
+        }
+        search()
+
     }, [departmentCompanySelection, refreshObj["clientRequests"]])
-
-    async function handleSearchClientRequests() {
-        if (departmentCompanySelection === null || departmentCompanySelection.type !== "company") return
-
-        activeClientRequestsSet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', false, { companyIdBeingAccessed: departmentCompanySelection.companyId, allowRegularAccess: true }))
-
-        //get everything that is not in progress - request history
-        clientRequestsHistorySet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', true, { companyIdBeingAccessed: departmentCompanySelection.companyId, allowRegularAccess: true }))
-    }
 
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
@@ -114,6 +117,15 @@ export default function Page() {
 
                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                             {activeClientRequests.map(eachActiveClientRequest => {
+                                //furthest non complete item
+                                const activeChecklistItemIndex = eachActiveClientRequest.checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
+                                console.log(`$activeChecklistItemIndex`, activeChecklistItemIndex);
+
+                                const activeChecklistItem: checklistItemType = eachActiveClientRequest.checklist[activeChecklistItemIndex]
+                                console.log(`$activeChecklistItem`, activeChecklistItem);
+
+                                console.log(`$eachActiveClientRequest.checklist`, eachActiveClientRequest.checklist);
+
                                 return (
                                     <div key={eachActiveClientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
                                         {eachActiveClientRequest.checklistStarter !== undefined && (
@@ -127,6 +139,37 @@ export default function Page() {
 
                                             <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
                                         </div>
+
+                                        {activeChecklistItem.type === "manual" && activeChecklistItem.for.type === "company" && activeChecklistItem.for.companyId === eachActiveClientRequest.companyId && (
+                                            <div>
+                                                <label>{activeChecklistItem.prompt}</label>
+
+                                                <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
+                                                    runAction={async () => {
+                                                        const newCompletedManualChecklistItem = activeChecklistItem
+                                                        newCompletedManualChecklistItem.completed = true
+
+                                                        //update server
+                                                        const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { companyIdBeingAccessed: eachActiveClientRequest.companyId })
+
+                                                        //refresh
+                                                        //get latest specific request 
+                                                        activeClientRequestsSet(prevClientRequests => {
+                                                            const newClientRequests = prevClientRequests.map(eachClientRequestMap => {
+                                                                if (eachClientRequestMap.id === latestClientRequest.id) {
+                                                                    return latestClientRequest
+                                                                }
+
+                                                                return eachClientRequestMap
+                                                            })
+
+                                                            return newClientRequests
+                                                        })
+                                                    }}
+                                                />
+                                            </div>
+
+                                        )}
 
                                         <button className='button2' style={{ justifySelf: "flex-end" }}
                                             onClick={() => {

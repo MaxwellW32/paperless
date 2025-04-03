@@ -418,6 +418,8 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                             </div>
                                                         </div>
 
+                                                        <label>to: </label>
+
                                                         <input type='text' value={eachChecklistItem.to} placeholder='Enter send to'
                                                             onChange={(e) => {
                                                                 //edit new checklist item
@@ -432,6 +434,8 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                             }}
                                                         />
 
+                                                        <label>subject: </label>
+
                                                         <input type='text' value={eachChecklistItem.subject} placeholder='Enter email subject'
                                                             onChange={(e) => {
                                                                 //edit new checklist item
@@ -445,6 +449,8 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                 updateChecklist(newChecklist)
                                                             }}
                                                         />
+
+                                                        <label>Mail: </label>
 
                                                         <textarea rows={5} value={eachChecklistItem.email} placeholder='Enter email to send'
                                                             onChange={(e) => {
