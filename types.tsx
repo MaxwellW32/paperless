@@ -196,6 +196,16 @@ export type checklistItemEmailType = z.infer<typeof checklistItemEmailSchema>
 
 export const checklistItemManualSchema = z.object({
     type: z.literal("manual"),
+    for: z.union([
+        z.object({
+            type: z.literal("department"),
+            departmenId: z.string().min(1)
+        }),
+        z.object({
+            type: z.literal("company"),
+            companyId: z.string().min(1)
+        }),
+    ]),
     prompt: z.string().min(1),
     completed: z.boolean(),
 })

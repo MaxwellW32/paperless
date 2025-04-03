@@ -167,6 +167,10 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                         } :
                                                             eachOption === "manual" ? {
                                                                 type: "manual",
+                                                                for: {
+                                                                    type: "department",
+                                                                    departmenId: ""
+                                                                },
                                                                 prompt: "",
                                                                 completed: false
                                                             } : null
@@ -235,7 +239,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                     onClick={async () => {
                                                                         toast.success("searching")
                                                                         const seenDepartments = await getDepartments({})
-                                                                        console.log(`$seenDepartments`, seenDepartments);
+
                                                                         departmentsSet(seenDepartments)
                                                                     }}
                                                                 >departments</button>
@@ -279,7 +283,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                                                     </>
                                                                                                 )}
 
-                                                                                                {eachCompany.usersToCompanies !== undefined && (
+                                                                                                {eachCompany.usersToCompanies !== undefined && eachCompany.usersToCompanies.length > 0 && (
                                                                                                     <>
                                                                                                         <p>company user emails:</p>
 
@@ -364,7 +368,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                                                     </>
                                                                                                 )}
 
-                                                                                                {eachDepartment.usersToDepartments !== undefined && (
+                                                                                                {eachDepartment.usersToDepartments !== undefined && eachDepartment.usersToDepartments.length > 0 && (
                                                                                                     <>
                                                                                                         <h3>department user emails:</h3>
 
@@ -460,6 +464,110 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
 
                                                 {eachChecklistItem.type === "manual" && (
                                                     <>
+                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+
+                                                                <button className='button1'
+                                                                    onClick={async () => {
+                                                                        toast.success("searching")
+
+                                                                        companiesSet(await getCompanies({}))
+                                                                    }}
+                                                                >companies</button>
+
+                                                                <button className='button1'
+                                                                    onClick={async () => {
+                                                                        toast.success("searching")
+                                                                        const seenDepartments = await getDepartments({})
+
+                                                                        departmentsSet(seenDepartments)
+                                                                    }}
+                                                                >departments</button>
+                                                            </div>
+
+                                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                                                {companies.length > 0 && (
+                                                                    <>
+                                                                        <ShowMore
+                                                                            label='companies'
+                                                                            content={
+                                                                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                                    {companies.map(eachCompany => {
+                                                                                        return (
+                                                                                            <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                                                                <h3>{eachCompany.name}</h3>
+
+                                                                                                <button className='button1'
+                                                                                                    onClick={() => {
+                                                                                                        //edit new checklist item
+                                                                                                        const newChecklistItem = { ...eachChecklistItem }
+                                                                                                        newChecklistItem.for = {
+                                                                                                            type: "company",
+                                                                                                            companyId: eachCompany.id
+                                                                                                        }
+
+                                                                                                        //edit new checklist at index
+                                                                                                        const newChecklist = [...seenChecklist]
+                                                                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                                                                        toast.success(`set for ${eachCompany.name}`)
+
+                                                                                                        updateChecklist(newChecklist)
+                                                                                                    }}
+                                                                                                >add</button>
+                                                                                            </div>
+                                                                                        )
+                                                                                    })}
+                                                                                </div>
+                                                                            }
+                                                                        />
+                                                                    </>
+                                                                )}
+
+                                                                {departments.length > 0 && (
+                                                                    <>
+                                                                        <ShowMore
+                                                                            label='departments'
+                                                                            content={
+                                                                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                                    {departments.map(eachDepartment => {
+                                                                                        return (
+                                                                                            <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                                                                <h3>{eachDepartment.name}</h3>
+
+                                                                                                <button className='button1'
+                                                                                                    onClick={() => {
+                                                                                                        //edit new checklist item
+                                                                                                        const newChecklistItem = { ...eachChecklistItem }
+                                                                                                        newChecklistItem.for = {
+                                                                                                            type: "department",
+                                                                                                            departmenId: eachDepartment.id
+                                                                                                        }
+
+                                                                                                        //edit new checklist at index
+                                                                                                        const newChecklist = [...seenChecklist]
+                                                                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                                                                        toast.success(`set for ${eachDepartment.name}`)
+
+                                                                                                        updateChecklist(newChecklist)
+                                                                                                    }}
+                                                                                                >add</button>
+                                                                                            </div>
+                                                                                        )
+                                                                                    })}
+                                                                                </div>
+                                                                            }
+                                                                        />
+                                                                    </>
+                                                                )}
+                                                            </div>
+
+                                                            {((eachChecklistItem.for.type === "department" && eachChecklistItem.for.departmenId !== "") || (eachChecklistItem.for.type === "company" && eachChecklistItem.for.companyId !== "")) && (
+                                                                <h3>manual check set for {eachChecklistItem.for.type}</h3>
+                                                            )}
+                                                        </div>
+
                                                         <input type='text' value={eachChecklistItem.prompt} placeholder='Enter prompt to ask user'
                                                             onChange={(e) => {
                                                                 //edit new checklist item
