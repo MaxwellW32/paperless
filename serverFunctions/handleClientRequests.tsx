@@ -4,6 +4,7 @@ import { clientRequests } from "@/db/schema"
 import { authAcessType, checklistItemType, clientRequest, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { ensureUserHasAccess } from "@/utility/sessionCheck"
 import { eq, and, ne } from "drizzle-orm"
+import { sendEmail } from "./handleMail"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest, auth: authAcessType): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
@@ -39,7 +40,7 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
     return updatedClientRequest
 }
 
-export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, auth: authAcessType) {
+export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, auth: authAcessType): Promise<clientRequest> {
     //security check
     await ensureUserHasAccess(auth)
 
@@ -157,7 +158,48 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
     return requestsForDepartmentSignoff
 }
 
-export async function runChecklistAutomation(checklist: checklistItemType[]) {
+export async function runChecklistAutomation(clientRequestId: clientRequest["id"], seenChecklist: checklistItemType[], auth: authAcessType) {
+    //checklist that can be updated
+    let checklist = seenChecklist
+
+    //check the latest incomplete task
+    const latestChecklistItemIndex = checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
+    const latestChecklistItem: checklistItemType | undefined = latestChecklistItemIndex !== -1 ? checklist[latestChecklistItemIndex] : undefined
+
+    if (latestChecklistItem === undefined) {
+        //if nothing is incomplete then mark client request as finished
+        await updateClientRequests(clientRequestId, {
+            status: "completed"
+        }, auth)
+
+        return
+    }
+
+    console.log(`$running automation for`, latestChecklistItem.type);
+
     //send emails
-    //check the latest cimplete index in list
+    if (latestChecklistItem.type === "email") {
+        await sendEmail({
+            sendTo: latestChecklistItem.to,
+            replyTo: undefined,
+            subject: latestChecklistItem.subject,
+            text: latestChecklistItem.email,
+        })
+
+        //mark as complete 
+        latestChecklistItem.completed = true
+
+        //update
+        const newUpdatedClientRequest = await updateClientRequestsChecklist(clientRequestId, latestChecklistItem, latestChecklistItemIndex, auth)
+
+        //update checklist 
+        checklist = newUpdatedClientRequest.checklist
+    }
+
+    //stop running
+    if (latestChecklistItem.type === "form" || latestChecklistItem.type === "manual") {
+        return
+    }
+
+    runChecklistAutomation(clientRequestId, checklist, auth)
 }

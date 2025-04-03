@@ -4,8 +4,8 @@ import styles from "./style.module.css"
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, departmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
-import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
+import { authAcessType, checklistStarter, clientRequest, company, department, departmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
+import { addClientRequests, runChecklistAutomation, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { useAtom } from 'jotai'
 import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
@@ -119,6 +119,8 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
             //send off new client request
             if (activeCompanyId === undefined) throw new Error("not seeing company id")
 
+            const seenAuth: authAcessType = department !== undefined && department.canManageRequests ? { departmentIdBeingAccessed: department.id } : { companyIdBeingAccessed: activeCompanyId }
+
             if (sentClientRequest === undefined) {
                 //make new client request
 
@@ -145,7 +147,10 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 })
 
                 //send up to server
-                await addClientRequests(validatedNewClientRequest, department !== undefined && department.canManageRequests ? { departmentIdBeingAccessed: department.id } : { companyIdBeingAccessed: activeCompanyId })
+                const newAddedClientRequest = await addClientRequests(validatedNewClientRequest, seenAuth)
+
+                //run automation
+                await runChecklistAutomation(newAddedClientRequest.id, newAddedClientRequest.checklist, seenAuth)
 
                 toast.success("submitted")
                 formObjSet(deepClone(initialFormObj))
@@ -169,7 +174,10 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 })
 
                 //update
-                await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, department !== undefined && department.canManageRequests ? { departmentIdBeingAccessed: department.id } : { companyIdBeingAccessed: activeCompanyId })
+                const updatedClientRequest = await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, seenAuth)
+
+                //run automation
+                await runChecklistAutomation(updatedClientRequest.id, updatedClientRequest.checklist, seenAuth)
 
                 toast.success("request updated")
             }

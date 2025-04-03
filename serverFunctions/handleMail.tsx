@@ -24,7 +24,7 @@ const transporter = nodemailer.createTransport({
 
 export async function sendEmail(input: {
     sendTo: string,
-    replyTo: string,
+    replyTo: string | undefined,
     subject: string,
     text: string,
 }) {

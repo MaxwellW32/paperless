@@ -6,7 +6,7 @@ import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStar
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
 import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
-import { getClientRequests, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
+import { getClientRequests, runChecklistAutomation, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 import { useSession } from 'next-auth/react'
@@ -155,6 +155,9 @@ export default function Page() {
 
                                                         //update server
                                                         const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { companyIdBeingAccessed: eachActiveClientRequest.companyId })
+
+                                                        //run automation
+                                                        await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, { companyIdBeingAccessed: eachActiveClientRequest.companyId })
 
                                                         //refresh
                                                         //get latest specific request 
