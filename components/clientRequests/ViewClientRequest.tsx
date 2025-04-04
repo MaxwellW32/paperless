@@ -1,12 +1,12 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { clientRequest, company } from '@/types'
+import { clientRequest, company, department } from '@/types'
 import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import dashboardStyles from "@/app/dashboard.module.css"
 import Moment from 'react-moment';
 
-export default function ViewClientRequest({ sentClientRequest }: { sentClientRequest: clientRequest }) {
+export default function ViewClientRequest({ sentClientRequest, department }: { sentClientRequest: clientRequest, department?: department }) {
     const [seenCompany, seenCompanySet] = useState<company | undefined>()
 
     //search company
@@ -14,7 +14,7 @@ export default function ViewClientRequest({ sentClientRequest }: { sentClientReq
         const search = async () => {
             if (sentClientRequest === undefined) return
 
-            seenCompanySet(await getSpecificCompany(sentClientRequest.companyId))
+            seenCompanySet(await getSpecificCompany(sentClientRequest.companyId, department !== undefined ? { departmentIdForAuth: department.id } : { companyIdBeingAccessed: sentClientRequest.companyId }))
         }
         search()
 

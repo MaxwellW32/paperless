@@ -1,52 +1,25 @@
 "use client"
-import { departmentCompanySelection, user, } from '@/types'
-import { departmentCompanySelectionGlobal } from '@/utility/globalState'
+import { userDepartmentCompanySelection, user, } from '@/types'
+import { userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
 import { useAtom } from 'jotai'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 export default function CompanyDepartmentSelection({ seenUser }: { seenUser: user }) {
-    const [departmentCompanySelection, departmentCompanySelectionSet] = useAtom<departmentCompanySelection | null>(departmentCompanySelectionGlobal)
+    const [userDepartmentCompanySelection, userDepartmentCompanySelectionSet] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
     const [ranCheck, ranCheckSet] = useState(false)
 
-    //tell what the useer is
-    //load up their possible options
-    //set departmentcompanydelection
-    const foundCompanyDepartmentSelectionName = useMemo<string | undefined>(() => {
-        if (departmentCompanySelection === null) return undefined
-
-        if (seenUser.fromDepartment) {
-            //employee
-            if (seenUser.usersToDepartments === undefined || departmentCompanySelection.type !== "department") return undefined
-
-            const seenUserDepartment = seenUser.usersToDepartments.find(eachUserToDepartment => eachUserToDepartment.departmentId === departmentCompanySelection.departmentId)
-            if (seenUserDepartment === undefined || seenUserDepartment.department === undefined) return undefined
-
-            return seenUserDepartment.department.name
-
-        } else {
-            //company
-            if (seenUser.usersToCompanies === undefined || departmentCompanySelection.type !== "company") return undefined
-
-            const seenUserCompany = seenUser.usersToCompanies.find(eachUserToCompany => eachUserToCompany.companyId === departmentCompanySelection.companyId)
-            if (seenUserCompany === undefined || seenUserCompany.company === undefined) return undefined
-
-            return seenUserCompany.company.name
-        }
-
-    }, [departmentCompanySelection, seenUser.fromDepartment, seenUser.usersToDepartments, seenUser.usersToCompanies])
-
-    //if only one result set active
+    //set first result as active
     useEffect(() => {
         if (seenUser.fromDepartment) {
             //empolyee
             if (seenUser.usersToDepartments !== undefined && seenUser.usersToDepartments.length > 0) {
-                departmentCompanySelectionSet({ type: "department", departmentId: seenUser.usersToDepartments[0].departmentId })
+                userDepartmentCompanySelectionSet({ type: "userDepartment", seenUserToDepartment: seenUser.usersToDepartments[0] })
             }
 
         } else {
             //department
             if (seenUser.usersToCompanies !== undefined && seenUser.usersToCompanies.length > 0) {
-                departmentCompanySelectionSet({ type: "company", companyId: seenUser.usersToCompanies[0].companyId })
+                userDepartmentCompanySelectionSet({ type: "userCompany", seenUserToCompany: seenUser.usersToCompanies[0] })
             }
         }
 
@@ -57,7 +30,7 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
 
     return (
         <div style={{ position: "relative", display: ranCheck ? "" : "none" }}>
-            {departmentCompanySelection === null ? (
+            {userDepartmentCompanySelection === null ? (
                 <>
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", position: "absolute", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
                         {seenUser.fromDepartment ? (
@@ -70,9 +43,9 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
                                     return (
                                         <button key={eachUserDepartment.id} className='button1'
                                             onClick={() => {
-                                                departmentCompanySelectionSet({
-                                                    type: "department",
-                                                    departmentId: eachUserDepartment.departmentId
+                                                userDepartmentCompanySelectionSet({
+                                                    type: "userDepartment",
+                                                    seenUserToDepartment: eachUserDepartment
                                                 })
                                             }}
                                         >{eachUserDepartment.department.name}</button>
@@ -89,9 +62,9 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
                                     return (
                                         <button key={eachUserCompany.id} className='button1'
                                             onClick={() => {
-                                                departmentCompanySelectionSet({
-                                                    type: "company",
-                                                    companyId: eachUserCompany.companyId
+                                                userDepartmentCompanySelectionSet({
+                                                    type: "userCompany",
+                                                    seenUserToCompany: eachUserCompany
                                                 })
                                             }}
                                         >{eachUserCompany.company.name}</button>
@@ -103,13 +76,25 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
                 </>
             ) : (
                 <>
-                    {foundCompanyDepartmentSelectionName !== undefined && (
-                        <button className='button1' style={{ backgroundColor: "rgb(var(--color1))" }}
-                            onClick={() => {
-                                departmentCompanySelectionSet(null)
-                            }}
-                        >{foundCompanyDepartmentSelectionName}</button>
-                    )}
+                    <button className='button1' style={{ backgroundColor: "rgb(var(--color1))" }}
+                        onClick={() => {
+                            userDepartmentCompanySelectionSet(null)
+                        }}
+                    >
+                        {userDepartmentCompanySelection.type === "userDepartment" ? (
+                            <>
+                                {userDepartmentCompanySelection.seenUserToDepartment.department !== undefined && (
+                                    <>{userDepartmentCompanySelection.seenUserToDepartment.department.name}</>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                {userDepartmentCompanySelection.seenUserToCompany.company !== undefined && (
+                                    <>{userDepartmentCompanySelection.seenUserToCompany.company.name}</>
+                                )}
+                            </>
+                        )}
+                    </button>
                 </>
             )}
         </div>

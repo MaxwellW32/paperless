@@ -1,11 +1,11 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import dashboardStyles from "@/app/dashboard.module.css"
-import { activeScreenType, checklistItemType, checklistStarter, clientRequest, departmentCompanySelection, refreshObjType } from '@/types'
+import { activeScreenType, checklistItemType, checklistStarter, clientRequest, userDepartmentCompanySelection, refreshObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
-import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
+import { userDepartmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
 import { getClientRequests, runChecklistAutomation, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
@@ -21,7 +21,8 @@ export default function Page() {
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>()
 
     const [refreshObj,] = useAtom<refreshObjType>(refreshObjGlobal)
-    const [departmentCompanySelection,] = useAtom<departmentCompanySelection | null>(departmentCompanySelectionGlobal)
+    const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
+
     const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
     const [clientRequestsHistory, clientRequestsHistorySet] = useState<clientRequest[]>([])
 
@@ -36,17 +37,17 @@ export default function Page() {
     //search requests from company
     useEffect(() => {
         const search = async () => {
-            if (departmentCompanySelection === null || departmentCompanySelection.type !== "company") return
+            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userCompany") return
 
             //get active requests
-            activeClientRequestsSet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', false, { clientRequestIdBeingAccessed: "", allowRegularAccess: true }))
+            activeClientRequestsSet(await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, 'in-progress', false, { clientRequestIdBeingAccessed: "", allowRegularAccess: true }))
 
             //get everything that is not in progress - request history
-            clientRequestsHistorySet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', true, { clientRequestIdBeingAccessed: "", allowRegularAccess: true }))
+            clientRequestsHistorySet(await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, 'in-progress', true, { clientRequestIdBeingAccessed: "", allowRegularAccess: true }))
         }
         search()
 
-    }, [departmentCompanySelection, refreshObj["clientRequests"]])
+    }, [userDepartmentCompanySelection, refreshObj["clientRequests"]])
 
     if (session !== null && session.user.accessLevel !== "admin" && session.user.fromDepartment) {
         return (

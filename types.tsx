@@ -79,14 +79,16 @@ export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema
 export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
 export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
-export type clientRequestAuth = { clientRequestIdBeingAccessed: clientRequest["id"], departmentIdForAuth?: department["id"], allowRegularAccess?: boolean }
+export type clientRequestAuthType = { clientRequestIdBeingAccessed: clientRequest["id"], departmentIdForAuth?: department["id"], allowRegularAccess?: boolean }
+export type companyAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"], allowRegularAccess?: boolean }
+export type departmentAuthType = { departmentIdBeingAccessed: department["id"], allowRegularAccess?: boolean }
 
-export type departmentCompanySelection = {
-    type: "department",
-    departmentId: string
+export type userDepartmentCompanySelection = {
+    type: "userDepartment",
+    seenUserToDepartment: userToDepartment
 } | {
-    type: "company",
-    companyId: string
+    type: "userCompany",
+    seenUserToCompany: userToCompany
 }
 
 export type refreshObjType = { [key: string]: boolean }

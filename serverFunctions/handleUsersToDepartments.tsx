@@ -2,7 +2,7 @@
 import { db } from "@/db"
 import { usersToDepartments } from "@/db/schema"
 import { department, departmentSchema, newUserToDepartment, newUserToDepartmentSchema, updateUserToDepartment, updateUserToDepartmentSchema, user, userSchema, userToDepartment, userToDepartmentSchema } from "@/types"
-import { ensureCanAccessDepartment, ensureUserIsAdmin } from "@/utility/sessionCheck"
+import { ensureUserIsAdmin } from "@/utility/sessionCheck"
 import { and, eq } from "drizzle-orm"
 
 export async function addUsersToDepartments(newUsersToDepartmentsObj: newUserToDepartment): Promise<userToDepartment> {
@@ -44,7 +44,7 @@ export async function deleteUsersToDepartments(usersToDepartmentsId: userToDepar
 export async function getSpecificUsersToDepartments(userId: user["id"], departmentId: department["id"], runSecurityCheck = true): Promise<userToDepartment | undefined> {
     //security
     if (runSecurityCheck) {
-        await ensureCanAccessDepartment({ departmentIdBeingAccessed: departmentId })
+        await ensureUserIsAdmin()
     }
 
     userSchema.shape.id.parse(userId)

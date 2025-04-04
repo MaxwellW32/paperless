@@ -1,11 +1,11 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import dashboardStyles from "@/app/dashboard.module.css"
-import { activeScreenType, checklistItemType, checklistStarter, clientRequest, department, departmentCompanySelection, refreshObjType } from '@/types'
+import { activeScreenType, checklistItemType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
-import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
+import { userDepartmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
 import { getClientRequestsForDepartments, runChecklistAutomation, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 import { useSession } from 'next-auth/react'
@@ -22,7 +22,7 @@ export default function Page() {
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>()
 
     const [refreshObj,] = useAtom<refreshObjType>(refreshObjGlobal)
-    const [departmentCompanySelection,] = useAtom<departmentCompanySelection | null>(departmentCompanySelectionGlobal)
+    const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
     const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
     const [seenDepartment, seenDepartmentSet] = useState<department | undefined>()
 
@@ -37,25 +37,25 @@ export default function Page() {
     //search requests from company
     useEffect(() => {
         const search = async () => {
-            if (departmentCompanySelection === null || departmentCompanySelection.type !== "department") return
+            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
 
             //get active requests needing this department signoff
-            activeClientRequestsSet(await getClientRequestsForDepartments('in-progress', false, departmentCompanySelection.departmentId, { clientRequestIdBeingAccessed: "", departmentIdForAuth: departmentCompanySelection.departmentId }))
+            activeClientRequestsSet(await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { clientRequestIdBeingAccessed: "", departmentIdForAuth: userDepartmentCompanySelection.seenUserToDepartment.departmentId }))
         }
         search()
 
-    }, [departmentCompanySelection, refreshObj["clientRequests"]])
+    }, [userDepartmentCompanySelection, refreshObj["clientRequests"]])
 
     //search department
     useEffect(() => {
         const search = async () => {
-            if (departmentCompanySelection === null || departmentCompanySelection.type !== "department") return
+            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
 
-            seenDepartmentSet(await getSpecificDepartment(departmentCompanySelection.departmentId))
+            seenDepartmentSet(await getSpecificDepartment(userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId }))
         }
         search()
 
-    }, [departmentCompanySelection])
+    }, [userDepartmentCompanySelection])
 
     if (session !== null && session.user.accessLevel !== "admin" && !session.user.fromDepartment) {
         return (
@@ -130,7 +130,7 @@ export default function Page() {
                         <h3>Active requests</h3>
 
                         {activeClientRequests.map(eachActiveClientRequest => {
-                            if (departmentCompanySelection === null || departmentCompanySelection.type !== "department") return
+                            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
 
                             //furthest non complete item
                             const activeChecklistItemIndex = eachActiveClientRequest.checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
@@ -161,7 +161,7 @@ export default function Page() {
                                         }}
                                     >view</button>
 
-                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && activeChecklistItem.for.type === "department" && activeChecklistItem.for.departmenId === departmentCompanySelection.departmentId && (
+                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && activeChecklistItem.for.type === "department" && activeChecklistItem.for.departmenId === userDepartmentCompanySelection.seenUserToDepartment.departmentId && (
                                         <div>
                                             <label>{activeChecklistItem.prompt}</label>
 
@@ -171,10 +171,10 @@ export default function Page() {
                                                     newCompletedManualChecklistItem.completed = true
 
                                                     //update server
-                                                    const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: departmentCompanySelection.departmentId })
+                                                    const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
 
                                                     //run automation
-                                                    await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, { clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: departmentCompanySelection.departmentId })
+                                                    await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, { clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
 
                                                     //refresh
                                                     //get latest specific request 

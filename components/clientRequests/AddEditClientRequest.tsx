@@ -4,15 +4,15 @@ import styles from "./style.module.css"
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, departmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
+import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
 import { addClientRequests, runChecklistAutomation, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { useAtom } from 'jotai'
-import { departmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
+import { userDepartmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 
 export default function AddEditClientRequest({ checklistStarter, sentClientRequest, department }: { checklistStarter?: checklistStarter, sentClientRequest?: clientRequest, department?: department }) {
-    const [departmentCompanySelection,] = useAtom<departmentCompanySelection | null>(departmentCompanySelectionGlobal)
+    const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
 
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
 
@@ -71,19 +71,19 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
     useEffect(() => {
         try {
             const search = async () => {
-                if (departmentCompanySelection === null) return
+                if (userDepartmentCompanySelection === null) return
 
                 //only run for clients accounts
-                if (departmentCompanySelection.type !== "company") return
+                if (userDepartmentCompanySelection.type !== "userCompany") return
 
-                activeCompanyIdSet(departmentCompanySelection.companyId)
+                activeCompanyIdSet(userDepartmentCompanySelection.seenUserToCompany.companyId)
             }
             search()
 
         } catch (error) {
             consoleAndToastError(error)
         }
-    }, [departmentCompanySelection])
+    }, [userDepartmentCompanySelection])
 
     // function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
     //     // @ts-expect-error type
@@ -200,7 +200,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                             onClick={async () => {
                                 toast.success("searching")
 
-                                companiesSet(await getCompanies())
+                                companiesSet(await getCompanies({ departmentIdForAuth: department.id }))
                             }}
                         >get companies</button>
 

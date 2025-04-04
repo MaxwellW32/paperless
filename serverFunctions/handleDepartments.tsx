@@ -1,8 +1,8 @@
 "use server"
 import { db } from "@/db"
 import { departments } from "@/db/schema"
-import { department, departmentSchema, newDepartment, newDepartmentSchema, updateDepartmentSchema } from "@/types"
-import { ensureCanAccessDepartment } from "@/utility/sessionCheck"
+import { department, departmentAuthType, departmentSchema, newDepartment, newDepartmentSchema, updateDepartmentSchema } from "@/types"
+import { ensureCanAccessDepartment, ensureUserIsAdmin } from "@/utility/sessionCheck"
 import { eq } from "drizzle-orm"
 
 export async function addDepartments(newDeparmentObj: newDepartment): Promise<department> {
@@ -34,7 +34,7 @@ export async function updateDepartments(deparmentId: department["id"], updatedDe
 
 export async function deleteDepartments(deparmentId: department["id"]) {
     //security check
-    await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId })
+    await ensureUserIsAdmin()
 
     //validation
     departmentSchema.shape.id.parse(deparmentId)
@@ -42,12 +42,12 @@ export async function deleteDepartments(deparmentId: department["id"]) {
     await db.delete(departments).where(eq(departments.id, deparmentId));
 }
 
-export async function getSpecificDepartment(deparmentId: department["id"], skipAuth = false): Promise<department | undefined> {
+export async function getSpecificDepartment(deparmentId: department["id"], departmentAuth: departmentAuthType, skipAuth = false): Promise<department | undefined> {
     departmentSchema.shape.id.parse(deparmentId)
 
     if (!skipAuth) {
         //security check
-        await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId })
+        await ensureCanAccessDepartment(departmentAuth)
     }
 
     const result = await db.query.departments.findFirst({
@@ -57,9 +57,9 @@ export async function getSpecificDepartment(deparmentId: department["id"], skipA
     return result
 }
 
-export async function getDepartments(): Promise<department[]> {
+export async function getDepartments(departmentAuth: departmentAuthType): Promise<department[]> {
     //security check
-    await ensureCanAccessDepartment({ departmentIdBeingAccessed: "", allowRegularAccess: true })
+    await ensureCanAccessDepartment(departmentAuth)
 
     const results = await db.query.departments.findMany({
         with: {

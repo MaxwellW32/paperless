@@ -1,8 +1,8 @@
 "use server"
 import { db } from "@/db"
 import { companies } from "@/db/schema"
-import { company, companySchema, newCompany, newCompanySchema, updateCompanySchema } from "@/types"
-import { ensureCanAccessCompany } from "@/utility/sessionCheck"
+import { company, companyAuthType, companySchema, newCompany, newCompanySchema, updateCompanySchema } from "@/types"
+import { ensureCanAccessCompany, ensureUserIsAdmin } from "@/utility/sessionCheck"
 import { eq } from "drizzle-orm"
 
 export async function addCompanies(newCompanyObj: newCompany): Promise<company> {
@@ -21,7 +21,7 @@ export async function addCompanies(newCompanyObj: newCompany): Promise<company> 
 
 export async function updateCompanies(companyId: company["id"], updatedCompanyObj: Partial<company>) {
     //security check
-    await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
+    await ensureUserIsAdmin()
 
     updateCompanySchema.partial().parse(updatedCompanyObj)
 
@@ -34,7 +34,7 @@ export async function updateCompanies(companyId: company["id"], updatedCompanyOb
 
 export async function deleteCompanies(companyId: company["id"]) {
     //security check
-    await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
+    await ensureUserIsAdmin()
 
     //validation
     companySchema.shape.id.parse(companyId)
@@ -42,11 +42,11 @@ export async function deleteCompanies(companyId: company["id"]) {
     await db.delete(companies).where(eq(companies.id, companyId));
 }
 
-export async function getSpecificCompany(companyId: company["id"]): Promise<company | undefined> {
+export async function getSpecificCompany(companyId: company["id"], companyAuth: companyAuthType): Promise<company | undefined> {
     companySchema.shape.id.parse(companyId)
 
     //security check
-    await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
+    await ensureCanAccessCompany(companyAuth)
 
     const result = await db.query.companies.findFirst({
         where: eq(companies.id, companyId),
@@ -55,9 +55,9 @@ export async function getSpecificCompany(companyId: company["id"]): Promise<comp
     return result
 }
 
-export async function getCompanies(): Promise<company[]> {
+export async function getCompanies(companyAuth: companyAuthType): Promise<company[]> {
     //security check
-    await ensureCanAccessCompany({ companyIdBeingAccessed: "", allowRegularAccess: true })
+    await ensureCanAccessCompany(companyAuth)
 
     const results = await db.query.companies.findMany({
         with: {

@@ -3,7 +3,7 @@ import { getSpecificClientRequest } from "@/serverFunctions/handleClientRequests
 import { getSpecificDepartment } from "@/serverFunctions/handleDepartments"
 import { getSpecificUsersToCompanies, getUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies"
 import { getSpecificUsersToDepartments } from "@/serverFunctions/handleUsersToDepartments"
-import { clientRequest, clientRequestAuth, company, companySchema, department, departmentSchema } from "@/types"
+import { clientRequest, clientRequestAuthType, company, companyAuthType, companySchema, department, departmentAuthType, departmentSchema } from "@/types"
 
 export async function sessionCheckWithError() {
     const session = await auth()
@@ -16,7 +16,7 @@ export async function sessionCheckWithError() {
     }
 }
 
-export async function ensureCanAccessDepartment({ departmentIdBeingAccessed, allowRegularAccess = false }: { departmentIdBeingAccessed: department["id"], allowRegularAccess?: boolean }) {
+export async function ensureCanAccessDepartment({ departmentIdBeingAccessed, allowRegularAccess = false }: departmentAuthType) {
     //security check - ensures only admin or elevated roles can make change
     const session = await auth()
     if (session === null) throw new Error("need session")
@@ -42,7 +42,7 @@ export async function ensureCanAccessDepartment({ departmentIdBeingAccessed, all
     return session
 }
 
-export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmentIdForAuth, allowRegularAccess = false }: { companyIdBeingAccessed: company["id"], departmentIdForAuth?: department["id"], allowRegularAccess?: boolean }) {
+export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmentIdForAuth, allowRegularAccess = false }: companyAuthType) {
     //security check - ensures only admin or elevated roles can make change
     const session = await auth()
     if (session === null) throw new Error("need session")
@@ -58,7 +58,7 @@ export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmen
         if (departmentIdForAuth === undefined) throw new Error("provide departmentId for auth")
 
         //does the department have edit permissions
-        const seenDepartment = await getSpecificDepartment(departmentIdForAuth, true)
+        const seenDepartment = await getSpecificDepartment(departmentIdForAuth, { departmentIdBeingAccessed: "" }, true)
         if (seenDepartment === undefined) throw new Error("not seeing department")
 
         //ensure department can make changes
@@ -67,6 +67,9 @@ export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmen
         //check if in department user has elevated auth
         await ensureCanAccessDepartment({ departmentIdBeingAccessed: departmentIdForAuth })
     }
+
+    //ensure clients pass a company id
+    if (companyIdBeingAccessed === undefined) throw new Error("provide companyId for auth")
 
     //validation
     companySchema.shape.id.parse(companyIdBeingAccessed)
@@ -79,7 +82,7 @@ export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmen
     return session
 }
 
-export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAuth) {
+export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAuthType) {
     //security check - ensures only admin or elevated roles can make change
     const session = await auth()
     if (session === null) throw new Error("need session")
@@ -95,7 +98,7 @@ export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAu
         if (clientReqAuth.departmentIdForAuth === undefined) throw new Error("provide departmentId for auth")
 
         //does the department have edit permissions
-        const seenDepartment = await getSpecificDepartment(clientReqAuth.departmentIdForAuth, true)
+        const seenDepartment = await getSpecificDepartment(clientReqAuth.departmentIdForAuth, { departmentIdBeingAccessed: "" }, true)
         if (seenDepartment === undefined) throw new Error("not seeing department")
 
         //ensure department can make changes
@@ -109,14 +112,8 @@ export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAu
         const seenClientRequest = await getSpecificClientRequest(clientReqAuth.clientRequestIdBeingAccessed, clientReqAuth, true)
         if (seenClientRequest === undefined) throw new Error("not seeing clientRequest")
 
-        //is the client request company id in the users usersToCompanies table
-        const seenUsersToCompanies = await getUsersToCompanies({ type: "user", userId: session.user.id })
-
-        const seenUserToCompany = seenUsersToCompanies.find(eachUserToCompany => eachUserToCompany.companyId === seenClientRequest.companyId)
-        if (seenUserToCompany === undefined) throw new Error("seenUserToCompany is undefined")
-
         //check if in company user has elevated auth
-        await ensureCanAccessCompany({ companyIdBeingAccessed: seenUserToCompany.companyId })
+        await ensureCanAccessCompany({ companyIdBeingAccessed: seenClientRequest.companyId })
     }
 
     return session

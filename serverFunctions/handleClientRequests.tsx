@@ -1,7 +1,7 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { checklistItemType, clientRequest, clientRequestAuth, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
 import { ensureCanAccesClientRequest } from "@/utility/sessionCheck"
@@ -25,7 +25,7 @@ export async function addClientRequests(newClientRequestObj: newClientRequest): 
     return addedClientRequest[0]
 }
 
-export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuth): Promise<clientRequest> {
+export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
     //security check
     await ensureCanAccesClientRequest(clientRequestAuth)
 
@@ -40,7 +40,7 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
     return updatedClientRequest
 }
 
-export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuth): Promise<clientRequest> {
+export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
     //security check
     await ensureCanAccesClientRequest(clientRequestAuth)
 
@@ -60,7 +60,7 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
     return updatedClientRequest
 }
 
-export async function deleteClientRequests(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuth) {
+export async function deleteClientRequests(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType) {
     //security check
     await ensureCanAccesClientRequest(clientRequestAuth)
 
@@ -70,7 +70,7 @@ export async function deleteClientRequests(clientRequestId: clientRequest["id"],
     await db.delete(clientRequests).where(eq(clientRequests.id, clientRequestId));
 }
 
-export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuth, skipAuth = false): Promise<clientRequest | undefined> {
+export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType, skipAuth = false): Promise<clientRequest | undefined> {
     clientRequestSchema.shape.id.parse(clientRequestId)
 
     if (!skipAuth) {
@@ -88,7 +88,7 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
     return result
 }
 
-export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }, status: clientRequestStatusType, getOppositeOfStatus: boolean, clientRequestAuth: clientRequestAuth, limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }, status: clientRequestStatusType, getOppositeOfStatus: boolean, clientRequestAuth: clientRequestAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
     await ensureCanAccesClientRequest(clientRequestAuth)
 
@@ -125,7 +125,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
     }
 }
 
-export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], clientRequestAuth: clientRequestAuth, limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], clientRequestAuth: clientRequestAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
     await ensureCanAccesClientRequest(clientRequestAuth)
 
@@ -155,7 +155,7 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
     return requestsForDepartmentSignoff
 }
 
-export async function runChecklistAutomation(clientRequestId: clientRequest["id"], seenChecklist: checklistItemType[], clientRequestAuth: clientRequestAuth,) {
+export async function runChecklistAutomation(clientRequestId: clientRequest["id"], seenChecklist: checklistItemType[], clientRequestAuth: clientRequestAuthType,) {
     //checklist that can be updated
     let checklist = seenChecklist
 

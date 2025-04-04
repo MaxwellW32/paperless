@@ -2,7 +2,7 @@
 import { db } from "@/db"
 import { usersToCompanies } from "@/db/schema"
 import { company, companySchema, newUserToCompany, newUserToCompanySchema, updateUserToCompany, updateUserToCompanySchema, user, userSchema, userToCompany, userToCompanySchema } from "@/types"
-import { ensureCanAccessCompany, ensureUserIsAdmin } from "@/utility/sessionCheck"
+import { ensureUserIsAdmin } from "@/utility/sessionCheck"
 import { and, eq } from "drizzle-orm"
 
 export async function addUsersToCompanies(newUsersToCompaniesObj: newUserToCompany): Promise<userToCompany> {
@@ -44,7 +44,7 @@ export async function deleteUsersToCompanies(usersToCompaniesId: userToCompany["
 export async function getSpecificUsersToCompanies(userId: user["id"], companyId: company["id"], runSecurityCheck = true): Promise<userToCompany | undefined> {
     //security
     if (runSecurityCheck) {
-        await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
+        await ensureUserIsAdmin()
     }
 
     userSchema.shape.id.parse(userId)
