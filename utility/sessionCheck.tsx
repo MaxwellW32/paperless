@@ -105,7 +105,7 @@ export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAu
         if (!seenDepartment.canManageRequests) throw new Error("department doesn't have manage company access")
 
         //check if in department user has elevated auth
-        return await ensureCanAccessDepartment({ departmentIdBeingAccessed: clientReqAuth.departmentIdForAuth })
+        return await ensureCanAccessDepartment({ departmentIdBeingAccessed: seenDepartment.id })
 
     } else {
         //get client request

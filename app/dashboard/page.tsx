@@ -173,7 +173,6 @@ export default function Page() {
                         <h3>Active requests</h3>
 
                         {activeClientRequests.map(eachActiveClientRequest => {
-
                             //furthest non complete item
                             const activeChecklistItemIndex = eachActiveClientRequest.checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
                             const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachActiveClientRequest.checklist[activeChecklistItemIndex] : undefined
@@ -193,7 +192,7 @@ export default function Page() {
                                     //if manual signoff is meant for department
                                     if (activeChecklistItem.for.type === "department" && userDepartmentCompanySelection.type === "userDepartment" && activeChecklistItem.for.departmenId === userDepartmentCompanySelection.seenUserToDepartment.departmentId) {
                                         canEditRequest = true
-                                        newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: userDepartmentCompanySelection.seenUserToDepartment.departmentId, allowRegularAccess: true }
+                                        newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id, allowRegularAccess: true }
 
                                         //if manual signoff is meant for company
                                     } else if (activeChecklistItem.for.type === "company" && userDepartmentCompanySelection.type === "userCompany" && activeChecklistItem.for.companyId === userDepartmentCompanySelection.seenUserToCompany.companyId) {
