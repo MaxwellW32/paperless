@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { authAcessType, clientRequest, company, department } from '@/types'
+import { clientRequest, company } from '@/types'
 import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import dashboardStyles from "@/app/dashboard.module.css"
 import Moment from 'react-moment';
@@ -14,9 +14,7 @@ export default function ViewClientRequest({ sentClientRequest }: { sentClientReq
         const search = async () => {
             if (sentClientRequest === undefined) return
 
-            const seenAuth: authAcessType = seenDepartment !== undefined && seenDepartment.canManageRequests ? { departmentIdBeingAccessed: seenDepartment.id } : { companyIdBeingAccessed: sentClientRequest.companyId }
-
-            seenCompanySet(await getSpecificCompany(sentClientRequest.companyId, seenAuth))
+            seenCompanySet(await getSpecificCompany(sentClientRequest.companyId))
         }
         search()
 

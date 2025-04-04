@@ -40,7 +40,7 @@ export default function Page() {
             if (departmentCompanySelection === null || departmentCompanySelection.type !== "department") return
 
             //get active requests needing this department signoff
-            activeClientRequestsSet(await getClientRequestsForDepartments('in-progress', false, departmentCompanySelection.departmentId))
+            activeClientRequestsSet(await getClientRequestsForDepartments('in-progress', false, departmentCompanySelection.departmentId, { clientRequestIdBeingAccessed: "", departmentIdForAuth: departmentCompanySelection.departmentId }))
         }
         search()
 
@@ -51,7 +51,7 @@ export default function Page() {
         const search = async () => {
             if (departmentCompanySelection === null || departmentCompanySelection.type !== "department") return
 
-            seenDepartmentSet(await getSpecificDepartment(departmentCompanySelection.departmentId, { departmentIdBeingAccessed: departmentCompanySelection.departmentId }))
+            seenDepartmentSet(await getSpecificDepartment(departmentCompanySelection.departmentId))
         }
         search()
 
@@ -171,10 +171,10 @@ export default function Page() {
                                                     newCompletedManualChecklistItem.completed = true
 
                                                     //update server
-                                                    const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { departmentIdBeingAccessed: departmentCompanySelection.departmentId })
+                                                    const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: departmentCompanySelection.departmentId })
 
                                                     //run automation
-                                                    await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, { departmentIdBeingAccessed: departmentCompanySelection.departmentId })
+                                                    await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, { clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: departmentCompanySelection.departmentId })
 
                                                     //refresh
                                                     //get latest specific request 
@@ -216,7 +216,7 @@ export default function Page() {
                         )}
 
                         {activeScreen.type === "viewRequest" && (
-                            <ViewClientRequest sentClientRequest={activeScreen.clientRequest} seenDepartment={seenDepartment} />
+                            <ViewClientRequest sentClientRequest={activeScreen.clientRequest} />
                         )}
                     </>
 

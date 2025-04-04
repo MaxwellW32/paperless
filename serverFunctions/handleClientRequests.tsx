@@ -1,14 +1,14 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { authAcessType, checklistItemType, clientRequest, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
-import { ensureUserHasAccess } from "@/utility/sessionCheck"
+import { checklistItemType, clientRequest, clientRequestAuth, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
+import { ensureCanAccesClientRequest } from "@/utility/sessionCheck"
 
-export async function addClientRequests(newClientRequestObj: newClientRequest, auth: authAcessType): Promise<clientRequest> {
+export async function addClientRequests(newClientRequestObj: newClientRequest): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
-    const seenSession = await ensureUserHasAccess(auth)
+    const seenSession = await ensureCanAccesClientRequest({ clientRequestIdBeingAccessed: "", allowRegularAccess: true })
 
     newClientRequestSchema.parse(newClientRequestObj)
 
@@ -25,9 +25,9 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, a
     return addedClientRequest[0]
 }
 
-export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, auth: authAcessType): Promise<clientRequest> {
+export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuth): Promise<clientRequest> {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureCanAccesClientRequest(clientRequestAuth)
 
     updateClientRequestSchema.partial().parse(updatedClientRequestObj)
 
@@ -40,14 +40,14 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
     return updatedClientRequest
 }
 
-export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, auth: authAcessType): Promise<clientRequest> {
+export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuth): Promise<clientRequest> {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureCanAccesClientRequest(clientRequestAuth)
 
     clientRequestSchema.shape.id.parse(clientRequestId)
 
     //get client request
-    const seenClientRequest = await getSpecificClientRequest(clientRequestId, auth)
+    const seenClientRequest = await getSpecificClientRequest(clientRequestId, clientRequestAuth)
     if (seenClientRequest === undefined) throw new Error("not seeing client request")
 
     //validation
@@ -56,13 +56,13 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
     }
 
     //send update
-    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, auth)
+    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, clientRequestAuth)
     return updatedClientRequest
 }
 
-export async function deleteClientRequests(clientRequestId: clientRequest["id"], auth: authAcessType) {
+export async function deleteClientRequests(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuth) {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureCanAccesClientRequest(clientRequestAuth)
 
     //validation
     clientRequestSchema.shape.id.parse(clientRequestId)
@@ -70,12 +70,12 @@ export async function deleteClientRequests(clientRequestId: clientRequest["id"],
     await db.delete(clientRequests).where(eq(clientRequests.id, clientRequestId));
 }
 
-export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], auth: authAcessType, skipAuth = false): Promise<clientRequest | undefined> {
+export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuth, skipAuth = false): Promise<clientRequest | undefined> {
     clientRequestSchema.shape.id.parse(clientRequestId)
 
     if (!skipAuth) {
         //security check
-        await ensureUserHasAccess(auth)
+        await ensureCanAccesClientRequest(clientRequestAuth)
     }
 
     const result = await db.query.clientRequests.findFirst({
@@ -88,9 +88,9 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
     return result
 }
 
-export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }, status: clientRequestStatusType, getOppositeOfStatus: boolean, auth: authAcessType, limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }, status: clientRequestStatusType, getOppositeOfStatus: boolean, clientRequestAuth: clientRequestAuth, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureCanAccesClientRequest(clientRequestAuth)
 
     if (option.type === "user") {
         userSchema.shape.id.parse(option.userId)
@@ -125,9 +125,9 @@ export async function getClientRequests(option: { type: "user", userId: user["id
     }
 }
 
-export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], clientRequestAuth: clientRequestAuth, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
-    await ensureUserHasAccess({ departmentIdBeingAccessed: departmentId })
+    await ensureCanAccesClientRequest(clientRequestAuth)
 
     //get client requests in progress
     const results = await db.query.clientRequests.findMany({
@@ -155,7 +155,7 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
     return requestsForDepartmentSignoff
 }
 
-export async function runChecklistAutomation(clientRequestId: clientRequest["id"], seenChecklist: checklistItemType[], auth: authAcessType) {
+export async function runChecklistAutomation(clientRequestId: clientRequest["id"], seenChecklist: checklistItemType[], clientRequestAuth: clientRequestAuth,) {
     //checklist that can be updated
     let checklist = seenChecklist
 
@@ -167,7 +167,7 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
         //if nothing is incomplete then mark client request as finished
         await updateClientRequests(clientRequestId, {
             status: "completed"
-        }, auth)
+        }, clientRequestAuth)
 
         return
     }
@@ -187,7 +187,7 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
         latestChecklistItem.completed = true
 
         //update
-        const newUpdatedClientRequest = await updateClientRequestsChecklist(clientRequestId, latestChecklistItem, latestChecklistItemIndex, auth)
+        const newUpdatedClientRequest = await updateClientRequestsChecklist(clientRequestId, latestChecklistItem, latestChecklistItemIndex, clientRequestAuth)
 
         //update checklist 
         checklist = newUpdatedClientRequest.checklist
@@ -198,5 +198,5 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
         return
     }
 
-    runChecklistAutomation(clientRequestId, checklist, auth)
+    runChecklistAutomation(clientRequestId, checklist, clientRequestAuth)
 }

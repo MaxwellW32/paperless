@@ -1,4 +1,4 @@
-import { array, z } from "zod";
+import { z } from "zod";
 
 // regular types
 
@@ -79,8 +79,7 @@ export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema
 export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
 export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
-export type authAcessType = { departmentIdBeingAccessed?: department["id"], companyIdBeingAccessed?: company["id"], allowRegularAccess?: boolean }
-
+export type clientRequestAuth = { clientRequestIdBeingAccessed: clientRequest["id"], departmentIdForAuth?: department["id"], allowRegularAccess?: boolean }
 
 export type departmentCompanySelection = {
     type: "department",

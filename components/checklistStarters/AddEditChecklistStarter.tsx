@@ -244,14 +244,14 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                     onClick={async () => {
                                                                         toast.success("searching")
 
-                                                                        companiesSet(await getCompanies({}))
+                                                                        companiesSet(await getCompanies())
                                                                     }}
                                                                 >companies</button>
 
                                                                 <button className='button1'
                                                                     onClick={async () => {
                                                                         toast.success("searching")
-                                                                        const seenDepartments = await getDepartments({})
+                                                                        const seenDepartments = await getDepartments()
 
                                                                         departmentsSet(seenDepartments)
                                                                     }}
@@ -490,14 +490,14 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                     onClick={async () => {
                                                                         toast.success("searching")
 
-                                                                        companiesSet(await getCompanies({}))
+                                                                        companiesSet(await getCompanies())
                                                                     }}
                                                                 >companies</button>
 
                                                                 <button className='button1'
                                                                     onClick={async () => {
                                                                         toast.success("searching")
-                                                                        const seenDepartments = await getDepartments({})
+                                                                        const seenDepartments = await getDepartments()
 
                                                                         departmentsSet(seenDepartments)
                                                                     }}

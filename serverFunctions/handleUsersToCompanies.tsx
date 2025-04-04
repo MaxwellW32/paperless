@@ -1,13 +1,13 @@
 "use server"
 import { db } from "@/db"
 import { usersToCompanies } from "@/db/schema"
-import { authAcessType, company, companySchema, newUserToCompany, newUserToCompanySchema, updateUserToCompany, updateUserToCompanySchema, user, userSchema, userToCompany, userToCompanySchema } from "@/types"
-import { ensureUserHasAccess } from "@/utility/sessionCheck"
+import { company, companySchema, newUserToCompany, newUserToCompanySchema, updateUserToCompany, updateUserToCompanySchema, user, userSchema, userToCompany, userToCompanySchema } from "@/types"
+import { ensureCanAccessCompany, ensureUserIsAdmin } from "@/utility/sessionCheck"
 import { and, eq } from "drizzle-orm"
 
-export async function addUsersToCompanies(newUsersToCompaniesObj: newUserToCompany, auth: authAcessType): Promise<userToCompany> {
+export async function addUsersToCompanies(newUsersToCompaniesObj: newUserToCompany): Promise<userToCompany> {
     //security check - ensures only admin or elevated roles can make change
-    await ensureUserHasAccess(auth)
+    await ensureUserIsAdmin()
 
     newUserToCompanySchema.parse(newUsersToCompaniesObj)
 
@@ -18,9 +18,9 @@ export async function addUsersToCompanies(newUsersToCompaniesObj: newUserToCompa
     return addedUserToCompany[0]
 }
 
-export async function updateUsersToCompanies(usersToCompaniesId: userToCompany["id"], updatedUsersToCompaniesObj: Partial<updateUserToCompany>, auth: authAcessType) {
+export async function updateUsersToCompanies(usersToCompaniesId: userToCompany["id"], updatedUsersToCompaniesObj: Partial<updateUserToCompany>) {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureUserIsAdmin()
 
     updateUserToCompanySchema.partial().parse(updatedUsersToCompaniesObj)
 
@@ -31,9 +31,9 @@ export async function updateUsersToCompanies(usersToCompaniesId: userToCompany["
         .where(eq(usersToCompanies.id, usersToCompaniesId));
 }
 
-export async function deleteUsersToCompanies(usersToCompaniesId: userToCompany["id"], auth: authAcessType) {
+export async function deleteUsersToCompanies(usersToCompaniesId: userToCompany["id"]) {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureUserIsAdmin()
 
     //validation
     userToCompanySchema.shape.id.parse(usersToCompaniesId)
@@ -41,10 +41,10 @@ export async function deleteUsersToCompanies(usersToCompaniesId: userToCompany["
     await db.delete(usersToCompanies).where(eq(usersToCompanies.id, usersToCompaniesId));
 }
 
-export async function getSpecificUsersToCompanies(userId: user["id"], companyId: company["id"], auth: authAcessType, runSecurityCheck = true): Promise<userToCompany | undefined> {
+export async function getSpecificUsersToCompanies(userId: user["id"], companyId: company["id"], runSecurityCheck = true): Promise<userToCompany | undefined> {
     //security
     if (runSecurityCheck) {
-        ensureUserHasAccess(auth)
+        await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
     }
 
     userSchema.shape.id.parse(userId)
@@ -61,9 +61,9 @@ export async function getSpecificUsersToCompanies(userId: user["id"], companyId:
     return result
 }
 
-export async function getUsersToCompanies(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }, auth: authAcessType): Promise<userToCompany[]> {
+export async function getUsersToCompanies(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }): Promise<userToCompany[]> {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureUserIsAdmin()
 
     if (option.type === "user") {
         userSchema.shape.id.parse(option.userId)

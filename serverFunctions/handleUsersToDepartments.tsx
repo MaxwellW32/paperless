@@ -1,13 +1,13 @@
 "use server"
 import { db } from "@/db"
 import { usersToDepartments } from "@/db/schema"
-import { authAcessType, department, departmentSchema, newUserToDepartment, newUserToDepartmentSchema, updateUserToDepartment, updateUserToDepartmentSchema, user, userSchema, userToDepartment, userToDepartmentSchema } from "@/types"
-import { ensureUserHasAccess } from "@/utility/sessionCheck"
+import { department, departmentSchema, newUserToDepartment, newUserToDepartmentSchema, updateUserToDepartment, updateUserToDepartmentSchema, user, userSchema, userToDepartment, userToDepartmentSchema } from "@/types"
+import { ensureCanAccessDepartment, ensureUserIsAdmin } from "@/utility/sessionCheck"
 import { and, eq } from "drizzle-orm"
 
-export async function addUsersToDepartments(newUsersToDepartmentsObj: newUserToDepartment, auth: authAcessType): Promise<userToDepartment> {
+export async function addUsersToDepartments(newUsersToDepartmentsObj: newUserToDepartment): Promise<userToDepartment> {
     //security check - ensures only admin or elevated roles can make change
-    await ensureUserHasAccess(auth)
+    await ensureUserIsAdmin()
 
     newUserToDepartmentSchema.parse(newUsersToDepartmentsObj)
 
@@ -18,9 +18,9 @@ export async function addUsersToDepartments(newUsersToDepartmentsObj: newUserToD
     return addedUserToDepartment[0]
 }
 
-export async function updateUsersToDepartments(usersToDepartmentsId: userToDepartment["id"], updatedUsersToDepartmentsObj: Partial<updateUserToDepartment>, auth: authAcessType) {
+export async function updateUsersToDepartments(usersToDepartmentsId: userToDepartment["id"], updatedUsersToDepartmentsObj: Partial<updateUserToDepartment>) {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureUserIsAdmin()
 
     updateUserToDepartmentSchema.partial().parse(updatedUsersToDepartmentsObj)
 
@@ -31,9 +31,9 @@ export async function updateUsersToDepartments(usersToDepartmentsId: userToDepar
         .where(eq(usersToDepartments.id, usersToDepartmentsId));
 }
 
-export async function deleteUsersToDepartments(usersToDepartmentsId: userToDepartment["id"], auth: authAcessType) {
+export async function deleteUsersToDepartments(usersToDepartmentsId: userToDepartment["id"]) {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureUserIsAdmin()
 
     //validation
     userToDepartmentSchema.shape.id.parse(usersToDepartmentsId)
@@ -41,10 +41,10 @@ export async function deleteUsersToDepartments(usersToDepartmentsId: userToDepar
     await db.delete(usersToDepartments).where(eq(usersToDepartments.id, usersToDepartmentsId));
 }
 
-export async function getSpecificUsersToDepartments(userId: user["id"], departmentId: department["id"], auth: authAcessType, runSecurityCheck = true): Promise<userToDepartment | undefined> {
+export async function getSpecificUsersToDepartments(userId: user["id"], departmentId: department["id"], runSecurityCheck = true): Promise<userToDepartment | undefined> {
     //security
     if (runSecurityCheck) {
-        ensureUserHasAccess(auth)
+        await ensureCanAccessDepartment({ departmentIdBeingAccessed: departmentId })
     }
 
     userSchema.shape.id.parse(userId)
@@ -61,9 +61,9 @@ export async function getSpecificUsersToDepartments(userId: user["id"], departme
     return result
 }
 
-export async function getUsersToDepartments(option: { type: "user", userId: user["id"] } | { type: "department", departmentId: department["id"] }, auth: authAcessType): Promise<userToDepartment[]> {
+export async function getUsersToDepartments(option: { type: "user", userId: user["id"] } | { type: "department", departmentId: department["id"] }): Promise<userToDepartment[]> {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureUserIsAdmin()
 
     if (option.type === "user") {
         userSchema.shape.id.parse(option.userId)

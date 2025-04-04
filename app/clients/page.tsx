@@ -39,10 +39,10 @@ export default function Page() {
             if (departmentCompanySelection === null || departmentCompanySelection.type !== "company") return
 
             //get active requests
-            activeClientRequestsSet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', false, { companyIdBeingAccessed: departmentCompanySelection.companyId, allowRegularAccess: true }))
+            activeClientRequestsSet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', false, { clientRequestIdBeingAccessed: "", allowRegularAccess: true }))
 
             //get everything that is not in progress - request history
-            clientRequestsHistorySet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', true, { companyIdBeingAccessed: departmentCompanySelection.companyId, allowRegularAccess: true }))
+            clientRequestsHistorySet(await getClientRequests({ type: "company", companyId: departmentCompanySelection.companyId }, 'in-progress', true, { clientRequestIdBeingAccessed: "", allowRegularAccess: true }))
         }
         search()
 
@@ -147,10 +147,10 @@ export default function Page() {
                                                         newCompletedManualChecklistItem.completed = true
 
                                                         //update server
-                                                        const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { companyIdBeingAccessed: eachActiveClientRequest.companyId })
+                                                        const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { clientRequestIdBeingAccessed: eachActiveClientRequest.id })
 
                                                         //run automation
-                                                        await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, { companyIdBeingAccessed: eachActiveClientRequest.companyId })
+                                                        await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, { clientRequestIdBeingAccessed: eachActiveClientRequest.id })
 
                                                         //refresh
                                                         //get latest specific request 

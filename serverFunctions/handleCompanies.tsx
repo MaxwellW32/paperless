@@ -1,13 +1,13 @@
 "use server"
 import { db } from "@/db"
 import { companies } from "@/db/schema"
-import { authAcessType, company, companySchema, newCompany, newCompanySchema, updateCompanySchema } from "@/types"
-import { ensureUserHasAccess } from "@/utility/sessionCheck"
+import { company, companySchema, newCompany, newCompanySchema, updateCompanySchema } from "@/types"
+import { ensureCanAccessCompany } from "@/utility/sessionCheck"
 import { eq } from "drizzle-orm"
 
-export async function addCompanies(newCompanyObj: newCompany, auth: authAcessType): Promise<company> {
+export async function addCompanies(newCompanyObj: newCompany): Promise<company> {
     //security check - ensures only admin or elevated roles can make change
-    await ensureUserHasAccess(auth)
+    await ensureCanAccessCompany({ companyIdBeingAccessed: "", allowRegularAccess: true })
 
     newCompanySchema.parse(newCompanyObj)
 
@@ -19,9 +19,9 @@ export async function addCompanies(newCompanyObj: newCompany, auth: authAcessTyp
     return addedDepartment
 }
 
-export async function updateCompanies(companyId: company["id"], updatedCompanyObj: Partial<company>, auth: authAcessType) {
+export async function updateCompanies(companyId: company["id"], updatedCompanyObj: Partial<company>) {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
 
     updateCompanySchema.partial().parse(updatedCompanyObj)
 
@@ -32,9 +32,9 @@ export async function updateCompanies(companyId: company["id"], updatedCompanyOb
         .where(eq(companies.id, companyId));
 }
 
-export async function deleteCompanies(companyId: company["id"], auth: authAcessType) {
+export async function deleteCompanies(companyId: company["id"]) {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
 
     //validation
     companySchema.shape.id.parse(companyId)
@@ -42,11 +42,11 @@ export async function deleteCompanies(companyId: company["id"], auth: authAcessT
     await db.delete(companies).where(eq(companies.id, companyId));
 }
 
-export async function getSpecificCompany(companyId: company["id"], auth: authAcessType): Promise<company | undefined> {
+export async function getSpecificCompany(companyId: company["id"]): Promise<company | undefined> {
     companySchema.shape.id.parse(companyId)
 
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
 
     const result = await db.query.companies.findFirst({
         where: eq(companies.id, companyId),
@@ -55,9 +55,9 @@ export async function getSpecificCompany(companyId: company["id"], auth: authAce
     return result
 }
 
-export async function getCompanies(auth: authAcessType): Promise<company[]> {
+export async function getCompanies(): Promise<company[]> {
     //security check
-    await ensureUserHasAccess(auth)
+    await ensureCanAccessCompany({ companyIdBeingAccessed: "", allowRegularAccess: true })
 
     const results = await db.query.companies.findMany({
         with: {
