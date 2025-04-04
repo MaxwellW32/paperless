@@ -92,7 +92,16 @@ export type departmentCompanySelection = {
 
 export type refreshObjType = { [key: string]: boolean }
 
-
+export type activeScreenType = {
+    type: "newRequest",
+    activeChecklistStarterType: checklistStarter["type"] | undefined
+} | {
+    type: "editRequest",
+    oldClientRequest: clientRequest
+} | {
+    type: "viewRequest",
+    clientRequest: clientRequest
+}
 
 
 
@@ -409,6 +418,7 @@ export type updateChecklistStarter = z.infer<typeof updateChecklistStarterSchema
 export const clientRequestStatusSchema = z.enum(["in-progress", "completed", "cancelled", "on-hold"])
 export type clientRequestStatusType = z.infer<typeof clientRequestStatusSchema>
 
+//add access list
 export const clientRequestSchema = z.object({
     id: z.string().min(1),
     userId: userSchema.shape.id, //who sent the request

@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import styles from "./page.module.css"
-import { checklistItemType, checklistStarter, clientRequest, department, departmentCompanySelection, refreshObjType } from '@/types'
+import dashboardStyles from "@/app/dashboard.module.css"
+import { activeScreenType, checklistItemType, checklistStarter, clientRequest, department, departmentCompanySelection, refreshObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
@@ -10,6 +10,7 @@ import { getClientRequestsForDepartments, runChecklistAutomation, updateClientRe
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 import { useSession } from 'next-auth/react'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
+import ViewClientRequest from '@/components/clientRequests/ViewClientRequest'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -18,13 +19,6 @@ export default function Page() {
     const [makingNewRequest, makingNewRequestSet] = useState(false)
     const [checklistStarterTypes, checklistStarterTypesSet] = useState<checklistStarter["type"][] | undefined>()
 
-    type activeScreenType = {
-        type: "newRequest",
-        activeChecklistStarterType: checklistStarter["type"] | undefined
-    } | {
-        type: "editRequest",
-        oldClientRequest: clientRequest
-    }
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>()
 
     const [refreshObj,] = useAtom<refreshObjType>(refreshObjGlobal)
@@ -70,8 +64,8 @@ export default function Page() {
     }
 
     return (
-        <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
-            <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
+        <main className={dashboardStyles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
+            <div className={dashboardStyles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
                 <button className='button1'
                     onClick={() => {
                         showingSideBarSet(false)
@@ -80,7 +74,7 @@ export default function Page() {
 
                 {seenDepartment !== undefined && seenDepartment.canManageRequests && (
                     <>
-                        <div className={styles.newRequest}>
+                        <div className={dashboardStyles.newRequest}>
                             <button className='button1'
                                 onClick={() => {
                                     makingNewRequestSet(prev => {
@@ -132,74 +126,81 @@ export default function Page() {
                 )}
 
                 {activeClientRequests.length > 0 && (
-                    <div className={styles.activeClientRequests}>
+                    <div className={dashboardStyles.clientRequests}>
                         <h3>Active requests</h3>
 
-                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                            {activeClientRequests.map(eachActiveClientRequest => {
-                                if (departmentCompanySelection === null || departmentCompanySelection.type !== "department") return
+                        {activeClientRequests.map(eachActiveClientRequest => {
+                            if (departmentCompanySelection === null || departmentCompanySelection.type !== "department") return
 
-                                //furthest non complete item
-                                const activeChecklistItemIndex = eachActiveClientRequest.checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
+                            //furthest non complete item
+                            const activeChecklistItemIndex = eachActiveClientRequest.checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
 
-                                const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachActiveClientRequest.checklist[activeChecklistItemIndex] : undefined
+                            const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachActiveClientRequest.checklist[activeChecklistItemIndex] : undefined
 
-                                return (
-                                    <div key={eachActiveClientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
-                                        {eachActiveClientRequest.checklistStarter !== undefined && (
-                                            <h3>{eachActiveClientRequest.checklistStarter.type}</h3>
-                                        )}
+                            return (
+                                <div key={eachActiveClientRequest.id} className={dashboardStyles.eachClientRequest}>
+                                    {eachActiveClientRequest.checklistStarter !== undefined && (
+                                        <h3>{eachActiveClientRequest.checklistStarter.type}</h3>
+                                    )}
 
-                                        <label style={{ backgroundColor: "rgb(var(--shade1))", color: "rgb(var(--shade2))", padding: "1rem", justifySelf: "flex-start", borderRadius: ".5rem" }}>{eachActiveClientRequest.status}</label>
+                                    <label>{eachActiveClientRequest.status}</label>
 
-                                        <div style={{ display: "flex", gap: ".5rem", fontSize: "var(--fontSizeS)" }}>
-                                            <p>{eachActiveClientRequest.dateSubmitted.toLocaleDateString()}</p>
+                                    <div className={dashboardStyles.dateHolder}>
+                                        <p>{eachActiveClientRequest.dateSubmitted.toLocaleDateString()}</p>
 
-                                            <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
-                                        </div>
-
-                                        {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && activeChecklistItem.for.type === "department" && activeChecklistItem.for.departmenId === departmentCompanySelection.departmentId && (
-                                            <div>
-                                                <label>{activeChecklistItem.prompt}</label>
-
-                                                <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
-                                                    runAction={async () => {
-                                                        const newCompletedManualChecklistItem = activeChecklistItem
-                                                        newCompletedManualChecklistItem.completed = true
-
-                                                        //update server
-                                                        const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { departmentIdBeingAccessed: departmentCompanySelection.departmentId })
-
-                                                        //run automation
-                                                        await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, { departmentIdBeingAccessed: departmentCompanySelection.departmentId })
-
-                                                        //refresh
-                                                        //get latest specific request 
-                                                        activeClientRequestsSet(prevClientRequests => {
-                                                            const newClientRequests = prevClientRequests.map(eachClientRequestMap => {
-                                                                if (eachClientRequestMap.id === latestClientRequest.id) {
-                                                                    return latestClientRequest
-                                                                }
-
-                                                                return eachClientRequestMap
-                                                            })
-
-                                                            return newClientRequests
-                                                        })
-                                                    }}
-                                                />
-                                            </div>
-
-                                        )}
+                                        <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
                                     </div>
-                                )
-                            })}
-                        </div>
+
+                                    <button className='button2'
+                                        onClick={() => {
+                                            //making view request
+                                            activeScreenSet({
+                                                type: "viewRequest",
+                                                clientRequest: eachActiveClientRequest
+                                            })
+                                        }}
+                                    >view</button>
+
+                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && activeChecklistItem.for.type === "department" && activeChecklistItem.for.departmenId === departmentCompanySelection.departmentId && (
+                                        <div>
+                                            <label>{activeChecklistItem.prompt}</label>
+
+                                            <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
+                                                runAction={async () => {
+                                                    const newCompletedManualChecklistItem = activeChecklistItem
+                                                    newCompletedManualChecklistItem.completed = true
+
+                                                    //update server
+                                                    const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, { departmentIdBeingAccessed: departmentCompanySelection.departmentId })
+
+                                                    //run automation
+                                                    await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, { departmentIdBeingAccessed: departmentCompanySelection.departmentId })
+
+                                                    //refresh
+                                                    //get latest specific request 
+                                                    activeClientRequestsSet(prevClientRequests => {
+                                                        const newClientRequests = prevClientRequests.map(eachClientRequestMap => {
+                                                            if (eachClientRequestMap.id === latestClientRequest.id) {
+                                                                return latestClientRequest
+                                                            }
+
+                                                            return eachClientRequestMap
+                                                        })
+
+                                                        return newClientRequests
+                                                    })
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
                     </div>
                 )}
             </div>
 
-            <div className={styles.mainContent}>
+            <div className={dashboardStyles.mainContent}>
                 {!showingSideBar && (
                     <button className='button1' style={{ alignSelf: "flex-start" }}
                         onClick={() => {
@@ -212,6 +213,10 @@ export default function Page() {
                     <>
                         {activeScreen.type === "newRequest" && activeScreen.activeChecklistStarterType !== undefined && seenDepartment !== undefined && (
                             <ChooseChecklistStarter seenChecklistStarterType={activeScreen.activeChecklistStarterType} seenDepartment={seenDepartment} />
+                        )}
+
+                        {activeScreen.type === "viewRequest" && (
+                            <ViewClientRequest sentClientRequest={activeScreen.clientRequest} seenDepartment={seenDepartment} />
                         )}
                     </>
 

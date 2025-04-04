@@ -3,3 +3,9 @@
     align-content: flex-start;
     gap: 1rem;
 }
+
+.main {
+    display: grid;
+    align-content: flex-start;
+    gap: 1rem;
+}

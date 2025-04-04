@@ -1,9 +1,8 @@
 import styles from "./page.module.css"
 
 //remember
-//design from client access
-//then do from egov perspective
-//ensure checklist only shows the forms to the client nothing else
+//run checklist on add/update request
+//set checklist to null on complete
 
 //roles
 //admin - admin - maxwellwedderburn@outlook.com
@@ -13,10 +12,13 @@ import styles from "./page.module.css"
 //Danielle is department manager - head - need other email
 
 //to do
+//change auth model on client/server - departments/company
 //emails are sent automatically
 //change client request to be manual form
 //then make edit client request checklist its own form 
-//then make interacting with client reuests more server based
+//then make interacting with client requests more server based
+//make edit client request its own admin form - specific screen form
+//websockets
 
 export default async function Home() {
 

@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import styles from "./page.module.css"
-import { checklistItemType, checklistStarter, clientRequest, departmentCompanySelection, refreshObjType } from '@/types'
+import dashboardStyles from "@/app/dashboard.module.css"
+import { activeScreenType, checklistItemType, checklistStarter, clientRequest, departmentCompanySelection, refreshObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
@@ -18,13 +18,6 @@ export default function Page() {
     const [makingNewRequest, makingNewRequestSet] = useState(false)
     const [checklistStarterTypes, checklistStarterTypesSet] = useState<checklistStarter["type"][] | undefined>()
 
-    type activeScreenType = {
-        type: "newRequest",
-        activeChecklistStarterType: checklistStarter["type"] | undefined
-    } | {
-        type: "editRequest",
-        oldClientRequest: clientRequest
-    }
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>()
 
     const [refreshObj,] = useAtom<refreshObjType>(refreshObjGlobal)
@@ -62,15 +55,15 @@ export default function Page() {
     }
 
     return (
-        <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
-            <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
+        <main className={dashboardStyles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
+            <div className={dashboardStyles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
                 <button className='button1'
                     onClick={() => {
                         showingSideBarSet(false)
                     }}
                 >close</button>
 
-                <div className={styles.newRequest}>
+                <div className={dashboardStyles.newRequest}>
                     <button className='button1'
                         onClick={() => {
                             makingNewRequestSet(prev => {
@@ -120,7 +113,7 @@ export default function Page() {
                 </div>
 
                 {activeClientRequests.length > 0 && (
-                    <div className={styles.activeClientRequests}>
+                    <div className={dashboardStyles.clientRequests}>
                         <h3>Active requests</h3>
 
                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
@@ -131,14 +124,14 @@ export default function Page() {
                                 const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachActiveClientRequest.checklist[activeChecklistItemIndex] : undefined
 
                                 return (
-                                    <div key={eachActiveClientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
+                                    <div key={eachActiveClientRequest.id} className={dashboardStyles.eachClientRequest}>
                                         {eachActiveClientRequest.checklistStarter !== undefined && (
                                             <h3>{eachActiveClientRequest.checklistStarter.type}</h3>
                                         )}
 
-                                        <label style={{ backgroundColor: "rgb(var(--shade1))", color: "rgb(var(--shade2))", padding: "1rem", justifySelf: "flex-start", borderRadius: ".5rem" }}>{eachActiveClientRequest.status}</label>
+                                        <label>{eachActiveClientRequest.status}</label>
 
-                                        <div style={{ display: "flex", gap: ".5rem", fontSize: "var(--fontSizeS)" }}>
+                                        <div className={dashboardStyles.dateHolder}>
                                             <p>{eachActiveClientRequest.dateSubmitted.toLocaleDateString()}</p>
 
                                             <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
@@ -194,33 +187,31 @@ export default function Page() {
                 )}
 
                 {clientRequestsHistory.length > 0 && (
-                    <div className={styles.activeClientRequests}>
+                    <div className={dashboardStyles.clientRequests}>
                         <h3>request history</h3>
 
-                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                            {clientRequestsHistory.map(eachHistoryCientRequest => {
-                                return (
-                                    <div key={eachHistoryCientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
-                                        {eachHistoryCientRequest.checklistStarter !== undefined && (
-                                            <h3>{eachHistoryCientRequest.checklistStarter.type}</h3>
-                                        )}
+                        {clientRequestsHistory.map(eachHistoryCientRequest => {
+                            return (
+                                <div key={eachHistoryCientRequest.id} className={dashboardStyles.eachClientRequest}>
+                                    {eachHistoryCientRequest.checklistStarter !== undefined && (
+                                        <h3>{eachHistoryCientRequest.checklistStarter.type}</h3>
+                                    )}
 
-                                        <div style={{ display: "flex", gap: ".5rem", fontSize: "var(--fontSizeS)" }}>
-                                            <p>{eachHistoryCientRequest.dateSubmitted.toLocaleDateString()}</p>
+                                    <div className={dashboardStyles.dateHolder}>
+                                        <p>{eachHistoryCientRequest.dateSubmitted.toLocaleDateString()}</p>
 
-                                            <p>{eachHistoryCientRequest.dateSubmitted.toLocaleTimeString()}</p>
-                                        </div>
-
-                                        <label style={{ backgroundColor: "rgb(var(--shade1))", color: "rgb(var(--shade2))", padding: "1rem", justifySelf: "flex-start", borderRadius: ".5rem" }}>{eachHistoryCientRequest.status}</label>
+                                        <p>{eachHistoryCientRequest.dateSubmitted.toLocaleTimeString()}</p>
                                     </div>
-                                )
-                            })}
-                        </div>
+
+                                    <label style={{ backgroundColor: "rgb(var(--shade1))", color: "rgb(var(--shade2))", padding: "1rem", justifySelf: "flex-start", borderRadius: ".5rem" }}>{eachHistoryCientRequest.status}</label>
+                                </div>
+                            )
+                        })}
                     </div>
                 )}
             </div>
 
-            <div className={styles.mainContent}>
+            <div className={dashboardStyles.mainContent}>
                 {!showingSideBar && (
                     <button className='button1' style={{ alignSelf: "flex-start" }}
                         onClick={() => {

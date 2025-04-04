@@ -55,14 +55,9 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
         seenClientRequest.checklist[indexToUpdate] = updatedChecklistItem
     }
 
-    const [updatedClientRequest] = await db.update(clientRequests)
-        .set({
-            checklist: seenClientRequest.checklist
-        })
-        .where(eq(clientRequests.id, clientRequestId)).returning()
-
+    //send update
+    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, auth)
     return updatedClientRequest
-
 }
 
 export async function deleteClientRequests(clientRequestId: clientRequest["id"], auth: authAcessType) {
@@ -75,16 +70,18 @@ export async function deleteClientRequests(clientRequestId: clientRequest["id"],
     await db.delete(clientRequests).where(eq(clientRequests.id, clientRequestId));
 }
 
-export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], auth: authAcessType): Promise<clientRequest | undefined> {
+export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], auth: authAcessType, skipAuth = false): Promise<clientRequest | undefined> {
     clientRequestSchema.shape.id.parse(clientRequestId)
 
-    //security check
-    await ensureUserHasAccess(auth)
+    if (!skipAuth) {
+        //security check
+        await ensureUserHasAccess(auth)
+    }
 
     const result = await db.query.clientRequests.findFirst({
         where: eq(clientRequests.id, clientRequestId),
         with: {
-            checklistStarter: true
+            checklistStarter: true,
         }
     });
 
