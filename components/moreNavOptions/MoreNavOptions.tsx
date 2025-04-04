@@ -24,7 +24,7 @@ export default function MoreNavOptions({ session }: { session: Session }) {
 
                     <li className={styles.moreIntemsItem}
                     >
-                        <Link href={session.user.fromDepartment ? "/departments" : "/clients"}>dashboard</Link>
+                        <Link href={"/dashboard"}>dashboard</Link>
                     </li>
 
                     {session.user.accessLevel === "admin" && (

@@ -4,14 +4,17 @@ import styles from "./style.module.css"
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema } from '@/types'
+import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, companyAuthType, clientRequestAuthType } from '@/types'
 import { addClientRequests, runChecklistAutomation, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
+import { useSession } from 'next-auth/react'
 
 export default function AddEditClientRequest({ checklistStarter, sentClientRequest, department }: { checklistStarter?: checklistStarter, sentClientRequest?: clientRequest, department?: department }) {
+    const { data: session } = useSession()
+
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
 
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
@@ -171,7 +174,16 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                     return eachChecklist
                 })
 
-                const seenclientRequestAuth = department !== undefined && department.canManageRequests ? { departmentIdForAuth: department.id, clientRequestIdBeingAccessed: "" } : { clientRequestIdBeingAccessed: sentClientRequest.id }
+                let seenclientRequestAuth: clientRequestAuthType | undefined = undefined
+
+                if (session !== null && session.user.accessLevel === "admin") {
+                    seenclientRequestAuth = { clientRequestIdBeingAccessed: sentClientRequest.id }
+
+                } else if (department !== undefined && department.canManageRequests) {
+                    seenclientRequestAuth = { departmentIdForAuth: department.id, clientRequestIdBeingAccessed: "" }
+                }
+
+                if (seenclientRequestAuth === undefined) throw new Error("not seeing client request auth")
 
                 //update
                 const updatedClientRequest = await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, seenclientRequestAuth)
@@ -193,14 +205,30 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
     return (
         <form className={styles.form} action={() => { }}>
-            {department !== undefined && department.canManageRequests && (
+            {((session !== null && session.user.accessLevel === "admin") || (department !== undefined && department.canManageRequests)) && (
                 <>
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
                         <button className='button1'
                             onClick={async () => {
-                                toast.success("searching")
+                                try {
+                                    toast.success("searching")
 
-                                companiesSet(await getCompanies({ departmentIdForAuth: department.id }))
+                                    let newCompanyAuthType: companyAuthType | undefined = undefined
+
+                                    if (department !== undefined) {
+                                        newCompanyAuthType = { departmentIdForAuth: department.id }
+
+                                    } else if (session !== null && session.user.accessLevel === "admin") {
+                                        newCompanyAuthType = {}
+                                    }
+
+                                    if (newCompanyAuthType === undefined) throw new Error("not seeing company auth type")
+
+                                    companiesSet(await getCompanies(newCompanyAuthType))
+
+                                } catch (error) {
+                                    consoleAndToastError(error)
+                                }
                             }}
                         >get companies</button>
 

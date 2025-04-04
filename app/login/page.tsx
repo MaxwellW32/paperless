@@ -22,7 +22,7 @@ export default function Page() {
                     try {
                         await signIn("nodemailer", {
                             email: email,
-                            callbackUrl: `${window.location.origin}`,
+                            callbackUrl: `${window.location.origin}/dashboard`,
                             redirect: false,
                         })
 

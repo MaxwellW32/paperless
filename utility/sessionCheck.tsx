@@ -65,7 +65,7 @@ export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmen
         if (!seenDepartment.canManageRequests) throw new Error("department doesn't have manage company access")
 
         //check if in department user has elevated auth
-        await ensureCanAccessDepartment({ departmentIdBeingAccessed: departmentIdForAuth })
+        return await ensureCanAccessDepartment({ departmentIdBeingAccessed: departmentIdForAuth })
     }
 
     //ensure clients pass a company id
@@ -105,7 +105,7 @@ export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAu
         if (!seenDepartment.canManageRequests) throw new Error("department doesn't have manage company access")
 
         //check if in department user has elevated auth
-        await ensureCanAccessDepartment({ departmentIdBeingAccessed: clientReqAuth.departmentIdForAuth })
+        return await ensureCanAccessDepartment({ departmentIdBeingAccessed: clientReqAuth.departmentIdForAuth })
 
     } else {
         //get client request
@@ -113,10 +113,8 @@ export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAu
         if (seenClientRequest === undefined) throw new Error("not seeing clientRequest")
 
         //check if in company user has elevated auth
-        await ensureCanAccessCompany({ companyIdBeingAccessed: seenClientRequest.companyId })
+        return await ensureCanAccessCompany({ companyIdBeingAccessed: seenClientRequest.companyId })
     }
-
-    return session
 }
 
 export async function ensureUserIsAdmin() {
