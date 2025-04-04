@@ -10,6 +10,8 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
 
     //set first result as active
     useEffect(() => {
+        if (seenUser.accessLevel === "admin") return
+
         if (seenUser.fromDepartment) {
             //empolyee
             if (seenUser.usersToDepartments !== undefined && seenUser.usersToDepartments.length > 0) {
@@ -17,7 +19,7 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
             }
 
         } else {
-            //department
+            //company
             if (seenUser.usersToCompanies !== undefined && seenUser.usersToCompanies.length > 0) {
                 userDepartmentCompanySelectionSet({ type: "userCompany", seenUserToCompany: seenUser.usersToCompanies[0] })
             }
@@ -27,6 +29,8 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
         ranCheckSet(true)
 
     }, [])
+
+    if (seenUser.accessLevel === "admin") return null
 
     return (
         <div style={{ position: "relative", display: ranCheck ? "" : "none" }}>

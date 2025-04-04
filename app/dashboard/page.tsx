@@ -1,16 +1,17 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import dashboardStyles from "@/app/dashboard.module.css"
+import styles from "./page.module.css"
 import { activeScreenType, checklistItemType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
-import { getClientRequestsForDepartments, runChecklistAutomation, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
+import { getClientRequests, getClientRequestsForDepartments, runChecklistAutomation, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 import { useSession } from 'next-auth/react'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import ViewClientRequest from '@/components/clientRequests/ViewClientRequest'
+import { Session } from 'inspector/promises'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -24,6 +25,8 @@ export default function Page() {
     const [refreshObj,] = useAtom<refreshObjType>(refreshObjGlobal)
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
     const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
+    const [clientRequestsHistory, clientRequestsHistorySet] = useState<clientRequest[]>([])
+
     const [seenDepartment, seenDepartmentSet] = useState<department | undefined>()
 
     //get checklist starters
@@ -34,13 +37,36 @@ export default function Page() {
         search()
     }, [])
 
-    //search requests from company
+    //search active client requests
     useEffect(() => {
         const search = async () => {
-            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
+            if (userDepartmentCompanySelection === null || session === null) return
 
-            //get active requests needing this department signoff
-            activeClientRequestsSet(await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId, allowRegularAccess: true }))
+            let newClientRequests: clientRequest[] | undefined = undefined
+            let clientRequestsHistory: clientRequest[] | undefined = undefined
+
+            //if admin
+            if (session.user.accessLevel === "admin") {
+                //if app admin get all active requests
+                newClientRequests = await getClientRequests({ type: "all" }, 'in-progress', false)
+
+                //get history
+                clientRequestsHistory = await getClientRequests({ type: "all" }, 'in-progress', true)
+
+            } else {
+                //if user is from department
+                if (userDepartmentCompanySelection.type === "userDepartment") {
+                    //regular department user
+                    newClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId, allowRegularAccess: true })
+
+                } else if (userDepartmentCompanySelection.type === "userCompany") {
+                    //set active requests from client
+                    newClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, 'in-progress', false)
+
+                    //set client requests history
+                    clientRequestsHistory = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, 'in-progress', true)
+                }
+            }
         }
         search()
 
@@ -57,24 +83,27 @@ export default function Page() {
 
     }, [userDepartmentCompanySelection])
 
-    if (session !== null && session.user.accessLevel !== "admin" && !session.user.fromDepartment) {
+    if (session === null) {
         return (
-            <p>page for departments only</p>
+            <p>Please login</p>
         )
     }
 
+    const canAddNewRequest = (session.user.accessLevel === "admin") || (userDepartmentCompanySelection !== null && ((userDepartmentCompanySelection.type === "userCompany") || (userDepartmentCompanySelection.type === "userDepartment" && seenDepartment !== undefined && seenDepartment.canManageRequests)))
+    const canManageRequest = (session.user.accessLevel === "admin") || (userDepartmentCompanySelection !== null && ((userDepartmentCompanySelection.type === "userCompany") || (userDepartmentCompanySelection.type === "userDepartment" && seenDepartment !== undefined && seenDepartment.canManageRequests)))
+
     return (
-        <main className={dashboardStyles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
-            <div className={dashboardStyles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
+        <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
+            <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
                 <button className='button1'
                     onClick={() => {
                         showingSideBarSet(false)
                     }}
                 >close</button>
 
-                {seenDepartment !== undefined && seenDepartment.canManageRequests && (
+                {canAddNewRequest && (
                     <>
-                        <div className={dashboardStyles.newRequest}>
+                        <div className={styles.newRequest}>
                             <button className='button1'
                                 onClick={() => {
                                     makingNewRequestSet(prev => {
@@ -126,26 +155,40 @@ export default function Page() {
                 )}
 
                 {activeClientRequests.length > 0 && (
-                    <div className={dashboardStyles.clientRequests}>
+                    <div className={styles.clientRequests}>
                         <h3>Active requests</h3>
 
                         {activeClientRequests.map(eachActiveClientRequest => {
-                            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
+                            if (userDepartmentCompanySelection === null) return
 
                             //furthest non complete item
                             const activeChecklistItemIndex = eachActiveClientRequest.checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
-
                             const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachActiveClientRequest.checklist[activeChecklistItemIndex] : undefined
 
+                            let canEditRequest = false
+
+                            //ensure can edit checklist item                            
+                            if (activeChecklistItem !== undefined && activeChecklistItem.type === "manual") {
+                                if (session.user.accessLevel === "admin") {
+                                    canEditRequest = true
+                                }
+
+                                if (activeChecklistItem.for.type === "department" && userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userDepartment" && activeChecklistItem.for.departmenId === userDepartmentCompanySelection.seenUserToDepartment.departmentId && seenDepartment !== undefined && seenDepartment.canManageRequests) {
+                                    canEditRequest = true
+                                }
+
+                                && 
+                            }
+
                             return (
-                                <div key={eachActiveClientRequest.id} className={dashboardStyles.eachClientRequest}>
+                                <div key={eachActiveClientRequest.id} className={styles.eachClientRequest}>
                                     {eachActiveClientRequest.checklistStarter !== undefined && (
                                         <h3>{eachActiveClientRequest.checklistStarter.type}</h3>
                                     )}
 
                                     <label>{eachActiveClientRequest.status}</label>
 
-                                    <div className={dashboardStyles.dateHolder}>
+                                    <div className={styles.dateHolder}>
                                         <p>{eachActiveClientRequest.dateSubmitted.toLocaleDateString()}</p>
 
                                         <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
@@ -161,7 +204,7 @@ export default function Page() {
                                         }}
                                     >view</button>
 
-                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && activeChecklistItem.for.type === "department" && activeChecklistItem.for.departmenId === userDepartmentCompanySelection.seenUserToDepartment.departmentId && (
+                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && (
                                         <div>
                                             <label>{activeChecklistItem.prompt}</label>
 
@@ -200,7 +243,7 @@ export default function Page() {
                 )}
             </div>
 
-            <div className={dashboardStyles.mainContent}>
+            <div className={styles.mainContent}>
                 {!showingSideBar && (
                     <button className='button1' style={{ alignSelf: "flex-start" }}
                         onClick={() => {

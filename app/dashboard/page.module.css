@@ -1,0 +1,68 @@
+.main {
+    display: grid;
+    align-content: flex-start;
+    overflow: auto;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr;
+    position: relative;
+}
+
+.sidebar {
+    display: grid;
+    align-content: flex-start;
+    overflow: auto;
+    gap: 1rem;
+    width: 300px;
+    background-color: rgb(var(--color3));
+    padding: 1rem;
+}
+
+.newRequest {
+    display: grid;
+    align-content: flex-start;
+}
+
+.clientRequests {
+    display: grid;
+    align-content: flex-start;
+    gap: 1rem;
+}
+
+.eachClientRequest {
+    display: grid;
+    align-content: flex-start;
+    gap: 1rem;
+    background-color: rgb(var(--shade2));
+    padding: 1rem;
+}
+
+.eachClientRequest>label {
+    padding: .5rem;
+    background-color: rgb(var(--shade1));
+    color: rgb(var(--shade2));
+    font-size: var(--fontSizeS);
+    justify-self: flex-start;
+}
+
+.dateHolder {
+    display: flex;
+    gap: .5rem;
+    font-size: var(--fontSizeS);
+}
+
+.mainContent {
+    display: grid;
+    align-content: flex-start;
+    overflow: auto;
+    padding: 1rem;
+}
+
+@media only screen and (max-width: 600px) {
+    .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%
+    }
+
+}

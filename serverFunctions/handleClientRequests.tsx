@@ -1,10 +1,10 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
-import { ensureCanAccesClientRequest, ensureCanAccessDepartment } from "@/utility/sessionCheck"
+import { ensureCanAccesClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin, sessionCheckWithError } from "@/utility/sessionCheck"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
@@ -88,11 +88,11 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
     return result
 }
 
-export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }, status: clientRequestStatusType, getOppositeOfStatus: boolean, clientRequestAuth: clientRequestAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
-    //security check
-    await ensureCanAccesClientRequest(clientRequestAuth)
-
+export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"], companyAuth: companyAuthType, } | { type: "all" }, status: clientRequestStatusType, getOppositeOfStatus: boolean, limit = 50, offset = 0): Promise<clientRequest[]> {
     if (option.type === "user") {
+        await ensureUserIsAdmin()
+
+        //make sure you are that user
         userSchema.shape.id.parse(option.userId)
 
         const results = await db.query.clientRequests.findMany({
@@ -107,12 +107,29 @@ export async function getClientRequests(option: { type: "user", userId: user["id
         return results
 
     } else if (option.type === "company") {
+        //security check
+        await ensureCanAccessCompany(option.companyAuth)
+
         companySchema.shape.id.parse(option.companyId)
 
         const results = await db.query.clientRequests.findMany({
             limit: limit,
             offset: offset,
             where: and(eq(clientRequests.companyId, option.companyId), getOppositeOfStatus ? ne(clientRequests.status, status) : eq(clientRequests.status, status)),
+            with: {
+                checklistStarter: true
+            },
+        });
+
+        return results
+
+    } else if (option.type === "all") {
+        await ensureUserIsAdmin()
+
+        const results = await db.query.clientRequests.findMany({
+            limit: limit,
+            offset: offset,
+            where: getOppositeOfStatus ? ne(clientRequests.status, status) : eq(clientRequests.status, status),
             with: {
                 checklistStarter: true
             },

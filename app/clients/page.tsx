@@ -24,7 +24,6 @@ export default function Page() {
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
 
     const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
-    const [clientRequestsHistory, clientRequestsHistorySet] = useState<clientRequest[]>([])
 
     //get checklist starters
     useEffect(() => {
@@ -40,10 +39,9 @@ export default function Page() {
             if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userCompany") return
 
             //get active requests
-            activeClientRequestsSet(await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, 'in-progress', false, { clientRequestIdBeingAccessed: "", allowRegularAccess: true }))
+            activeClientRequestsSet()
 
-            //get everything that is not in progress - request history
-            clientRequestsHistorySet(await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, 'in-progress', true, { clientRequestIdBeingAccessed: "", allowRegularAccess: true }))
+
         }
         search()
 
