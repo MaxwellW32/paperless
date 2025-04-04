@@ -1,10 +1,10 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
-import { ensureCanAccesClientRequest } from "@/utility/sessionCheck"
+import { ensureCanAccesClientRequest, ensureCanAccessDepartment } from "@/utility/sessionCheck"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
@@ -125,9 +125,9 @@ export async function getClientRequests(option: { type: "user", userId: user["id
     }
 }
 
-export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], clientRequestAuth: clientRequestAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], departmentAuth: departmentAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
-    await ensureCanAccesClientRequest(clientRequestAuth)
+    await ensureCanAccessDepartment(departmentAuth)
 
     //get client requests in progress
     const results = await db.query.clientRequests.findMany({

@@ -40,7 +40,7 @@ export default function Page() {
             if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
 
             //get active requests needing this department signoff
-            activeClientRequestsSet(await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { clientRequestIdBeingAccessed: "", departmentIdForAuth: userDepartmentCompanySelection.seenUserToDepartment.departmentId }))
+            activeClientRequestsSet(await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId, allowRegularAccess: true }))
         }
         search()
 
@@ -215,8 +215,8 @@ export default function Page() {
                             <ChooseChecklistStarter seenChecklistStarterType={activeScreen.activeChecklistStarterType} seenDepartment={seenDepartment} />
                         )}
 
-                        {activeScreen.type === "viewRequest" && (
-                            <ViewClientRequest sentClientRequest={activeScreen.clientRequest} />
+                        {activeScreen.type === "viewRequest" && seenDepartment !== undefined && (
+                            <ViewClientRequest sentClientRequest={activeScreen.clientRequest} department={seenDepartment} />
                         )}
                     </>
 

@@ -12,13 +12,8 @@ import styles from "./page.module.css"
 //Danielle is department manager - head - need other email
 
 //to do
-//change auth model on client/server - departments/company
-//emails are sent automatically
-//change client request to be manual form
-//then make edit client request checklist its own form 
-//then make interacting with client requests more server based
-//make edit client request its own admin form - specific screen form
 //websockets
+//html emails
 
 export default async function Home() {
 
