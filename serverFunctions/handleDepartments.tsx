@@ -1,13 +1,13 @@
 "use server"
 import { db } from "@/db"
 import { departments } from "@/db/schema"
-import { department, departmentAuthType, departmentSchema, newDepartment, newDepartmentSchema, updateDepartmentSchema } from "@/types"
+import { department, departmentAuthType, departmentSchema, newDepartment, newDepartmentSchema, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from "@/types"
 import { ensureCanAccessDepartment, ensureUserIsAdmin } from "@/utility/sessionCheck"
 import { eq } from "drizzle-orm"
 
 export async function addDepartments(newDeparmentObj: newDepartment): Promise<department> {
     //security check - ensures only admin or elevated roles can make change
-    await ensureCanAccessDepartment({ departmentIdBeingAccessed: "", allowRegularAccess: true })
+    await ensureCanAccessDepartment({ departmentIdBeingAccessed: "", allowElevatedAccess: true })
 
     newDepartmentSchema.parse(newDeparmentObj)
 
@@ -21,13 +21,28 @@ export async function addDepartments(newDeparmentObj: newDepartment): Promise<de
 
 export async function updateDepartments(deparmentId: department["id"], updatedDepartmentObj: Partial<department>) {
     //security check
-    await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId })
+    const { session, accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId })
 
-    updateDepartmentSchema.partial().parse(updatedDepartmentObj)
+    let validatedUpdatedDepartmentObj: Partial<department> | undefined = undefined
+
+    if (session.user.accessLevel === "admin") {
+        validatedUpdatedDepartmentObj = updateDepartmentSchema.partial().parse(updatedDepartmentObj)
+
+    } else {
+        //small admin
+        if (accessLevel === "admin") {
+            validatedUpdatedDepartmentObj = smallAdminUpdateDepartmentSchema.partial().parse(updatedDepartmentObj)
+
+        } else {
+            throw new Error("not access to department")
+        }
+    }
+
+    if (validatedUpdatedDepartmentObj === undefined) throw new Error("not seeing updated department object")
 
     await db.update(departments)
         .set({
-            ...updatedDepartmentObj
+            ...validatedUpdatedDepartmentObj
         })
         .where(eq(departments.id, deparmentId));
 }

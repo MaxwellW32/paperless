@@ -4,19 +4,17 @@ import { clientRequests } from "@/db/schema"
 import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
-import { ensureCanAccesClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin, sessionCheckWithError } from "@/utility/sessionCheck"
+import { ensureCanAccesClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin } from "@/utility/sessionCheck"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
-    const seenSession = await ensureCanAccesClientRequest({ clientRequestIdBeingAccessed: "", allowRegularAccess: true })
+    const { session } = await ensureCanAccesClientRequest({ clientRequestIdBeingAccessed: "", allowElevatedAccess: true })
 
     newClientRequestSchema.parse(newClientRequestObj)
 
-    //one global function to handle checklist automtions
-
     //add new request
     const addedClientRequest = await db.insert(clientRequests).values({
-        userId: seenSession.user.id,
+        userId: session.user.id,
         status: "in-progress",
         dateSubmitted: new Date,
         ...newClientRequestObj,
@@ -27,7 +25,8 @@ export async function addClientRequests(newClientRequestObj: newClientRequest): 
 
 export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
     //security check
-    await ensureCanAccesClientRequest(clientRequestAuth)
+    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
+    if (accessLevel === "regular") throw new Error("no access to client request")
 
     updateClientRequestSchema.partial().parse(updatedClientRequestObj)
 
@@ -42,7 +41,8 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
 
 export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
     //security check
-    await ensureCanAccesClientRequest(clientRequestAuth)
+    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
+    if (accessLevel === "regular") throw new Error("no access to client request")
 
     clientRequestSchema.shape.id.parse(clientRequestId)
 
@@ -62,7 +62,8 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
 
 export async function deleteClientRequests(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType) {
     //security check
-    await ensureCanAccesClientRequest(clientRequestAuth)
+    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
+    if (accessLevel === "regular") throw new Error("no access to client request")
 
     //validation
     clientRequestSchema.shape.id.parse(clientRequestId)
@@ -75,7 +76,8 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
 
     if (!skipAuth) {
         //security check
-        await ensureCanAccesClientRequest(clientRequestAuth)
+        const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
+        if (accessLevel === "regular") throw new Error("no access to client request")
     }
 
     const result = await db.query.clientRequests.findFirst({
@@ -108,7 +110,8 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
     } else if (option.type === "company") {
         //security check
-        await ensureCanAccessCompany(option.companyAuth)
+        const { accessLevel } = await ensureCanAccessCompany(option.companyAuth)
+        if (accessLevel === "regular") throw new Error("no access to client request")
 
         companySchema.shape.id.parse(option.companyId)
 
@@ -144,7 +147,8 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
 export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], departmentAuth: departmentAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
-    await ensureCanAccessDepartment(departmentAuth)
+    const { accessLevel } = await ensureCanAccessDepartment(departmentAuth)
+    if (accessLevel === "regular") throw new Error("no access to client request")
 
     //get client requests in progress
     const results = await db.query.clientRequests.findMany({

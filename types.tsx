@@ -1,3 +1,4 @@
+import { Session } from "next-auth";
 import { z } from "zod";
 
 // regular types
@@ -79,9 +80,9 @@ export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema
 export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
 export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
-export type clientRequestAuthType = { clientRequestIdBeingAccessed: clientRequest["id"], departmentIdForAuth?: department["id"], allowRegularAccess?: boolean }
-export type companyAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"], allowRegularAccess?: boolean }
-export type departmentAuthType = { departmentIdBeingAccessed: department["id"], allowRegularAccess?: boolean }
+export type clientRequestAuthType = { clientRequestIdBeingAccessed: clientRequest["id"], departmentIdForAuth?: department["id"], allowElevatedAccess?: boolean }
+export type companyAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"], allowElevatedAccess?: boolean }
+export type departmentAuthType = { departmentIdBeingAccessed: department["id"], allowElevatedAccess?: boolean }
 
 export type userDepartmentCompanySelection = {
     type: "userDepartment",
@@ -104,7 +105,7 @@ export type activeScreenType = {
     clientRequest: clientRequest
 }
 
-
+export type authAccessLevelResponseType = { session: Session, accessLevel: userDepartmentAccessLevel | companyAccessLevel }
 
 
 
@@ -276,8 +277,13 @@ export type department = z.infer<typeof departmentSchema> & {
     usersToDepartments?: userToDepartment[],
 }
 
+//admin
 export const updateDepartmentSchema = departmentSchema.omit({ id: true })
 export type updateDepartment = z.infer<typeof updateDepartmentSchema>
+
+//department admin
+export const smallAdminUpdateDepartmentSchema = updateDepartmentSchema.omit({ canManageRequests: true })
+export type smallAdminUpdateDepartment = z.infer<typeof smallAdminUpdateDepartmentSchema>
 
 export const newDepartmentSchema = departmentSchema.omit({ id: true })
 export type newDepartment = z.infer<typeof newDepartmentSchema>
@@ -297,8 +303,13 @@ export type company = z.infer<typeof companySchema> & {
     usersToCompanies?: userToCompany[],
 }
 
+//admin
 export const updateCompanySchema = companySchema.omit({ id: true })
 export type updateCompany = z.infer<typeof updateCompanySchema>
+
+//department admin
+export const smallAdminUpdateCompanySchema = updateCompanySchema.omit({})
+export type smallAdminUpdateCompany = z.infer<typeof smallAdminUpdateCompanySchema>
 
 export const newCompanySchema = companySchema.omit({ id: true })
 export type newCompany = z.infer<typeof newCompanySchema>
@@ -460,13 +471,14 @@ export type newClientRequest = z.infer<typeof newClientRequestSchema>
 
 
 //keep synced with db schema
-export const userDepartmentRoleSchema = z.enum(["head", "elevated", "regular"])
+export const userDepartmentAccessLevelSchema = z.enum(["admin", "elevated", "regular"])
+export type userDepartmentAccessLevel = z.infer<typeof userDepartmentAccessLevelSchema>
 
 export const userToDepartmentSchema = z.object({
     id: z.string().min(1),
     userId: userSchema.shape.id,
     departmentId: departmentSchema.shape.id,
-    departmentRole: userDepartmentRoleSchema,
+    departmentAccessLevel: userDepartmentAccessLevelSchema,
     contactNumbers: z.array(z.string().min(1)).min(1),
     contactEmails: z.array(z.string().min(1)).min(1),
 })
@@ -485,13 +497,14 @@ export type updateUserToDepartment = z.infer<typeof updateUserToDepartmentSchema
 
 
 //keep synced with db schema
-export const userCompanyRoleSchema = z.enum(["head", "elevated", "regular"])
+export const companyAccessLevelSchema = z.enum(["admin", "elevated", "regular"])
+export type companyAccessLevel = z.infer<typeof companyAccessLevelSchema>
 
 export const userToCompanySchema = z.object({
     id: z.string().min(1),
     userId: userSchema.shape.id,
     companyId: companySchema.shape.id,
-    companyRole: userCompanyRoleSchema,
+    companyAccessLevel: companyAccessLevelSchema,
     onAccessList: z.boolean(),
     contactNumbers: z.array(z.string().min(1)).min(1),
     contactEmails: z.array(z.string().min(1)).min(1),

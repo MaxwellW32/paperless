@@ -1,9 +1,9 @@
 import { auth } from "@/auth/auth"
 import { getSpecificClientRequest } from "@/serverFunctions/handleClientRequests"
 import { getSpecificDepartment } from "@/serverFunctions/handleDepartments"
-import { getSpecificUsersToCompanies, getUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies"
+import { getSpecificUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies"
 import { getSpecificUsersToDepartments } from "@/serverFunctions/handleUsersToDepartments"
-import { clientRequest, clientRequestAuthType, company, companyAuthType, companySchema, department, departmentAuthType, departmentSchema } from "@/types"
+import { authAccessLevelResponseType, clientRequestAuthType, companyAuthType, companySchema, departmentAuthType, departmentSchema } from "@/types"
 
 export async function sessionCheckWithError() {
     const session = await auth()
@@ -16,19 +16,18 @@ export async function sessionCheckWithError() {
     }
 }
 
-export async function ensureCanAccessDepartment({ departmentIdBeingAccessed, allowRegularAccess = false }: departmentAuthType) {
+export async function ensureCanAccessDepartment({ departmentIdBeingAccessed, allowElevatedAccess = false }: departmentAuthType): Promise<authAccessLevelResponseType> {
     //security check - ensures only admin or elevated roles can make change
-    const session = await auth()
-    if (session === null) throw new Error("need session")
+    const session = await sessionCheckWithError()
 
     //admin pass
-    if (session.user.accessLevel === "admin") return session
+    if (session.user.accessLevel === "admin") return { session, accessLevel: "admin" }
 
     //user is from Egov making a change
     if (!session.user.fromDepartment) throw new Error("not from department")
 
     //allow regular access
-    if (allowRegularAccess) return session
+    if (allowElevatedAccess) return { session, accessLevel: "elevated" }
 
     //validation
     departmentSchema.shape.id.parse(departmentIdBeingAccessed)
@@ -37,21 +36,18 @@ export async function ensureCanAccessDepartment({ departmentIdBeingAccessed, all
     if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
 
     //auth role validation
-    if (seenUserToDepartment.departmentRole === "regular") throw new Error("no access to make change")
-
-    return session
+    return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
 }
 
-export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmentIdForAuth, allowRegularAccess = false }: companyAuthType) {
+export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmentIdForAuth, allowElevatedAccess = false }: companyAuthType): Promise<authAccessLevelResponseType> {
     //security check - ensures only admin or elevated roles can make change
-    const session = await auth()
-    if (session === null) throw new Error("need session")
+    const session = await sessionCheckWithError()
 
     //admin pass
-    if (session.user.accessLevel === "admin") return session
+    if (session.user.accessLevel === "admin") return { session, accessLevel: "admin" }
 
     //allow regular access
-    if (allowRegularAccess) return session
+    if (allowElevatedAccess) return { session, accessLevel: "elevated" }
 
     //user is from Egov making a change
     if (session.user.fromDepartment) {
@@ -78,20 +74,18 @@ export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmen
     if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
 
     //auth role validation
-    if (seenUserToCompany.companyRole === "regular") throw new Error("no access to make change")
-    return session
+    return { session, accessLevel: seenUserToCompany.companyAccessLevel }
 }
 
-export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAuthType) {
+export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAuthType): Promise<authAccessLevelResponseType> {
     //security check - ensures only admin or elevated roles can make change
-    const session = await auth()
-    if (session === null) throw new Error("need session")
+    const session = await sessionCheckWithError()
 
     //admin pass
-    if (session.user.accessLevel === "admin") return session
+    if (session.user.accessLevel === "admin") return { session, accessLevel: "admin" }
 
     //allow regular access
-    if (clientReqAuth.allowRegularAccess) return session
+    if (clientReqAuth.allowElevatedAccess) return { session, accessLevel: "elevated" }
 
     //if from department you have to be elevated and department capable of change
     if (session.user.fromDepartment) {
@@ -119,8 +113,7 @@ export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAu
 
 export async function ensureUserIsAdmin() {
     //security check - ensures only admin
-    const session = await auth()
-    if (session === null) throw new Error("need session")
+    const session = await sessionCheckWithError()
 
     //security
     if (session.user.accessLevel !== "admin") throw new Error("not authorised to make change, need to be admin")

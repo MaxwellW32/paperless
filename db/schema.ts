@@ -137,13 +137,14 @@ export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
 
 
 
-export const userDepartmentRoleEnum = pgEnum("departmentRole", ["head", "elevated", "regular"]);
+// export const userDepartmentRoleEnum = pgEnum("departmentRole", ["head", "elevated", "regular"]);
+export const departmentAccessLevelEnum = pgEnum("departmentAccessLevel", ["admin", "elevated", "regular"]);
 
 export const usersToDepartments = pgTable("usersToDepartments", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
     departmentId: varchar("departmentId", { length: 255 }).notNull().references(() => departments.id),
-    departmentRole: userDepartmentRoleEnum().notNull().default("regular"),
+    departmentAccessLevel: departmentAccessLevelEnum().notNull().default("regular"),
     contactNumbers: json("contactNumbers").$type<string[]>().notNull(),
     contactEmails: json("contactEmails").$type<string[]>().notNull(),
 })
@@ -162,13 +163,14 @@ export const usersToDepartmentsRelations = relations(usersToDepartments, ({ one 
 
 
 
-export const userCompanyRoleEnum = pgEnum("companyRole", ["head", "elevated", "regular"]);
+export const companyAccessLevelEnum = pgEnum("companyAccessLevel", ["admin", "elevated", "regular"]);
+// export const userCompanyRoleEnum = pgEnum("companyRole", ["head", "elevated", "regular"]);
 
 export const usersToCompanies = pgTable("usersToCompanies", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
-    companyRole: userCompanyRoleEnum().notNull().default("regular"),
+    companyAccessLevel: companyAccessLevelEnum().notNull().default("regular"),
     onAccessList: boolean("onAccessList").notNull().default(false),
     contactNumbers: json("contactNumbers").$type<string[]>().notNull(),
     contactEmails: json("contactEmails").$type<string[]>().notNull(),

@@ -14,10 +14,9 @@ import styles from "./page.module.css"
 //to do
 //websockets
 //html emails
-//dashboards same for clients/departments
 //edit department goes by id - check if admin, or someone with admin access, same with companies
-//role, different from elevation level - departments/companies have admin now
-//app admin can update all
+//change ensureCanAccessDepartment to include which access level someone can have - pass it the admin,elevated,refular check
+//make it so company admins can change simple things, same with department admins
 
 export default async function Home() {
 

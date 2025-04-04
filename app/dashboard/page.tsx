@@ -60,7 +60,7 @@ export default function Page() {
                     //if user is from department
                     if (userDepartmentCompanySelection.type === "userDepartment") {
                         //regular department user
-                        newClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId, allowRegularAccess: true })
+                        newClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId, allowElevatedAccess: true })
 
                     } else if (userDepartmentCompanySelection.type === "userCompany") {
                         //set active requests from client
@@ -192,7 +192,7 @@ export default function Page() {
                                     //if manual signoff is meant for department
                                     if (activeChecklistItem.for.type === "department" && userDepartmentCompanySelection.type === "userDepartment" && activeChecklistItem.for.departmenId === userDepartmentCompanySelection.seenUserToDepartment.departmentId) {
                                         canEditRequest = true
-                                        newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id, allowRegularAccess: true }
+                                        newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id, allowElevatedAccess: true }
 
                                         //if manual signoff is meant for company
                                     } else if (activeChecklistItem.for.type === "company" && userDepartmentCompanySelection.type === "userCompany" && activeChecklistItem.for.companyId === userDepartmentCompanySelection.seenUserToCompany.companyId) {

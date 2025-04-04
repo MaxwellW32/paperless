@@ -14,7 +14,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
         const search = async () => {
             if (sentClientRequest === undefined) return
 
-            seenCompanySet(await getSpecificCompany(sentClientRequest.companyId, department !== undefined ? { departmentIdForAuth: department.id, allowRegularAccess: true } : { companyIdBeingAccessed: sentClientRequest.companyId }))
+            seenCompanySet(await getSpecificCompany(sentClientRequest.companyId, department !== undefined ? { departmentIdForAuth: department.id, allowElevatedAccess: true } : { companyIdBeingAccessed: sentClientRequest.companyId }))
         }
         search()
 

@@ -1,13 +1,13 @@
 "use server"
 import { db } from "@/db"
 import { companies } from "@/db/schema"
-import { company, companyAuthType, companySchema, newCompany, newCompanySchema, updateCompanySchema } from "@/types"
+import { company, companyAuthType, companySchema, newCompany, newCompanySchema, smallAdminUpdateCompanySchema, updateCompanySchema } from "@/types"
 import { ensureCanAccessCompany, ensureUserIsAdmin } from "@/utility/sessionCheck"
 import { eq } from "drizzle-orm"
 
 export async function addCompanies(newCompanyObj: newCompany): Promise<company> {
     //security check - ensures only admin or elevated roles can make change
-    await ensureCanAccessCompany({ companyIdBeingAccessed: "", allowRegularAccess: true })
+    await ensureCanAccessCompany({ companyIdBeingAccessed: "", allowElevatedAccess: true })
 
     newCompanySchema.parse(newCompanyObj)
 
@@ -21,7 +21,24 @@ export async function addCompanies(newCompanyObj: newCompany): Promise<company> 
 
 export async function updateCompanies(companyId: company["id"], updatedCompanyObj: Partial<company>) {
     //security check
-    await ensureUserIsAdmin()
+    const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
+
+    let validatedUpdatedCompanyObj: Partial<company> | undefined = undefined
+
+    if (session.user.accessLevel === "admin") {
+        validatedUpdatedCompanyObj = updateCompanySchema.partial().parse(updatedCompanyObj)
+
+    } else {
+        //small admin
+        if (accessLevel === "admin") {
+            validatedUpdatedCompanyObj = smallAdminUpdateCompanySchema.partial().parse(updatedCompanyObj)
+
+        } else {
+            throw new Error("not access to company")
+        }
+    }
+
+    if (validatedUpdatedCompanyObj === undefined) throw new Error("not seeing updated company object")
 
     updateCompanySchema.partial().parse(updatedCompanyObj)
 
