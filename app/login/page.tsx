@@ -20,13 +20,15 @@ export default function Page() {
             <button className="button1" style={{ justifySelf: "center" }}
                 onClick={async () => {
                     try {
+                        toast.success("sending login email")
+
                         await signIn("nodemailer", {
                             email: email,
                             callbackUrl: `${window.location.origin}/dashboard`,
                             redirect: false,
                         })
 
-                        toast.success("login email sent")
+                        toast.success("sent")
 
                     } catch (error) {
                         consoleAndToastError(error)

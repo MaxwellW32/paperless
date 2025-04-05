@@ -66,6 +66,7 @@ export default function Page() {
                     if (userDepartmentCompanySelection.type === "userDepartment") {
                         //regular department user
                         newClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId, allowElevatedAccess: true })
+                        console.log(`$newClientRequests`, newClientRequests);
 
                     } else if (userDepartmentCompanySelection.type === "userCompany") {
                         //set active requests from client
@@ -278,6 +279,7 @@ export default function Page() {
 
                             let canEditRequest = false
                             let newClientRequestAuth: clientRequestAuthType | undefined = undefined
+                            let progressBar: number | undefined = activeChecklistItemIndex !== -1 ? (activeChecklistItemIndex + 1) / eachActiveClientRequest.checklist.length : undefined
 
                             //ensure can edit checklist item                            
                             if (activeChecklistItem !== undefined && activeChecklistItem.type === "manual") {
@@ -360,6 +362,12 @@ export default function Page() {
                                                     }
                                                 }}
                                             />
+                                        </div>
+                                    )}
+
+                                    {progressBar !== undefined && (
+                                        <div style={{ position: "relative", height: ".5rem" }}>
+                                            <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${progressBar * 100}%`, backgroundColor: "rgb(var(--color1))" }}></div>
                                         </div>
                                     )}
                                 </div>

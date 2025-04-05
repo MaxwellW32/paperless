@@ -219,5 +219,5 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
         return
     }
 
-    runChecklistAutomation(clientRequestId, checklist, clientRequestAuth)
+    await runChecklistAutomation(clientRequestId, checklist, clientRequestAuth)
 }

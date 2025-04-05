@@ -123,6 +123,8 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
             //send off new client request
             if (activeCompanyId === undefined) throw new Error("not seeing company id")
 
+            toast.success("submittting")
+
             if (sentClientRequest === undefined) {
                 //make new client request
 
