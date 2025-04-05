@@ -1,8 +1,7 @@
 import styles from "./page.module.css"
 
 //remember
-//run checklist on add/update request
-//set checklist to null on complete
+//set checklist to null on complete on older records
 
 //roles
 //admin - admin - maxwellwedderburn@outlook.com
@@ -12,11 +11,10 @@ import styles from "./page.module.css"
 //Danielle is department manager - head - need other email
 
 //to do
-//websockets
+//websockets -- new request, update request, delete request - dashboard updates
 //html emails
 //edit department goes by id - check if admin, or someone with admin access, same with companies
-//change ensureCanAccessDepartment to include which access level someone can have - pass it the admin,elevated,refular check
-//make it so company admins can change simple things, same with department admins
+//form validation
 
 export default async function Home() {
 

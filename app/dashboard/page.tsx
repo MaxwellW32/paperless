@@ -1,33 +1,38 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistItemType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, clientRequestAuthType } from '@/types'
+import { activeScreenType, checklistItemType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, clientRequestAuthType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
-import { userDepartmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
+import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
 import { getClientRequests, getClientRequestsForDepartments, runChecklistAutomation, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 import { useSession } from 'next-auth/react'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import ViewClientRequest from '@/components/clientRequests/ViewClientRequest'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
+import { updateRefreshObj } from '@/utility/utility'
 
 export default function Page() {
     const { data: session } = useSession()
 
-    const [showingSideBar, showingSideBarSet] = useState(false)
+    const [showingSideBar, showingSideBarSet] = useState(true)
     const [makingNewRequest, makingNewRequestSet] = useState(false)
     const [checklistStarterTypes, checklistStarterTypesSet] = useState<checklistStarter["type"][] | undefined>()
 
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>()
 
-    const [refreshObj,] = useAtom<refreshObjType>(refreshObjGlobal)
+    const [refreshObj, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
+    const [refreshWSObj, refreshWSObjSet] = useAtom<refreshWSObjType>(refreshWSObjGlobal)
+
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
     const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
     const [clientRequestsHistory, clientRequestsHistorySet] = useState<clientRequest[]>([])
 
     const [seenDepartment, seenDepartmentSet] = useState<department | undefined>()
+    const wsRef = useRef<WebSocket | null>(null);
+    const [, webSocketsConnectedSet] = useState(false)
 
     //get checklist starters
     useEffect(() => {
@@ -37,7 +42,7 @@ export default function Page() {
         search()
     }, [])
 
-    //search active client requests
+    //search active client requests - update locally
     useEffect(() => {
         const search = async () => {
             try {
@@ -87,6 +92,18 @@ export default function Page() {
 
     }, [userDepartmentCompanySelection, refreshObj["clientRequests"]])
 
+    //send ws update
+    useEffect(() => {
+        const search = async () => {
+            if (refreshWSObj["clientRequests"] === undefined) return
+
+            //if stuff in refreshObj, then update the client requests
+            sendWebsocketUpdate({ type: "clientRequests" })
+        }
+        search()
+
+    }, [refreshWSObj["clientRequests"]])
+
     //search department
     useEffect(() => {
         const search = async () => {
@@ -97,6 +114,88 @@ export default function Page() {
         search()
 
     }, [userDepartmentCompanySelection])
+
+    //set viewing sidebar on desktop
+    useEffect(() => {
+        if (window.innerWidth < 600) {
+            showingSideBarSet(false)
+        }
+    }, [])
+
+    //handle websockets
+    useEffect(() => {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const ws = new WebSocket(`${protocol}//${window.location.host}/api/ws`);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+            webSocketsConnectedSet(true);
+            console.log(`$ws connected`);
+
+            const newJoinMessage: webSocketMessageJoinType = {
+                type: "join",
+            }
+
+            webSocketMessageJoinSchema.parse(newJoinMessage)
+
+            //send request to join a website id room
+            ws.send(JSON.stringify(newJoinMessage));
+        };
+
+        ws.onclose = () => {
+            webSocketsConnectedSet(false);
+        };
+
+        ws.onmessage = (event) => {
+            const seenMessage = webSocketStandardMessageSchema.parse(JSON.parse(event.data.toString()))
+
+            if (seenMessage.type === "standard") {
+                const seenMessageObj = seenMessage.data.updated
+
+                if (seenMessageObj.type === "clientRequests") {
+                    //update locally
+                    refreshObjSet(prevRefreshObj => {
+                        return updateRefreshObj(prevRefreshObj, "clientRequests")
+                    })
+                }
+            };
+        }
+
+        const pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+                const newPingMessage: webSocketMessagePingType = {
+                    type: "ping"
+                }
+
+                //keep connection alive
+                ws.send(JSON.stringify(newPingMessage));
+                console.log(`$sent ping`);
+            }
+        }, 29000);
+
+        return () => {
+            clearInterval(pingInterval);
+
+            if (wsRef.current !== null) {
+                wsRef.current.close();
+            }
+        };
+    }, [])
+
+    function sendWebsocketUpdate(updateOption: webSocketStandardMessageType["data"]["updated"]) {
+        const newWebSocketsMessage: webSocketStandardMessageType = {
+            type: "standard",
+            data: {
+                updated: updateOption
+            }
+        }
+
+        webSocketStandardMessageSchema.parse(newWebSocketsMessage)
+
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify(newWebSocketsMessage));
+        }
+    }
 
     if (session === null) {
         return (
@@ -244,17 +343,16 @@ export default function Page() {
                                                         //run automation
                                                         await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, newClientRequestAuth)
 
-                                                        //update the latest specific request 
-                                                        activeClientRequestsSet(prevClientRequests => {
-                                                            const newClientRequests = prevClientRequests.map(eachClientRequestMap => {
-                                                                if (eachClientRequestMap.id === latestClientRequest.id) {
-                                                                    return latestClientRequest
-                                                                }
+                                                        //server change happened
 
-                                                                return eachClientRequestMap
-                                                            })
+                                                        //update locally
+                                                        refreshObjSet(prevRefreshObj => {
+                                                            return updateRefreshObj(prevRefreshObj, "clientRequests")
+                                                        })
 
-                                                            return newClientRequests
+                                                        //send off ws
+                                                        refreshWSObjSet(prevWSRefreshObj => {
+                                                            return updateRefreshObj(prevWSRefreshObj, "clientRequests")
                                                         })
 
                                                     } catch (error) {

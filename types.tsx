@@ -35,40 +35,29 @@ export type nullishStarters = {
     [key: string]: unknown
 }
 
-export const wsWebsiteUpdateSchema = z.object({
-    type: z.literal("website"),
+export const wsUpdateClientRequestsSchema = z.object({
+    type: z.literal("clientRequests"),
 });
-export type wsWebsiteUpdateType = z.infer<typeof wsWebsiteUpdateSchema>
+export type wsUpdateClientRequestsType = z.infer<typeof wsUpdateClientRequestsSchema>
 
-export const wsPageUpdateSchema = z.object({
-    type: z.literal("page"),
-    pageId: z.string().min(1),
-    refresh: z.boolean()
+export const wsUpdateOtherSchema = z.object({
+    type: z.literal("other"),
 });
-export type wsPageUpdateType = z.infer<typeof wsPageUpdateSchema>
+export type wsUpdateOtherType = z.infer<typeof wsUpdateOtherSchema>
 
-export const wsUsedComponentUpdateSchema = z.object({
-    type: z.literal("usedComponent"),
-    usedComponentId: z.string().min(1),
-    refresh: z.boolean() //wait till user not editing to refresh
-});
-export type wsUsedComponentUpdateType = z.infer<typeof wsUsedComponentUpdateSchema>
-
-export const weWsUpdatedUnionSchema = z.union([wsWebsiteUpdateSchema, wsPageUpdateSchema, wsUsedComponentUpdateSchema])
-export type weWsUpdatedUnionType = z.infer<typeof weWsUpdatedUnionSchema>
+export const wsUpdatedUnionSchema = z.union([wsUpdateClientRequestsSchema, wsUpdateOtherSchema])
+export type wsUpdatedUnionType = z.infer<typeof wsUpdatedUnionSchema>
 
 export const webSocketStandardMessageSchema = z.object({
     type: z.literal("standard"),
-    // data: z.object({
-    //     websiteId: z.string(),
-    //     updated: weWsUpdatedUnionSchema
-    // })
+    data: z.object({
+        updated: wsUpdatedUnionSchema
+    })
 });
 export type webSocketStandardMessageType = z.infer<typeof webSocketStandardMessageSchema>
 
 export const webSocketMessageJoinSchema = z.object({
     type: z.literal("join"),
-    // websiteId: z.string(),
 });
 export type webSocketMessageJoinType = z.infer<typeof webSocketMessageJoinSchema>
 
@@ -93,6 +82,7 @@ export type userDepartmentCompanySelection = {
 }
 
 export type refreshObjType = { [key: string]: boolean }
+export type refreshWSObjType = { [key: string]: boolean }
 
 export type activeScreenType = {
     type: "newRequest",

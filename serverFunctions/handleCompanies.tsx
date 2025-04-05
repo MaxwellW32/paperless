@@ -40,8 +40,6 @@ export async function updateCompanies(companyId: company["id"], updatedCompanyOb
 
     if (validatedUpdatedCompanyObj === undefined) throw new Error("not seeing updated company object")
 
-    updateCompanySchema.partial().parse(updatedCompanyObj)
-
     await db.update(companies)
         .set({
             ...updatedCompanyObj

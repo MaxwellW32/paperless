@@ -25,14 +25,16 @@ export async function addClientRequests(newClientRequestObj: newClientRequest): 
 
 export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
     //security check
-    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
-    if (accessLevel === "regular") throw new Error("no access to client request")
+    await ensureCanAccesClientRequest(clientRequestAuth)
 
-    updateClientRequestSchema.partial().parse(updatedClientRequestObj)
+    let validatedUpdatedClientRequestObj: Partial<clientRequest> | undefined = undefined
+    validatedUpdatedClientRequestObj = updateClientRequestSchema.partial().parse(updatedClientRequestObj)
+
+    if (validatedUpdatedClientRequestObj === undefined) throw new Error("not seeing updated client request object")
 
     const [updatedClientRequest] = await db.update(clientRequests)
         .set({
-            ...updatedClientRequestObj
+            ...validatedUpdatedClientRequestObj
         })
         .where(eq(clientRequests.id, clientRequestId)).returning()
 
@@ -41,9 +43,7 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
 
 export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
     //security check
-    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
-    if (accessLevel === "regular") throw new Error("no access to client request")
-
+    await ensureCanAccesClientRequest(clientRequestAuth)
     clientRequestSchema.shape.id.parse(clientRequestId)
 
     //get client request
@@ -63,7 +63,10 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
 export async function deleteClientRequests(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType) {
     //security check
     const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
-    if (accessLevel === "regular") throw new Error("no access to client request")
+
+    if (accessLevel !== "admin") {
+        throw new Error("not access to delete client request")
+    }
 
     //validation
     clientRequestSchema.shape.id.parse(clientRequestId)
@@ -76,8 +79,7 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
 
     if (!skipAuth) {
         //security check
-        const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
-        if (accessLevel === "regular") throw new Error("no access to client request")
+        await ensureCanAccesClientRequest(clientRequestAuth)
     }
 
     const result = await db.query.clientRequests.findFirst({
@@ -110,8 +112,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
     } else if (option.type === "company") {
         //security check
-        const { accessLevel } = await ensureCanAccessCompany(option.companyAuth)
-        if (accessLevel === "regular") throw new Error("no access to client request")
+        await ensureCanAccessCompany(option.companyAuth)
 
         companySchema.shape.id.parse(option.companyId)
 
@@ -147,8 +148,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
 export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], departmentAuth: departmentAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
-    const { accessLevel } = await ensureCanAccessDepartment(departmentAuth)
-    if (accessLevel === "regular") throw new Error("no access to client request")
+    await ensureCanAccessDepartment(departmentAuth)
 
     //get client requests in progress
     const results = await db.query.clientRequests.findMany({
@@ -184,8 +184,8 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
     const latestChecklistItemIndex = checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
     const latestChecklistItem: checklistItemType | undefined = latestChecklistItemIndex !== -1 ? checklist[latestChecklistItemIndex] : undefined
 
+    //if nothing is incomplete then mark client request as finished
     if (latestChecklistItem === undefined) {
-        //if nothing is incomplete then mark client request as finished
         await updateClientRequests(clientRequestId, {
             status: "completed"
         }, clientRequestAuth)

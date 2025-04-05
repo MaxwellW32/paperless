@@ -8,7 +8,7 @@ import { checklistStarter, clientRequest, company, department, userDepartmentCom
 import { addClientRequests, runChecklistAutomation, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { useAtom } from 'jotai'
-import { userDepartmentCompanySelectionGlobal, refreshObjGlobal } from '@/utility/globalState'
+import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 import { useSession } from 'next-auth/react'
 
@@ -18,6 +18,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
 
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
+    const [, refreshWSObjSet] = useAtom<refreshObjType>(refreshWSObjGlobal)
 
     const initialFormObj: newClientRequest = {
         companyId: "",
@@ -194,8 +195,16 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 toast.success("request updated")
             }
 
+            //change on server happened
+
+            //update locally
             refreshObjSet(prevRefreshObj => {
                 return updateRefreshObj(prevRefreshObj, "clientRequests")
+            })
+
+            //send ws update
+            refreshWSObjSet(prevWSRefreshObj => {
+                return updateRefreshObj(prevWSRefreshObj, "clientRequests")
             })
 
         } catch (error) {

@@ -6,7 +6,7 @@ const { WebSocket, WebSocketServer } = require("ws");
 const nextApp = next({ dev: process.env.NODE_ENV !== "production" });
 const handle = nextApp.getRequestHandler();
 
-const rooms = new Map();
+let websocketConnections = []
 
 nextApp.prepare().then(() => {
     const server = createServer((req, res) => {
@@ -16,52 +16,34 @@ nextApp.prepare().then(() => {
     const wss = new WebSocketServer({ noServer: true });
 
     wss.on("connection", (ws) => {
-        let userWebsiteId = null;
-
         ws.on("message", (message, isBinary) => {
             try {
                 const receivedMessage = JSON.parse(message.toString());
 
                 if (receivedMessage.type === "join") {
-                    userWebsiteId = receivedMessage.websiteId;
-                    console.log(`User joining room: ${userWebsiteId}`);
-
-                    if (!rooms.has(userWebsiteId)) {
-                        rooms.set(userWebsiteId, new Set());
+                    if (!websocketConnections.includes(ws)) {
+                        websocketConnections.push(ws);
                     }
 
-                    rooms.get(userWebsiteId).add(ws);
-                }
-
-                if (receivedMessage.type === "standard") {
-                    const websiteId = receivedMessage.data.websiteId;
-
-                    if (!rooms.has(websiteId)) {
-                        console.log(`No room found for websiteId: ${websiteId}`);
-                        return;
-                    }
-
-                    rooms.get(websiteId).forEach((client) => {
+                } else if (receivedMessage.type === "standard") {
+                    websocketConnections.forEach((client) => {
                         if (client !== ws && client.readyState === WebSocket.OPEN) {
                             client.send(JSON.stringify(receivedMessage), { binary: isBinary });
                         }
                     });
                 }
+
             } catch (error) {
                 console.error("WebSocket message error:", error);
             }
         });
 
         ws.on("close", () => {
-            if (userWebsiteId && rooms.has(userWebsiteId)) {
-                rooms.get(userWebsiteId).delete(ws);
-
-                if (rooms.get(userWebsiteId).size === 0) {
-                    rooms.delete(userWebsiteId);
-                }
+            if (websocketConnections.includes(ws)) {
+                websocketConnections = websocketConnections.filter((client) => client !== ws);
             }
 
-            console.log(`Client disconnected from room: ${userWebsiteId}`);
+            console.log(`Client disconnected`);
         });
     });
 
