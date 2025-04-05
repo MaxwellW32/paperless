@@ -279,7 +279,7 @@ export default function Page() {
 
                             let canEditRequest = false
                             let newClientRequestAuth: clientRequestAuthType | undefined = undefined
-                            let progressBar: number | undefined = activeChecklistItemIndex !== -1 ? (activeChecklistItemIndex + 1) / eachActiveClientRequest.checklist.length : undefined
+                            const progressBar: number | undefined = activeChecklistItemIndex !== -1 ? (activeChecklistItemIndex + 1) / eachActiveClientRequest.checklist.length : undefined
 
                             //ensure can edit checklist item                            
                             if (activeChecklistItem !== undefined && activeChecklistItem.type === "manual") {
