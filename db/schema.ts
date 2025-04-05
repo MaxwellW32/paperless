@@ -1,4 +1,4 @@
-import { checklistItemType } from "@/types";
+import { checklistItemType, user } from "@/types";
 import { relations } from "drizzle-orm";
 import { timestamp, pgTable, text, primaryKey, integer, varchar, pgEnum, json, index, boolean } from "drizzle-orm/pg-core"
 import type { AdapterAccountType } from "next-auth/adapters"
@@ -107,6 +107,7 @@ export const clientRequests = pgTable("clientRequests", {
     status: clientRequestStatusEnum().notNull(),
     checklist: json("checklist").$type<checklistItemType[]>().notNull(),
     checklistStarterId: varchar("checklistStarterId", { length: 255 }).notNull().references(() => checklistStarters.id),
+    clientsAccessingSite: json("clientsAccessingSite").$type<user["id"][]>().notNull(),
 },
     (t) => {
         return {

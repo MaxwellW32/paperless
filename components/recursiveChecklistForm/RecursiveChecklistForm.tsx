@@ -215,9 +215,17 @@ function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", pare
 
                                             ) : eachFormDataValue.data.type === "date" ? (
                                                 <input
-                                                    type="date"
+                                                    type="datetime-local"
                                                     value={eachFormDataValue.data.value}
-                                                    onChange={(e) => handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: new Date(e.target.value).toISOString().split('T')[0] } })}
+                                                    onChange={(e) =>
+                                                        handleChange(seenKeys, {
+                                                            ...eachFormDataValue,
+                                                            data: {
+                                                                ...eachFormDataValue.data,
+                                                                value: e.target.value,
+                                                            },
+                                                        })
+                                                    }
                                                 />
 
                                             ) : null}
@@ -333,6 +341,7 @@ function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", pare
         </div>
     );
 }
+
 function ButtonSelectionOptions({ seenKeys, addField }: {
     seenKeys: string, addField: (path: string, newKeyName: string, typeToAdd: formType[string]["type"], inputTypeSelection: formInputType["data"]["type"]) => void
 }) {
@@ -391,7 +400,7 @@ function ButtonSelectionOptions({ seenKeys, addField }: {
 
 
 
-export function ReadRecursiveChecklistForm({ seenForm, handleFormUpdate }: { seenForm: formType, handleFormUpdate: (updatedForm: formType) => void }) {
+export function ReadRecursiveChecklistForm({ seenForm, handleFormUpdate }: { seenForm: formType, handleFormUpdate?: (updatedForm: formType) => void }) {
     const [formData, setFormData] = useState<formType>(deepClone(seenForm));
     const updating = useRef(false)
 
@@ -413,6 +422,7 @@ export function ReadRecursiveChecklistForm({ seenForm, handleFormUpdate }: { see
         if (handleFormUpdate === undefined) return
 
         handleFormUpdate(formData)
+
     }, [formData])
 
     return (
@@ -518,9 +528,17 @@ function RecursiveReadChecklistForm({ formData, setFormData, sentKeys = "", pare
 
                                 ) : eachFormDataValue.data.type === "date" ? (
                                     <input
-                                        type="date"
+                                        type="datetime-local"
                                         value={eachFormDataValue.data.value}
-                                        onChange={(e) => handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: new Date(e.target.value).toISOString().split('T')[0] } })}
+                                        onChange={(e) =>
+                                            handleChange(seenKeys, {
+                                                ...eachFormDataValue,
+                                                data: {
+                                                    ...eachFormDataValue.data,
+                                                    value: e.target.value,
+                                                },
+                                            })
+                                        }
                                     />
 
                                 ) : null}

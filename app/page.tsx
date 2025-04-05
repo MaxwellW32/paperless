@@ -15,6 +15,7 @@ import styles from "./page.module.css"
 //html emails
 //edit department goes by id - check if admin, or someone with admin access, same with companies
 //form validation
+//one recursive form - view mode, add/edit
 
 export default async function Home() {
 

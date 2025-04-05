@@ -25,7 +25,8 @@ export async function addClientRequests(newClientRequestObj: newClientRequest): 
 
 export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
     //security check
-    await ensureCanAccesClientRequest(clientRequestAuth)
+    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
+    if (accessLevel === "regular") throw new Error("not access to update client request")
 
     let validatedUpdatedClientRequestObj: Partial<clientRequest> | undefined = undefined
     validatedUpdatedClientRequestObj = updateClientRequestSchema.partial().parse(updatedClientRequestObj)
@@ -43,7 +44,7 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
 
 export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
     //security check
-    await ensureCanAccesClientRequest(clientRequestAuth)
+    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
     clientRequestSchema.shape.id.parse(clientRequestId)
 
     //get client request
@@ -56,7 +57,7 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
     }
 
     //send update
-    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, clientRequestAuth)
+    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, accessLevel === "admin" ? clientRequestAuth : { clientRequestIdBeingAccessed: clientRequestAuth.clientRequestIdBeingAccessed, allowElevatedAccess: true })
     return updatedClientRequest
 }
 

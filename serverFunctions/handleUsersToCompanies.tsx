@@ -1,8 +1,8 @@
 "use server"
 import { db } from "@/db"
 import { usersToCompanies } from "@/db/schema"
-import { company, companySchema, newUserToCompany, newUserToCompanySchema, updateUserToCompany, updateUserToCompanySchema, user, userSchema, userToCompany, userToCompanySchema } from "@/types"
-import { ensureUserIsAdmin } from "@/utility/sessionCheck"
+import { company, companyAuthType, companySchema, newUserToCompany, newUserToCompanySchema, updateUserToCompany, updateUserToCompanySchema, user, userSchema, userToCompany, userToCompanySchema } from "@/types"
+import { ensureCanAccessCompany, ensureUserIsAdmin } from "@/utility/sessionCheck"
 import { and, eq } from "drizzle-orm"
 
 export async function addUsersToCompanies(newUsersToCompaniesObj: newUserToCompany): Promise<userToCompany> {
@@ -94,4 +94,19 @@ export async function getUsersToCompanies(option: { type: "user", userId: user["
     } else {
         throw new Error("invalid selection")
     }
+}
+
+export async function getUsersToCompaniesWithVisitAccess(companyId: company["id"], companyAuth: companyAuthType): Promise<userToCompany[]> {
+    companySchema.shape.id.parse(companyId)
+
+    await ensureCanAccessCompany(companyAuth)
+
+    const result = await db.query.usersToCompanies.findMany({
+        where: and(eq(usersToCompanies.companyId, companyId), eq(usersToCompanies.onAccessList, true)),
+        with: {
+            user: true,
+        }
+    });
+
+    return result
 }

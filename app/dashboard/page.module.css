@@ -48,6 +48,7 @@
     display: flex;
     gap: .5rem;
     font-size: var(--fontSizeS);
+    justify-self: flex-end;
 }
 
 .mainContent {

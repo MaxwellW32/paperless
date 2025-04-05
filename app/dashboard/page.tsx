@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import styles from "./page.module.css"
 import { activeScreenType, checklistItemType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, clientRequestAuthType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
@@ -13,6 +13,7 @@ import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import ViewClientRequest from '@/components/clientRequests/ViewClientRequest'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { updateRefreshObj } from '@/utility/utility'
+import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -33,6 +34,14 @@ export default function Page() {
     const [seenDepartment, seenDepartmentSet] = useState<department | undefined>()
     const wsRef = useRef<WebSocket | null>(null);
     const [, webSocketsConnectedSet] = useState(false)
+
+    const foundClientRequestToView = useMemo<clientRequest | undefined>(() => {
+        if (activeScreen === undefined || activeScreen.type !== "viewRequest") return undefined
+
+        const foundClientRequest = [...activeClientRequests, ...clientRequestsHistory].find(eachClientRequest => eachClientRequest.id === activeScreen.clientRequestId)
+        return foundClientRequest
+
+    }, [activeScreen, activeClientRequests, clientRequestsHistory])
 
     //get checklist starters
     useEffect(() => {
@@ -66,7 +75,6 @@ export default function Page() {
                     if (userDepartmentCompanySelection.type === "userDepartment") {
                         //regular department user
                         newClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId, allowElevatedAccess: true })
-                        console.log(`$newClientRequests`, newClientRequests);
 
                     } else if (userDepartmentCompanySelection.type === "userCompany") {
                         //set active requests from client
@@ -278,13 +286,14 @@ export default function Page() {
                             const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachActiveClientRequest.checklist[activeChecklistItemIndex] : undefined
 
                             let canEditRequest = false
+                            let canEditRequestPrompt = false
                             let newClientRequestAuth: clientRequestAuthType | undefined = undefined
                             const progressBar: number | undefined = activeChecklistItemIndex !== -1 ? (activeChecklistItemIndex + 1) / eachActiveClientRequest.checklist.length : undefined
 
                             //ensure can edit checklist item                            
                             if (activeChecklistItem !== undefined && activeChecklistItem.type === "manual") {
                                 if (session.user.accessLevel === "admin") {
-                                    canEditRequest = true
+                                    canEditRequestPrompt = true
                                     newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id }
 
                                 } else {
@@ -292,42 +301,71 @@ export default function Page() {
 
                                     //if manual signoff is meant for department
                                     if (activeChecklistItem.for.type === "department" && userDepartmentCompanySelection.type === "userDepartment" && activeChecklistItem.for.departmenId === userDepartmentCompanySelection.seenUserToDepartment.departmentId) {
-                                        canEditRequest = true
+                                        canEditRequestPrompt = true
                                         newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id, allowElevatedAccess: true }
 
                                         //if manual signoff is meant for company
                                     } else if (activeChecklistItem.for.type === "company" && userDepartmentCompanySelection.type === "userCompany" && activeChecklistItem.for.companyId === userDepartmentCompanySelection.seenUserToCompany.companyId) {
-                                        canEditRequest = true
+                                        canEditRequestPrompt = true
                                         newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id }
                                     }
                                 }
                             }
 
+                            //who can edit the request
+                            if (session.user.accessLevel === "admin") {
+                                canEditRequest = true
+
+                            } else {
+                                if (userDepartmentCompanySelection === null) return
+
+                                if (userDepartmentCompanySelection.type === "userCompany" && userDepartmentCompanySelection.seenUserToCompany.companyAccessLevel !== "regular") {
+                                    canEditRequest = true
+                                }
+                            }
+
                             return (
                                 <div key={eachActiveClientRequest.id} className={styles.eachClientRequest}>
-                                    {eachActiveClientRequest.checklistStarter !== undefined && (
-                                        <h3>{eachActiveClientRequest.checklistStarter.type}</h3>
-                                    )}
+                                    <div style={{ display: "grid", alignContent: "flex-start" }}>
+                                        {eachActiveClientRequest.checklistStarter !== undefined && (
+                                            <h3>{eachActiveClientRequest.checklistStarter.type}</h3>
+                                        )}
+
+                                        <div className={styles.dateHolder}>
+                                            <p>{eachActiveClientRequest.dateSubmitted.toLocaleDateString()}</p>
+
+                                            <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
+                                        </div>
+                                    </div>
 
                                     <label>{eachActiveClientRequest.status}</label>
 
-                                    <div className={styles.dateHolder}>
-                                        <p>{eachActiveClientRequest.dateSubmitted.toLocaleDateString()}</p>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", justifyContent: "flex-end" }}>
+                                        <button style={{ justifySelf: "flex-end" }} className='button2'
+                                            onClick={() => {
+                                                //making view request
+                                                activeScreenSet({
+                                                    type: "viewRequest",
+                                                    clientRequestId: eachActiveClientRequest.id
+                                                })
+                                            }}
+                                        >view</button>
 
-                                        <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
+                                        {canEditRequest && (
+                                            <button style={{ justifySelf: "flex-end" }} className='button2'
+                                                onClick={() => {
+                                                    //making view request
+                                                    activeScreenSet({
+                                                        type: "editRequest",
+                                                        oldClientRequest: eachActiveClientRequest
+                                                    })
+                                                }}
+                                            >edit</button>
+                                        )}
+
                                     </div>
 
-                                    <button className='button2'
-                                        onClick={() => {
-                                            //making view request
-                                            activeScreenSet({
-                                                type: "viewRequest",
-                                                clientRequest: eachActiveClientRequest
-                                            })
-                                        }}
-                                    >view</button>
-
-                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && canEditRequest && (
+                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && canEditRequestPrompt && (
                                         <div>
                                             <label>{activeChecklistItem.prompt}</label>
 
@@ -366,7 +404,7 @@ export default function Page() {
                                     )}
 
                                     {progressBar !== undefined && (
-                                        <div style={{ position: "relative", height: ".5rem" }}>
+                                        <div style={{ position: "relative", height: ".25rem" }}>
                                             <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${progressBar * 100}%`, backgroundColor: "rgb(var(--color1))" }}></div>
                                         </div>
                                     )}
@@ -416,8 +454,12 @@ export default function Page() {
                             <ChooseChecklistStarter seenChecklistStarterType={activeScreen.activeChecklistStarterType} seenDepartment={seenDepartment} />
                         )}
 
-                        {activeScreen.type === "viewRequest" && (
-                            <ViewClientRequest sentClientRequest={activeScreen.clientRequest} department={seenDepartment} />
+                        {activeScreen.type === "viewRequest" && foundClientRequestToView !== undefined && (
+                            <ViewClientRequest sentClientRequest={foundClientRequestToView} department={seenDepartment} />
+                        )}
+
+                        {activeScreen.type === "editRequest" && (
+                            <AddEditClientRequest sentClientRequest={activeScreen.oldClientRequest} department={seenDepartment} />
                         )}
                     </>
 

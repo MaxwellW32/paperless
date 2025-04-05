@@ -4,13 +4,14 @@ import styles from "./style.module.css"
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, companyAuthType, clientRequestAuthType } from '@/types'
+import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, companyAuthType, clientRequestAuthType, userToCompany } from '@/types'
 import { addClientRequests, runChecklistAutomation, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 import { useSession } from 'next-auth/react'
+import { getUsersToCompaniesWithVisitAccess } from '@/serverFunctions/handleUsersToCompanies'
 
 export default function AddEditClientRequest({ checklistStarter, sentClientRequest, department }: { checklistStarter?: checklistStarter, sentClientRequest?: clientRequest, department?: department }) {
     const { data: session } = useSession()
@@ -23,20 +24,22 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
     const initialFormObj: newClientRequest = {
         companyId: "",
         checklist: checklistStarter !== undefined ? checklistStarter.checklist : [],
-        checklistStarterId: checklistStarter !== undefined ? checklistStarter.id : ""
+        checklistStarterId: checklistStarter !== undefined ? checklistStarter.id : "",
+        clientsAccessingSite: []
     }
 
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest !== undefined ? updateClientRequestSchema.parse(sentClientRequest) : initialFormObj))
+
     // type clientRequestKeys = keyof Partial<clientRequest>
-
     // const [, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
-
-    const [activeCompanyId, activeCompanyIdSet] = useState<company["id"] | undefined>()
 
     const [activeChecklistFormIndex, activeChecklistFormIndexSet] = useState<number | undefined>()
 
+    const [activeCompanyId, activeCompanyIdSet] = useState<company["id"] | undefined>()
     const [companies, companiesSet] = useState<company[]>([])
+
+    const [usersToCompaniesWithAccess, usersToCompaniesWithAccessSet] = useState<userToCompany[] | undefined>(undefined)
 
     const editableChecklistFormIndexes = useMemo<number[]>(() => {
         if (formObj.checklist === undefined) return []
@@ -63,11 +66,35 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
     }, [formObj.checklist])
 
+    const companyAuth = useMemo<companyAuthType | undefined>(() => {
+        if (session === null) return undefined
+
+        //if admin
+        if (session.user.accessLevel === "admin") {
+            return {}
+
+            //if from department
+        } else if (department !== undefined && department.canManageRequests) {
+            return { departmentIdForAuth: department.id }
+
+            //if from client
+        } else if (userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany") {
+            return { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId }
+
+        } else {
+            return undefined
+        }
+
+    }, [session, userDepartmentCompanySelection, department])
+
     //handle changes from above
     useEffect(() => {
         if (sentClientRequest === undefined) return
 
         formObjSet(deepClone(updateClientRequestSchema.parse(sentClientRequest)))
+
+        //set company id
+        activeCompanyIdSet(sentClientRequest.companyId)
 
     }, [sentClientRequest])
 
@@ -80,6 +107,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 //only run for clients accounts
                 if (userDepartmentCompanySelection.type !== "userCompany") return
 
+                //set the active company id
                 activeCompanyIdSet(userDepartmentCompanySelection.seenUserToCompany.companyId)
             }
             search()
@@ -88,6 +116,22 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
             consoleAndToastError(error)
         }
     }, [userDepartmentCompanySelection])
+
+    //everytime active company id changes get users in company that can access the site
+    useEffect(() => {
+        try {
+            const search = async () => {
+                if (activeCompanyId === undefined || companyAuth === undefined) return
+
+                //search for users in this company with access to site
+                handleSearchUsersToCompaniesWithAccess(activeCompanyId, companyAuth)
+            }
+            search()
+
+        } catch (error) {
+            consoleAndToastError(error)
+        }
+    }, [activeCompanyId, companyAuth])
 
     // function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
     //     // @ts-expect-error type
@@ -214,6 +258,12 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
         }
     }
 
+    async function handleSearchUsersToCompaniesWithAccess(companyId: company["id"], companyAuth: companyAuthType) {
+        //get users in company that can access the site on load - only if new request
+        const seenUsersToCompaniesWithAccess = await getUsersToCompaniesWithVisitAccess(companyId, companyAuth)
+        usersToCompaniesWithAccessSet(seenUsersToCompaniesWithAccess)
+    }
+
     return (
         <form className={styles.form} action={() => { }}>
             {((session !== null && session.user.accessLevel === "admin") || (department !== undefined && department.canManageRequests)) && (
@@ -222,20 +272,10 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                         <button className='button1'
                             onClick={async () => {
                                 try {
+                                    if (companyAuth === undefined) return
                                     toast.success("searching")
 
-                                    let newCompanyAuthType: companyAuthType | undefined = undefined
-
-                                    if (department !== undefined) {
-                                        newCompanyAuthType = { departmentIdForAuth: department.id }
-
-                                    } else if (session !== null && session.user.accessLevel === "admin") {
-                                        newCompanyAuthType = {}
-                                    }
-
-                                    if (newCompanyAuthType === undefined) throw new Error("not seeing company auth type")
-
-                                    companiesSet(await getCompanies(newCompanyAuthType))
+                                    companiesSet(await getCompanies(companyAuth))
 
                                 } catch (error) {
                                     consoleAndToastError(error)
@@ -261,6 +301,69 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                             })}
                         </div>
                     </div>
+                </>
+            )}
+
+            {(userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany") && (
+                <>
+                    <button className='button2' style={{ justifySelf: "flex-start" }}
+                        onClick={async () => {
+                            try {
+                                //client only refresh button
+                                if (companyAuth === undefined) return
+
+                                //search 
+                                handleSearchUsersToCompaniesWithAccess(userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth)
+
+                            } catch (error) {
+                                consoleAndToastError(error)
+                            }
+                        }}
+                    >refresh users visiting</button>
+                </>
+            )}
+
+            {usersToCompaniesWithAccess !== undefined && (
+                <>
+                    {usersToCompaniesWithAccess.length > 0 ? (
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                            {usersToCompaniesWithAccess.map(eachUserToCompany => {
+                                if (eachUserToCompany.user === undefined) return null
+
+                                const seenInFormObj = formObj.clientsAccessingSite !== undefined && formObj.clientsAccessingSite.includes(eachUserToCompany.userId)
+
+                                return (
+                                    <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: seenInFormObj ? "rgb(var(--color3))" : "rgb(var(--color2))", padding: "1rem" }}>
+                                        <h3>{eachUserToCompany.user.name}</h3>
+
+                                        <button className='button3'
+                                            onClick={() => {
+                                                toast.success(`selected`)
+
+                                                //set the client accessing site
+                                                formObjSet(prevFormObj => {
+                                                    const newFormObj = { ...prevFormObj }
+                                                    if (newFormObj.clientsAccessingSite === undefined) return prevFormObj
+
+                                                    //add user to list
+                                                    if (!newFormObj.clientsAccessingSite.includes(eachUserToCompany.userId)) {
+                                                        newFormObj.clientsAccessingSite = [...newFormObj.clientsAccessingSite, eachUserToCompany.userId]
+                                                    }
+
+                                                    return newFormObj
+                                                })
+                                            }}
+                                        >add</button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <div>
+                            <p>No users seen to facilitate visit</p>
+                            <p>Please ask our team to add visiting access for some users</p>
+                        </div>
+                    )}
                 </>
             )}
 

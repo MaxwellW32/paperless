@@ -92,7 +92,7 @@ export type activeScreenType = {
     oldClientRequest: clientRequest
 } | {
     type: "viewRequest",
-    clientRequest: clientRequest
+    clientRequestId: clientRequest["id"]
 }
 
 export type authAccessLevelResponseType = { session: Session, accessLevel: userDepartmentAccessLevel | companyAccessLevel }
@@ -429,6 +429,7 @@ export const clientRequestSchema = z.object({
     status: clientRequestStatusSchema,
     checklist: z.array(checklistItemSchema).min(1),
     checklistStarterId: checklistStarterSchema.shape.id,
+    clientsAccessingSite: z.array(userSchema.shape.id),
 })
 export type clientRequest = z.infer<typeof clientRequestSchema> & {
     user?: user,
