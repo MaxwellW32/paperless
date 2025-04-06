@@ -1,41 +1,41 @@
-import AddEditDepartment from '@/components/departments/AddEditDepartment'
-import { ensureCanAccessDepartment } from '@/serverFunctions/handleAuth'
-import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
-import { department } from '@/types'
+import AddEditCompany from '@/components/companies/AddEditCompany'
+import { ensureCanAccessCompany } from '@/serverFunctions/handleAuth'
+import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
+import { company } from '@/types'
 import React from 'react'
 
 export default async function Page({ params }: { params: { id: string } }) {
-    const canEditDepartment = await checkanEditDepartment()
+    const canEditCompany = await checkanEditCompany()
 
-    const seenDepartment: department | undefined = canEditDepartment ? await getSpecificDepartment(params.id, { departmentIdBeingAccessed: params.id }) : undefined
+    const seenCompany: company | undefined = canEditCompany ? await getSpecificCompany(params.id, { companyIdBeingAccessed: params.id }) : undefined
 
-    async function checkanEditDepartment() {
-        let localCanEditDepartment: boolean = false
+    async function checkanEditCompany() {
+        let localCanEditCompany: boolean = false
 
         try {
-            const { accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: params.id })
+            const { accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: params.id })
 
             //app adming / department admin can edit
             if (accessLevel === "admin") {
-                localCanEditDepartment = true
+                localCanEditCompany = true
             }
 
         } catch (error) {
-            localCanEditDepartment = false
+            localCanEditCompany = false
         }
 
-        return localCanEditDepartment
+        return localCanEditCompany
     }
 
-    if (!canEditDepartment) {
-        return <p>not authorised to edit department</p>
+    if (!canEditCompany) {
+        return <p>not authorised to edit company</p>
     }
 
-    if (seenDepartment === undefined) {
-        return <p>not seeing department</p>
+    if (seenCompany === undefined) {
+        return <p>not seeing company</p>
     }
 
     return (
-        <AddEditDepartment sentDepartment={seenDepartment} />
+        <AddEditCompany sentCompany={seenCompany} />
     )
 }

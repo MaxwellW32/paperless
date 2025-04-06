@@ -9,6 +9,7 @@ import { addDepartments, updateDepartments } from '@/serverFunctions/handleDepar
 import TextInput from '../textInput/TextInput'
 import { ensureCanAccessDepartment } from '@/serverFunctions/handleAuth'
 import { z } from "zod"
+import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray/SimpleDisplayStringArray'
 
 export default function AddEditDepartment({ sentDepartment }: { sentDepartment?: department }) {
     const [localUpdateSchema, localUpdateSchemaSet] = useState<z.ZodSchema | undefined>()
@@ -146,119 +147,93 @@ export default function AddEditDepartment({ sentDepartment }: { sentDepartment?:
             )}
 
             {formObj.emails !== undefined && (
-                <div className={styles.arrayCont}>
-                    <label>department emails</label>
+                <SimpleDisplayStringArray
+                    keyName='emails'
+                    label='department emails'
+                    placeholder='enter department emails'
+                    seenArray={formObj.emails}
+                    updateFunction={(seenText, seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.emails === undefined) return prevFormObj
 
-                    <div className={styles.mapCont}>
-                        {formObj.emails.map((eachEmail, eachEmailIndex) => {
-                            return (
-                                <div key={eachEmailIndex} className={styles.mapEachCont}>
-                                    <input type='text' value={eachEmail} placeholder='please enter an email'
-                                        onChange={e => {
-                                            formObjSet(prevFormObj => {
-                                                const newFormObj = { ...prevFormObj }
-                                                if (newFormObj.emails === undefined) return prevFormObj
+                            newFormObj.emails[seenIndextoUpdate] = seenText
 
-                                                newFormObj.emails = newFormObj.emails.map((eachEmailMap, eachEmailMapIndex) => {
-                                                    if (eachEmailMapIndex === eachEmailIndex) {
-                                                        return e.target.value
-                                                    }
+                            return newFormObj
+                        })
+                    }}
+                    onBlur={() => {
+                        checkIfValid(formObj, "emails", departmentSchema)
+                    }}
+                    addFunction={() => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.emails === undefined) return prevFormObj
 
-                                                    return eachEmail
-                                                })
+                            newFormObj.emails = [...newFormObj.emails, ""]
 
-                                                return newFormObj
-                                            })
-                                        }}
+                            return newFormObj
+                        })
+                    }}
+                    removeFunction={(seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.emails === undefined) return prevFormObj
 
-                                        onBlur={() => {
-                                            checkIfValid(formObj, "emails", departmentSchema)
-                                        }}
-                                    />
-                                </div>
-                            )
-                        })}
-                    </div>
+                            newFormObj.emails = newFormObj.emails.filter((eachMailFilter, eachMailFilterIndex) => eachMailFilterIndex !== seenIndextoUpdate)
 
-                    <button className='button1'
-                        onClick={() => {
-                            formObjSet(prevFormObj => {
-                                const newFormObj = { ...prevFormObj }
-                                if (newFormObj.emails === undefined) return prevFormObj
-
-                                newFormObj.emails = [...newFormObj.emails, ""]
-
-                                return newFormObj
-                            })
-                        }}
-                    >add email</button>
-
-                    {formErrors["emails"] !== undefined && (
-                        <>
-                            <p className='errorText'>{formErrors["emails"]}</p>
-                        </>
-                    )}
-                </div>
+                            return newFormObj
+                        })
+                    }}
+                    errors={formErrors["emails"]}
+                />
             )}
 
             {formObj.phones !== undefined && (
-                <div className={styles.arrayCont}>
-                    <label>department phone numbers</label>
+                <SimpleDisplayStringArray
+                    keyName='phones'
+                    label='department phone numbers'
+                    placeholder='enter department phone numbers'
+                    seenArray={formObj.phones}
+                    updateFunction={(seenText, seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.phones === undefined) return prevFormObj
 
-                    <div className={styles.mapCont}>
-                        {formObj.phones.map((eachPhone, eachPhoneIndex) => {
-                            return (
-                                <div key={eachPhoneIndex} className={styles.mapEachCont}>
-                                    <input type='text' value={eachPhone} placeholder='phone number: e.g (876)123-4567'
-                                        onChange={e => {
-                                            formObjSet(prevFormObj => {
-                                                const newFormObj = { ...prevFormObj }
-                                                if (newFormObj.phones === undefined) return prevFormObj
+                            newFormObj.phones[seenIndextoUpdate] = seenText
 
-                                                newFormObj.phones = newFormObj.phones.map((eachPhoneMap, eachPhoneMapIndex) => {
-                                                    if (eachPhoneMapIndex === eachPhoneIndex) {
-                                                        return e.target.value
-                                                    }
+                            return newFormObj
+                        })
+                    }}
+                    onBlur={() => {
+                        checkIfValid(formObj, "phones", departmentSchema)
+                    }}
+                    addFunction={() => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.phones === undefined) return prevFormObj
 
-                                                    return eachPhone
-                                                })
+                            newFormObj.phones = [...newFormObj.phones, ""]
 
-                                                return newFormObj
-                                            })
-                                        }}
+                            return newFormObj
+                        })
+                    }}
+                    removeFunction={(seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.phones === undefined) return prevFormObj
 
-                                        onBlur={() => {
-                                            checkIfValid(formObj, "phones", departmentSchema)
-                                        }}
-                                    />
-                                </div>
-                            )
-                        })}
-                    </div>
+                            newFormObj.phones = newFormObj.phones.filter((eachMailFilter, eachMailFilterIndex) => eachMailFilterIndex !== seenIndextoUpdate)
 
-                    <button className='button1'
-                        onClick={() => {
-                            formObjSet(prevFormObj => {
-                                const newFormObj = { ...prevFormObj }
-                                if (newFormObj.phones === undefined) return prevFormObj
-
-                                newFormObj.phones = [...newFormObj.phones, ""]
-
-                                return newFormObj
-                            })
-                        }}
-                    >add phone number</button>
-
-                    {formErrors["phones"] !== undefined && (
-                        <>
-                            <p className='errorText'>{formErrors["phones"]}</p>
-                        </>
-                    )}
-                </div>
+                            return newFormObj
+                        })
+                    }}
+                    errors={formErrors["phones"]}
+                />
             )}
 
             {formObj.canManageRequests !== undefined && (
-                <div className={styles.arrayCont}>
+                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                     <label>can department manage client requests?</label>
 
                     <button className='button1'

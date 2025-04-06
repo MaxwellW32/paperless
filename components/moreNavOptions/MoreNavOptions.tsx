@@ -9,14 +9,15 @@ import Link from "next/link"
 import { useAtom } from "jotai"
 import { userDepartmentCompanySelection } from "@/types"
 import { userDepartmentCompanySelectionGlobal } from "@/utility/globalState"
-import { ensureCanAccessDepartment } from "@/serverFunctions/handleAuth"
+import { ensureCanAccessCompany, ensureCanAccessDepartment } from "@/serverFunctions/handleAuth"
 
 export default function MoreNavOptions({ session }: { session: Session }) {
     const [showingNav, showingNavSet] = useState(false)
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
-    const [canShowViewDepartment, canShowViewDepartmentSet] = useState(false)
+    const [canViewEditDepartment, canViewEditDepartmentSet] = useState(false)
+    const [canViewEditCompany, canViewEditCompanySet] = useState(false)
 
-    //get updateSchema on load
+    //get canViewEditDepartment on load
     useEffect(() => {
         const search = async () => {
             try {
@@ -28,7 +29,29 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                 const { accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
 
                 if (accessLevel === "admin") {
-                    canShowViewDepartmentSet(true)
+                    canViewEditDepartmentSet(true)
+                }
+
+            } catch (error) {
+            }
+        }
+        search()
+
+    }, [userDepartmentCompanySelection])
+
+    //get canShowViewDepartment on load
+    useEffect(() => {
+        const search = async () => {
+            try {
+                if (userDepartmentCompanySelection === null) return
+
+                //enusre only runs for users in department 
+                if (userDepartmentCompanySelection.type !== "userCompany") return
+
+                const { accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId })
+
+                if (accessLevel === "admin") {
+                    canViewEditCompanySet(true)
                 }
 
             } catch (error) {
@@ -55,11 +78,19 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                         <Link href={"/dashboard"}>dashboard</Link>
                     </li>
 
-                    {canShowViewDepartment && userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userDepartment" && (
+                    {canViewEditDepartment && userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userDepartment" && (
 
                         <li className={styles.moreIntemsItem}
                         >
                             <Link href={`/departments/edit/${userDepartmentCompanySelection.seenUserToDepartment.departmentId}`}>edit department</Link>
+                        </li>
+                    )}
+
+                    {canViewEditCompany && userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany" && (
+
+                        <li className={styles.moreIntemsItem}
+                        >
+                            <Link href={`/companies/edit/${userDepartmentCompanySelection.seenUserToCompany.companyId}`}>edit company</Link>
                         </li>
                     )}
 

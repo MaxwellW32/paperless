@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import toast from 'react-hot-toast'
 
-export default function ConfirmationBox({ text, confirmationText, successMessage, runAction, float = false, icon, buttonProps }: { text: string, confirmationText: string, successMessage: string, runAction: () => void, float?: boolean, icon?: React.JSX.Element, buttonProps?: React.HTMLAttributes<HTMLButtonElement> }) {
+export default function ConfirmationBox({ text, confirmationText, successMessage, runAction, float = false, icon, buttonProps, confirmationDivProps }: { text: string, confirmationText: string, successMessage: string, runAction: () => void, float?: boolean, icon?: React.JSX.Element, buttonProps?: React.HTMLAttributes<HTMLButtonElement>, confirmationDivProps?: React.HTMLAttributes<HTMLDivElement> }) {
     const [confirmed, confirmedSet] = useState(false)
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", position: "relative" }}>
@@ -17,7 +17,7 @@ export default function ConfirmationBox({ text, confirmationText, successMessage
             </button>
 
             {confirmed && (
-                <div style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", ...(float ? { position: "fixed", top: 0, right: 0 } : { position: "relative" }), backgroundColor: "beige", padding: "1rem", zIndex: 999 }}>
+                <div {...confirmationDivProps} style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", ...(float ? { position: "fixed", top: 0, right: 0 } : { position: "relative" }), backgroundColor: "beige", padding: "1rem", zIndex: 999, ...confirmationDivProps?.style }}>
                     <p style={{ fontSize: "var(--fontSizeS)" }}>{confirmationText}</p>
 
                     <div style={{ display: "flex", flexWrap: "wrap", textTransform: "capitalize" }}>

@@ -1,22 +1,21 @@
 "use client"
 import { getChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
-import { checklistStarter, department } from '@/types'
+import { checklistStarter, company, department } from '@/types'
 import React, { useEffect, useMemo, useState } from 'react'
 import ShowMore from '../showMore/ShowMore'
 import AddEditChecklistStarter from '../checklistStarters/AddEditChecklistStarter'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { getCompanies } from '@/serverFunctions/handleCompanies'
 
 export default function Admin() {
-    type screenSelectionType = {
-        screen: "checklistStarters"
-    } | {
-        screen: "departments"
-    }
-    const screenOptions: (screenSelectionType["screen"])[] = ["checklistStarters", "departments"]
+    const screenOptions = ["checklistStarters", "departments", "companies"] as const
+    type screenSelectionType = typeof screenOptions[number]
+
     const [screenSelection, screenSelectionSet] = useState<screenSelectionType | undefined>(undefined)
     const [departments, departmentsSet] = useState<department[]>([])
+    const [companies, companiesSet] = useState<company[]>([])
 
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", overflow: "auto", padding: "1rem" }}>
@@ -25,15 +24,13 @@ export default function Admin() {
             <div>
                 <h3>Choose a screen</h3>
 
-                <select value={screenSelection !== undefined ? screenSelection.screen : ""}
+                <select value={screenSelection !== undefined ? screenSelection : ""}
                     onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
                         if (event.target.value === "") return
 
-                        const eachStarterType = event.target.value as screenSelectionType["screen"]
+                        const eachStarterType = event.target.value as screenSelectionType
 
-                        screenSelectionSet({
-                            screen: eachStarterType
-                        })
+                        screenSelectionSet(eachStarterType)
                     }}
                 >
                     <option value={''}
@@ -51,7 +48,7 @@ export default function Admin() {
 
             {screenSelection !== undefined && (
                 <>
-                    {screenSelection.screen === "checklistStarters" && (
+                    {screenSelection === "checklistStarters" && (
                         <>
                             <ShowMore
                                 label='checklist starters'
@@ -62,8 +59,12 @@ export default function Admin() {
                         </>
                     )}
 
-                    {screenSelection.screen === "departments" && (
+                    {screenSelection === "departments" && (
                         <>
+                            <Link href={`departments/add`} target='_blank'>
+                                <button className='button1'>add department</button>
+                            </Link>
+
                             <button className='button1'
                                 onClick={async () => {
                                     toast.success("searching")
@@ -71,10 +72,6 @@ export default function Admin() {
                                     departmentsSet(await getDepartments({ departmentIdBeingAccessed: "" }))
                                 }}
                             >get departments</button>
-
-                            <Link href={`departments/add`} target='_blank'>
-                                <button className='button1'>add department</button>
-                            </Link>
 
                             {departments.length > 0 && (
                                 <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
@@ -85,6 +82,38 @@ export default function Admin() {
 
                                                 <Link href={`departments/edit/${eachDepartment.id}`} target='_blank'>
                                                     <button className='button1'>edit department</button>
+                                                </Link>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {screenSelection === "companies" && (
+                        <>
+                            <Link href={`companies/add`} target='_blank'>
+                                <button className='button1'>add company</button>
+                            </Link>
+
+                            <button className='button1'
+                                onClick={async () => {
+                                    toast.success("searching")
+
+                                    companiesSet(await getCompanies({}))
+                                }}
+                            >get companies</button>
+
+                            {companies.length > 0 && (
+                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                                    {companies.map(eachCompany => {
+                                        return (
+                                            <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                <h3>{eachCompany.name}</h3>
+
+                                                <Link href={`companies/edit/${eachCompany.id}`} target='_blank'>
+                                                    <button className='button1'>edit company</button>
                                                 </Link>
                                             </div>
                                         )

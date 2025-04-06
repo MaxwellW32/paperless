@@ -15,6 +15,7 @@ import styles from "./page.module.css"
 //form validation
 //one recursive form - view mode, add/edit
 //make security attribute based
+//add remove button on array map - add required label
 
 export default async function Home() {
 

@@ -1,0 +1,25 @@
+.arrayCont {
+    display: grid;
+    align-content: flex-start;
+    gap: 1rem;
+}
+
+.mapCont {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 300px;
+    align-content: flex-start;
+    gap: 1rem;
+    overflow: auto;
+}
+
+.mapEachCont {
+    display: grid;
+    align-content: flex-start;
+    gap: 1rem;
+    position: relative;
+}
+
+.removeButton {
+    justify-self: flex-start;
+}

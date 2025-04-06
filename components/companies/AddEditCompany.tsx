@@ -9,9 +9,7 @@ import { z } from "zod"
 import { company, companySchema, newCompany, newCompanySchema, smallAdminUpdateCompanySchema, updateCompanySchema } from '@/types'
 import { ensureCanAccessCompany } from '@/serverFunctions/handleAuth'
 import { addCompanies, updateCompanies } from '@/serverFunctions/handleCompanies'
-
-//admin can add/edit company
-//company admin can edit company
+import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray/SimpleDisplayStringArray'
 
 export default function AddEditCompany({ sentCompany }: { sentCompany?: company }) {
     const [localUpdateSchema, localUpdateSchemaSet] = useState<z.ZodSchema | undefined>()
@@ -174,171 +172,132 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
             )}
 
             {formObj.emails !== undefined && (
-                <div className={styles.arrayCont}>
-                    <label>company emails</label>
+                <SimpleDisplayStringArray
+                    keyName='emails'
+                    label='company emails'
+                    placeholder='enter company emails'
+                    seenArray={formObj.emails}
+                    updateFunction={(seenText, seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.emails === undefined) return prevFormObj
 
-                    <div className={styles.mapCont}>
-                        {formObj.emails.map((eachEmail, eachEmailIndex) => {
-                            return (
-                                <div key={eachEmailIndex} className={styles.mapEachCont}>
-                                    <input type='text' value={eachEmail} placeholder='please enter an email'
-                                        onChange={e => {
-                                            formObjSet(prevFormObj => {
-                                                const newFormObj = { ...prevFormObj }
-                                                if (newFormObj.emails === undefined) return prevFormObj
+                            newFormObj.emails[seenIndextoUpdate] = seenText
 
-                                                newFormObj.emails = newFormObj.emails.map((eachEmailMap, eachEmailMapIndex) => {
-                                                    if (eachEmailMapIndex === eachEmailIndex) {
-                                                        return e.target.value
-                                                    }
+                            return newFormObj
+                        })
+                    }}
+                    onBlur={() => {
+                        checkIfValid(formObj, "emails", companySchema)
+                    }}
+                    addFunction={() => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.emails === undefined) return prevFormObj
 
-                                                    return eachEmail
-                                                })
+                            newFormObj.emails = [...newFormObj.emails, ""]
 
-                                                return newFormObj
-                                            })
-                                        }}
+                            return newFormObj
+                        })
+                    }}
+                    removeFunction={(seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.emails === undefined) return prevFormObj
 
-                                        onBlur={() => {
-                                            checkIfValid(formObj, "emails", companySchema)
-                                        }}
-                                    />
-                                </div>
-                            )
-                        })}
-                    </div>
+                            newFormObj.emails = newFormObj.emails.filter((eachMailFilter, eachMailFilterIndex) => eachMailFilterIndex !== seenIndextoUpdate)
 
-                    <button className='button1'
-                        onClick={() => {
-                            formObjSet(prevFormObj => {
-                                const newFormObj = { ...prevFormObj }
-                                if (newFormObj.emails === undefined) return prevFormObj
-
-                                newFormObj.emails = [...newFormObj.emails, ""]
-
-                                return newFormObj
-                            })
-                        }}
-                    >add email</button>
-
-                    {formErrors["emails"] !== undefined && (
-                        <>
-                            <p className='errorText'>{formErrors["emails"]}</p>
-                        </>
-                    )}
-                </div>
+                            return newFormObj
+                        })
+                    }}
+                    errors={formErrors["emails"]}
+                />
             )}
 
             {formObj.phones !== undefined && (
-                <div className={styles.arrayCont}>
-                    <label>company phone numbers</label>
+                <SimpleDisplayStringArray
+                    keyName='phones'
+                    label='company phone numbers'
+                    placeholder='enter company phone numbers'
+                    seenArray={formObj.phones}
+                    updateFunction={(seenText, seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.phones === undefined) return prevFormObj
 
-                    <div className={styles.mapCont}>
-                        {formObj.phones.map((eachPhone, eachPhoneIndex) => {
-                            return (
-                                <div key={eachPhoneIndex} className={styles.mapEachCont}>
-                                    <input type='text' value={eachPhone} placeholder='phone number: e.g (876)123-4567'
-                                        onChange={e => {
-                                            formObjSet(prevFormObj => {
-                                                const newFormObj = { ...prevFormObj }
-                                                if (newFormObj.phones === undefined) return prevFormObj
+                            newFormObj.phones[seenIndextoUpdate] = seenText
 
-                                                newFormObj.phones = newFormObj.phones.map((eachPhoneMap, eachPhoneMapIndex) => {
-                                                    if (eachPhoneMapIndex === eachPhoneIndex) {
-                                                        return e.target.value
-                                                    }
+                            return newFormObj
+                        })
+                    }}
+                    onBlur={() => {
+                        checkIfValid(formObj, "phones", companySchema)
+                    }}
+                    addFunction={() => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.phones === undefined) return prevFormObj
 
-                                                    return eachPhone
-                                                })
+                            newFormObj.phones = [...newFormObj.phones, ""]
 
-                                                return newFormObj
-                                            })
-                                        }}
+                            return newFormObj
+                        })
+                    }}
+                    removeFunction={(seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.phones === undefined) return prevFormObj
 
-                                        onBlur={() => {
-                                            checkIfValid(formObj, "phones", companySchema)
-                                        }}
-                                    />
-                                </div>
-                            )
-                        })}
-                    </div>
+                            newFormObj.phones = newFormObj.phones.filter((eachMailFilter, eachMailFilterIndex) => eachMailFilterIndex !== seenIndextoUpdate)
 
-                    <button className='button1'
-                        onClick={() => {
-                            formObjSet(prevFormObj => {
-                                const newFormObj = { ...prevFormObj }
-                                if (newFormObj.phones === undefined) return prevFormObj
-
-                                newFormObj.phones = [...newFormObj.phones, ""]
-
-                                return newFormObj
-                            })
-                        }}
-                    >add phone number</button>
-
-                    {formErrors["phones"] !== undefined && (
-                        <>
-                            <p className='errorText'>{formErrors["phones"]}</p>
-                        </>
-                    )}
-                </div>
+                            return newFormObj
+                        })
+                    }}
+                    errors={formErrors["phones"]}
+                />
             )}
 
             {formObj.faxes !== undefined && (
-                <div className={styles.arrayCont}>
-                    <label>company faxes</label>
+                <SimpleDisplayStringArray
+                    keyName='faxes'
+                    label='company faxes'
+                    placeholder='enter company faxes'
+                    seenArray={formObj.faxes}
+                    updateFunction={(seenText, seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.faxes === undefined) return prevFormObj
 
-                    <div className={styles.mapCont}>
-                        {formObj.faxes.map((eachFax, eachFaxIndex) => {
-                            return (
-                                <div key={eachFaxIndex} className={styles.mapEachCont}>
-                                    <input type='text' value={eachFax} placeholder='fax number: e.g (555)123-4567'
-                                        onChange={e => {
-                                            formObjSet(prevFormObj => {
-                                                const newFormObj = { ...prevFormObj }
-                                                if (newFormObj.faxes === undefined) return prevFormObj
+                            newFormObj.faxes[seenIndextoUpdate] = seenText
 
-                                                newFormObj.faxes = newFormObj.faxes.map((eachFax, eachFaxMapIndex) => {
-                                                    if (eachFaxMapIndex === eachFaxIndex) {
-                                                        return e.target.value
-                                                    }
+                            return newFormObj
+                        })
+                    }}
+                    onBlur={() => {
+                        checkIfValid(formObj, "faxes", companySchema)
+                    }}
+                    addFunction={() => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.faxes === undefined) return prevFormObj
 
-                                                    return eachFax
-                                                })
+                            newFormObj.faxes = [...newFormObj.faxes, ""]
 
-                                                return newFormObj
-                                            })
-                                        }}
+                            return newFormObj
+                        })
+                    }}
+                    removeFunction={(seenIndextoUpdate) => {
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.faxes === undefined) return prevFormObj
 
-                                        onBlur={() => {
-                                            checkIfValid(formObj, "faxes", companySchema)
-                                        }}
-                                    />
-                                </div>
-                            )
-                        })}
-                    </div>
+                            newFormObj.faxes = newFormObj.faxes.filter((eachMailFilter, eachMailFilterIndex) => eachMailFilterIndex !== seenIndextoUpdate)
 
-                    <button className='button1'
-                        onClick={() => {
-                            formObjSet(prevFormObj => {
-                                const newFormObj = { ...prevFormObj }
-                                if (newFormObj.faxes === undefined) return prevFormObj
-
-                                newFormObj.faxes = [...newFormObj.faxes, ""]
-
-                                return newFormObj
-                            })
-                        }}
-                    >add fax number</button>
-
-                    {formErrors["phones"] !== undefined && (
-                        <>
-                            <p className='errorText'>{formErrors["phones"]}</p>
-                        </>
-                    )}
-                </div>
+                            return newFormObj
+                        })
+                    }}
+                    errors={formErrors["faxes"]}
+                />
             )}
 
             <button className='button1' style={{ justifySelf: "center" }}
