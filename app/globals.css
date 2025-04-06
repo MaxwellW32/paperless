@@ -14,6 +14,7 @@
     --viewColor2: rgb(245, 245, 220);
     --viewColor3: rgb(240, 248, 255);
     --viewColor4: rgb(152, 0, 0);
+    --viewColor5: rgb(207, 147, 27);
 
     --viewShade1: #171717;
     --viewShade2: #ffffff;
@@ -24,6 +25,7 @@
     --color2: 245, 245, 220;
     --color3: 240, 248, 255;
     --color4: 152, 0, 0;
+    --color5: 207, 147, 27;
 
     --shade1: 23, 23, 23;
     --shade2: 255, 255, 255;
@@ -152,7 +154,7 @@ section {
 }
 
 .button3 {
-    background-color: rgb(var(--color1));
+    background-color: rgb(var(--color5));
     color: rgb(var(--shade2));
     padding: .5rem;
     font-size: var(--fontSizeS);

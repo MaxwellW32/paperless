@@ -142,13 +142,18 @@ export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
 export const departmentAccessLevelEnum = pgEnum("departmentAccessLevel", ["admin", "elevated", "regular"]);
 
 export const usersToDepartments = pgTable("usersToDepartments", {
-    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: varchar("id", { length: 255 }).notNull().$defaultFn(() => crypto.randomUUID()),
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
     departmentId: varchar("departmentId", { length: 255 }).notNull().references(() => departments.id),
     departmentAccessLevel: departmentAccessLevelEnum().notNull().default("regular"),
     contactNumbers: json("contactNumbers").$type<string[]>().notNull(),
     contactEmails: json("contactEmails").$type<string[]>().notNull(),
-})
+},
+    (t) => {
+        return {
+            pk: primaryKey({ columns: [t.userId, t.departmentId] }),
+        };
+    })
 export const usersToDepartmentsRelations = relations(usersToDepartments, ({ one }) => ({
     user: one(users, {
         fields: [usersToDepartments.userId],
@@ -168,14 +173,19 @@ export const companyAccessLevelEnum = pgEnum("companyAccessLevel", ["admin", "el
 // export const userCompanyRoleEnum = pgEnum("companyRole", ["head", "elevated", "regular"]);
 
 export const usersToCompanies = pgTable("usersToCompanies", {
-    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: varchar("id", { length: 255 }).notNull().$defaultFn(() => crypto.randomUUID()),
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
     companyAccessLevel: companyAccessLevelEnum().notNull().default("regular"),
     onAccessList: boolean("onAccessList").notNull().default(false),
     contactNumbers: json("contactNumbers").$type<string[]>().notNull(),
     contactEmails: json("contactEmails").$type<string[]>().notNull(),
-})
+},
+    (t) => {
+        return {
+            pk: primaryKey({ columns: [t.userId, t.companyId] }),
+        };
+    })
 export const usersToCompaniesRelations = relations(usersToCompanies, ({ one }) => ({
     user: one(users, {
         fields: [usersToCompanies.userId],

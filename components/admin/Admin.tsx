@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./admin.module.css"
-import { checklistStarter, department, company, userToDepartment } from '@/types'
+import { checklistStarter, department, company, userToDepartment, userToCompany } from '@/types'
 import { getChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
@@ -15,6 +15,7 @@ import AddEditCompany from '../companies/AddEditCompany'
 import AddEditDepartment from '../departments/AddEditDepartment'
 import AddEditUserDepartment from '../usersToDepartments/AddEditUserDepartment'
 import AddEditUserCompany from '../usersToCompanies/AddEditUserCompany'
+import { getUsersToCompanies } from '@/serverFunctions/handleUsersToCompanies'
 
 export default function Page() {
     const activeScreenOptions = ["checklistStarters", "departments", "companies", "usersToDepartments", "usersToCompanies"] as const
@@ -25,11 +26,16 @@ export default function Page() {
     const [departments, departmentsSet] = useState<department[]>([])
     const [companies, companiesSet] = useState<company[]>([])
     const [usersToDepartments, usersToDepartmentsSet] = useState<userToDepartment[]>([])
+    const [usersToCompanies, usersToCompaniesSet] = useState<userToCompany[]>([])
+
     const [adding, addingSet] = useState<Partial<{ [key in activeScreenType]: boolean }>>({})
     const [editing, editingSet] = useState<{
         usersToDepartments?: {
             userToDepartmentId: userToDepartment["id"]
-        }
+        },
+        usersToCompanies?: {
+            userToCompanyId: userToCompany["id"]
+        },
     }>({})
 
     //usersToDepartments - get by department - selection menu
@@ -242,6 +248,9 @@ export default function Page() {
                                                     }
                                                 }}
                                             >
+                                                <option value={""}
+                                                >select</option>
+
                                                 {departments.map(eachDepartment => {
 
                                                     return (
@@ -320,17 +329,17 @@ export default function Page() {
                                             try {
                                                 toast.success("searching")
 
-                                                departmentsSet(await getDepartments({ departmentIdBeingAccessed: "" }))
+                                                companiesSet(await getCompanies({}))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)
                                             }
                                         }}
-                                    >search departments</button>
+                                    >search companies</button>
 
-                                    {departments.length > 0 && (
+                                    {companies.length > 0 && (
                                         <>
-                                            <h3>Select department to search</h3>
+                                            <h3>Select company to search</h3>
 
                                             <select defaultValue={""}
                                                 onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -338,37 +347,39 @@ export default function Page() {
                                                         if (event.target.value === "") return
                                                         toast.success("searching")
 
-                                                        const eachDepartmentId = event.target.value as department["id"]
+                                                        const eachCompanyId = event.target.value as company["id"]
 
                                                         //search latest usersToDepartments
-                                                        usersToDepartmentsSet(await getUsersToDepartments({ type: "department", departmentId: eachDepartmentId }))
+                                                        usersToCompaniesSet(await getUsersToCompanies({ type: "company", companyId: eachCompanyId }))
 
                                                     } catch (error) {
                                                         consoleAndToastError(error)
                                                     }
                                                 }}
                                             >
-                                                {departments.map(eachDepartment => {
+                                                <option value={""}
+                                                >select</option>
 
+                                                {companies.map(eachCompany => {
                                                     return (
-                                                        <option key={eachDepartment.id} value={eachDepartment.id}
-                                                        >{eachDepartment.name}</option>
+                                                        <option key={eachCompany.id} value={eachCompany.id}
+                                                        >{eachCompany.name}</option>
                                                     )
                                                 })}
                                             </select>
                                         </>
                                     )}
 
-                                    {usersToDepartments.length > 0 && (
+                                    {usersToCompanies.length > 0 && (
                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
-                                            {usersToDepartments.map(eachUserToDepartment => {
-                                                if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
+                                            {usersToCompanies.map(eachUserToCompany => {
+                                                if (eachUserToCompany.user === undefined || eachUserToCompany.company === undefined) return null
 
                                                 return (
-                                                    <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
-                                                        <h3>{eachUserToDepartment.user.name}</h3>
+                                                    <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                        <h3>{eachUserToCompany.user.name}</h3>
 
-                                                        <h3>{eachUserToDepartment.department.name}</h3>
+                                                        <h3>{eachUserToCompany.company.name}</h3>
 
                                                         <button className='button1'
                                                             onClick={() => {
@@ -376,26 +387,26 @@ export default function Page() {
                                                                     const newEditing = { ...prevEditing }
 
                                                                     //set / reset editing
-                                                                    newEditing.usersToDepartments = newEditing.usersToDepartments === undefined ? { userToDepartmentId: eachUserToDepartment.id } : undefined
+                                                                    newEditing.usersToCompanies = newEditing.usersToCompanies === undefined ? { userToCompanyId: eachUserToCompany.id } : undefined
 
                                                                     return newEditing
                                                                 })
                                                             }}
-                                                        >{editing.usersToDepartments ? "cancel edit" : "edit userToDepartment"}</button>
+                                                        >{editing.usersToCompanies ? "cancel edit" : "edit usersToCompanies"}</button>
                                                     </div>
                                                 )
                                             })}
                                         </div>
                                     )}
 
-                                    {editing.usersToDepartments !== undefined && (
+                                    {editing.usersToCompanies !== undefined && (
                                         <>
                                             <h3>Edit form:</h3>
 
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                <AddEditUserDepartment
-                                                    sentUserDepartment={usersToDepartments.find(eachUserToDepartment => editing.usersToDepartments !== undefined && eachUserToDepartment.id === editing.usersToDepartments.userToDepartmentId)}
-                                                    departmentsStarter={departments}
+                                                <AddEditUserCompany
+                                                    sentUserCompany={usersToCompanies.find(eachUserToCompany => editing.usersToCompanies !== undefined && eachUserToCompany.id === editing.usersToCompanies.userToCompanyId)}
+                                                    companiesStarter={companies}
                                                 />
                                             </div>
                                         </>

@@ -72,7 +72,7 @@ export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmen
     //validation
     companySchema.shape.id.parse(companyIdBeingAccessed)
 
-    const seenUserToCompany = await getSpecificUsersToCompanies(session.user.id, companyIdBeingAccessed, false)
+    const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: companyIdBeingAccessed, runSecurityCheck: false })
     if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
 
     //auth role validation

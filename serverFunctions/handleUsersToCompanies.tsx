@@ -41,24 +41,46 @@ export async function deleteUsersToCompanies(usersToCompaniesId: userToCompany["
     await db.delete(usersToCompanies).where(eq(usersToCompanies.id, usersToCompaniesId));
 }
 
-export async function getSpecificUsersToCompanies(userId: user["id"], companyId: company["id"], runSecurityCheck = true): Promise<userToCompany | undefined> {
-    //security
-    if (runSecurityCheck) {
-        await ensureUserIsAdmin()
-    }
+export async function getSpecificUsersToCompanies(options: { type: "id", userCompanyId: userToCompany["id"] } | { type: "both", userId: user["id"], companyId: company["id"], runSecurityCheck?: boolean }): Promise<userToCompany | undefined> {
+    if (options.type === "id") {
+        userToCompanySchema.shape.id.parse(options.userCompanyId)
 
-    userSchema.shape.id.parse(userId)
-    companySchema.shape.id.parse(companyId)
+        const result = await db.query.usersToCompanies.findFirst({
+            where: eq(usersToCompanies.id, options.userCompanyId),
+            with: {
+                user: true,
+                company: true,
+            }
+        });
 
-    const result = await db.query.usersToCompanies.findFirst({
-        where: and(eq(usersToCompanies.userId, userId), eq(usersToCompanies.companyId, companyId)),
-        with: {
-            user: true,
-            company: true,
+        return result
+
+    } else if (options.type === "both") {
+        if (options.runSecurityCheck === undefined) {
+            options.runSecurityCheck = true
         }
-    });
 
-    return result
+        //security
+        if (options.runSecurityCheck) {
+            await ensureUserIsAdmin()
+        }
+
+        userSchema.shape.id.parse(options.userId)
+        companySchema.shape.id.parse(options.companyId)
+
+        const result = await db.query.usersToCompanies.findFirst({
+            where: and(eq(usersToCompanies.userId, options.userId), eq(usersToCompanies.companyId, options.companyId)),
+            with: {
+                user: true,
+                company: true,
+            }
+        });
+
+        return result
+
+    } else {
+        throw new Error("invalid selection")
+    }
 }
 
 export async function getUsersToCompanies(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }): Promise<userToCompany[]> {
