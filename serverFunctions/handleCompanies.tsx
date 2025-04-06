@@ -2,12 +2,13 @@
 import { db } from "@/db"
 import { companies } from "@/db/schema"
 import { company, companyAuthType, companySchema, newCompany, newCompanySchema, smallAdminUpdateCompanySchema, updateCompanySchema } from "@/types"
-import { ensureCanAccessCompany, ensureUserIsAdmin } from "@/utility/sessionCheck"
+import { ensureCanAccessCompany, ensureUserIsAdmin } from "./handleAuth"
+
 import { eq } from "drizzle-orm"
 
 export async function addCompanies(newCompanyObj: newCompany): Promise<company> {
-    //security check - ensures only admin or elevated roles can make change
-    await ensureCanAccessCompany({ companyIdBeingAccessed: "", allowElevatedAccess: true })
+    //security check - ensures only admin can add
+    await ensureUserIsAdmin()
 
     newCompanySchema.parse(newCompanyObj)
 
@@ -20,7 +21,7 @@ export async function addCompanies(newCompanyObj: newCompany): Promise<company> 
 }
 
 export async function updateCompanies(companyId: company["id"], updatedCompanyObj: Partial<company>) {
-    //security check
+    //security check - only app admins / company admin
     const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
 
     let validatedUpdatedCompanyObj: Partial<company> | undefined = undefined

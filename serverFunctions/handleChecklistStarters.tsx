@@ -2,8 +2,9 @@
 import { db } from "@/db";
 import { checklistStarters } from "@/db/schema";
 import { checklistStarter, checklistStarterSchema, newChecklistStarter, newChecklistStarterSchema, updateChecklistStarter, updateChecklistStarterSchema } from "@/types";
-import { ensureUserIsAdmin, sessionCheckWithError } from "@/utility/sessionCheck";
+import { ensureUserIsAdmin } from '@/serverFunctions/handleAuth'
 import { eq } from "drizzle-orm";
+import { sessionCheckWithError } from "./handleAuth";
 
 export async function addChecklistStarters(newChecklistStartersObj: newChecklistStarter): Promise<checklistStarter> {
     await ensureUserIsAdmin()

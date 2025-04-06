@@ -2,12 +2,13 @@
 import { db } from "@/db"
 import { departments } from "@/db/schema"
 import { department, departmentAuthType, departmentSchema, newDepartment, newDepartmentSchema, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from "@/types"
-import { ensureCanAccessDepartment, ensureUserIsAdmin } from "@/utility/sessionCheck"
+import { ensureUserIsAdmin } from '@/serverFunctions/handleAuth'
 import { eq } from "drizzle-orm"
+import { ensureCanAccessDepartment } from "./handleAuth"
 
 export async function addDepartments(newDeparmentObj: newDepartment): Promise<department> {
-    //security check - ensures only admin or elevated roles can make change
-    await ensureCanAccessDepartment({ departmentIdBeingAccessed: "", allowElevatedAccess: true })
+    //security check  
+    await ensureUserIsAdmin()
 
     newDepartmentSchema.parse(newDeparmentObj)
 
@@ -20,7 +21,7 @@ export async function addDepartments(newDeparmentObj: newDepartment): Promise<de
 }
 
 export async function updateDepartments(deparmentId: department["id"], updatedDepartmentObj: Partial<department>) {
-    //security check
+    //security check - ensure only department / admin users
     const { session, accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId })
 
     let validatedUpdatedDepartmentObj: Partial<department> | undefined = undefined

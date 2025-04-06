@@ -26,13 +26,20 @@ export async function sendEmail(input: {
     sendTo: string,
     replyTo: string | undefined,
     subject: string,
-    text: string,
+    body: {
+        type: "html",
+        html: string
+    } | {
+        type: "text",
+        text: string
+    },
 }) {
     await transporter.sendMail({
         from: email,
         to: input.sendTo,
         subject: input.subject,
-        text: input.text,
+        text: input.body.type === "text" ? input.body.text : undefined,
+        html: input.body.type === "html" ? input.body.html : undefined,
         replyTo: input.replyTo
     });
 }

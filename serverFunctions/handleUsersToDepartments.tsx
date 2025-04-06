@@ -2,7 +2,7 @@
 import { db } from "@/db"
 import { usersToDepartments } from "@/db/schema"
 import { department, departmentSchema, newUserToDepartment, newUserToDepartmentSchema, updateUserToDepartment, updateUserToDepartmentSchema, user, userSchema, userToDepartment, userToDepartmentSchema } from "@/types"
-import { ensureUserIsAdmin } from "@/utility/sessionCheck"
+import { ensureUserIsAdmin } from '@/serverFunctions/handleAuth'
 import { and, eq } from "drizzle-orm"
 
 export async function addUsersToDepartments(newUsersToDepartmentsObj: newUserToDepartment): Promise<userToDepartment> {

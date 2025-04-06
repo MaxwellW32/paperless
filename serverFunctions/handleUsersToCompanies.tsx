@@ -2,7 +2,7 @@
 import { db } from "@/db"
 import { usersToCompanies } from "@/db/schema"
 import { company, companyAuthType, companySchema, newUserToCompany, newUserToCompanySchema, updateUserToCompany, updateUserToCompanySchema, user, userSchema, userToCompany, userToCompanySchema } from "@/types"
-import { ensureCanAccessCompany, ensureUserIsAdmin } from "@/utility/sessionCheck"
+import { ensureCanAccessCompany, ensureUserIsAdmin } from "./handleAuth"
 import { and, eq } from "drizzle-orm"
 
 export async function addUsersToCompanies(newUsersToCompaniesObj: newUserToCompany): Promise<userToCompany> {

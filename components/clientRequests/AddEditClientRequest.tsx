@@ -326,38 +326,42 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
             {usersToCompaniesWithAccess !== undefined && (
                 <>
                     {usersToCompaniesWithAccess.length > 0 ? (
-                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
-                            {usersToCompaniesWithAccess.map(eachUserToCompany => {
-                                if (eachUserToCompany.user === undefined) return null
+                        <>
+                            <label>Clients visiting:</label>
 
-                                const seenInFormObj = formObj.clientsAccessingSite !== undefined && formObj.clientsAccessingSite.includes(eachUserToCompany.userId)
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                {usersToCompaniesWithAccess.map(eachUserToCompany => {
+                                    if (eachUserToCompany.user === undefined) return null
 
-                                return (
-                                    <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: seenInFormObj ? "rgb(var(--color3))" : "rgb(var(--color2))", padding: "1rem" }}>
-                                        <h3>{eachUserToCompany.user.name}</h3>
+                                    const seenInFormObj = formObj.clientsAccessingSite !== undefined && formObj.clientsAccessingSite.includes(eachUserToCompany.userId)
 
-                                        <button className='button3'
-                                            onClick={() => {
-                                                toast.success(`selected`)
+                                    return (
+                                        <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: seenInFormObj ? "rgb(var(--color3))" : "rgb(var(--color2))", padding: "1rem" }}>
+                                            <h3>{eachUserToCompany.user.name}</h3>
 
-                                                //set the client accessing site
-                                                formObjSet(prevFormObj => {
-                                                    const newFormObj = { ...prevFormObj }
-                                                    if (newFormObj.clientsAccessingSite === undefined) return prevFormObj
+                                            <button className='button3'
+                                                onClick={() => {
+                                                    toast.success(`selected`)
 
-                                                    //add user to list
-                                                    if (!newFormObj.clientsAccessingSite.includes(eachUserToCompany.userId)) {
-                                                        newFormObj.clientsAccessingSite = [...newFormObj.clientsAccessingSite, eachUserToCompany.userId]
-                                                    }
+                                                    //set the client accessing site
+                                                    formObjSet(prevFormObj => {
+                                                        const newFormObj = { ...prevFormObj }
+                                                        if (newFormObj.clientsAccessingSite === undefined) return prevFormObj
 
-                                                    return newFormObj
-                                                })
-                                            }}
-                                        >add</button>
-                                    </div>
-                                )
-                            })}
-                        </div>
+                                                        //add user to list
+                                                        if (!newFormObj.clientsAccessingSite.includes(eachUserToCompany.userId)) {
+                                                            newFormObj.clientsAccessingSite = [...newFormObj.clientsAccessingSite, eachUserToCompany.userId]
+                                                        }
+
+                                                        return newFormObj
+                                                    })
+                                                }}
+                                            >add</button>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </>
                     ) : (
                         <div>
                             <p>No users seen to facilitate visit</p>
@@ -408,7 +412,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
             <button className='button1' style={{ justifySelf: "center" }}
                 onClick={handleSubmit}
-            >{sentClientRequest ? "update" : "submit"}</button>
+            >{sentClientRequest !== undefined ? "update" : "submit"}</button>
         </form>
     )
 }

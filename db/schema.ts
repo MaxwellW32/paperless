@@ -29,7 +29,7 @@ export const departments = pgTable("departments", {
     name: varchar("name", { length: 255 }).notNull().unique(),
     emails: json("emails").$type<string[]>().notNull(),
     phones: json("phones").$type<string[]>().notNull(),
-    canManageRequests: boolean("canManageRequests").notNull().default(false),
+    canManageRequests: boolean("canManageRequests").notNull(),
 })
 export const departmentsRelations = relations(departments, ({ many }) => ({
     usersToDepartments: many(usersToDepartments),

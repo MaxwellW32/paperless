@@ -4,7 +4,7 @@ import { clientRequests } from "@/db/schema"
 import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
-import { ensureCanAccesClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin } from "@/utility/sessionCheck"
+import { ensureCanAccesClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin } from "./handleAuth"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
@@ -202,7 +202,10 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
             sendTo: latestChecklistItem.to,
             replyTo: undefined,
             subject: latestChecklistItem.subject,
-            text: latestChecklistItem.email,
+            body: {
+                type: "html",
+                html: latestChecklistItem.email
+            }
         })
 
         //mark as complete 

@@ -2,8 +2,8 @@
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { updateUser, updateUserSchema, user, userSchema } from "@/types";
-import { sessionCheckWithError } from "@/utility/sessionCheck";
 import { eq } from "drizzle-orm";
+import { sessionCheckWithError } from "./handleAuth";
 // import { v4 as uuidV4 } from "uuid";
 
 export async function updateTheUser(userId: user["id"], userObj: Partial<updateUser>): Promise<user> {

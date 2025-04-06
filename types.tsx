@@ -190,7 +190,7 @@ export const checklistItemEmailSchema = z.object({
     type: z.literal("email"),
     to: z.string().min(1),
     subject: z.string().min(1),
-    email: z.string().min(1),
+    email: z.string().min(1).email(),
     completed: z.boolean(),
 })
 export type checklistItemEmailType = z.infer<typeof checklistItemEmailSchema>
@@ -239,7 +239,7 @@ export const userSchema = z.object({
     accessLevel: userAccessSchema.nullable(),
     name: z.string().min(1).nullable(),
     image: z.string().min(1).nullable(),
-    email: z.string().min(1).nullable(),
+    email: z.string().min(1).email().nullable(),
     emailVerified: z.date().nullable(),
 })
 export type user = z.infer<typeof userSchema> & {
@@ -259,7 +259,7 @@ export type updateUser = z.infer<typeof updateUserSchema>
 export const departmentSchema = z.object({
     id: z.string().min(1),
     name: z.string().min(1),
-    emails: z.array(z.string().min(1)).min(1),
+    emails: z.array(z.string().min(1).email()).min(1),
     phones: z.array(z.string().min(1)).min(1),
     canManageRequests: z.boolean(),
 })
@@ -285,7 +285,7 @@ export const companySchema = z.object({
     id: z.string().min(1),
     name: z.string().min(1),
     location: z.string().min(1),
-    emails: z.array(z.string().min(1)).min(1),
+    emails: z.array(z.string().min(1).email()).min(1),
     phones: z.array(z.string().min(1)).min(1),
     faxes: z.array(z.string().min(1)),
 })
@@ -471,7 +471,7 @@ export const userToDepartmentSchema = z.object({
     departmentId: departmentSchema.shape.id,
     departmentAccessLevel: userDepartmentAccessLevelSchema,
     contactNumbers: z.array(z.string().min(1)).min(1),
-    contactEmails: z.array(z.string().min(1)).min(1),
+    contactEmails: z.array(z.string().min(1).email()).min(1),
 })
 export type userToDepartment = z.infer<typeof userToDepartmentSchema> & {
     user?: user,
@@ -498,7 +498,7 @@ export const userToCompanySchema = z.object({
     companyAccessLevel: companyAccessLevelSchema,
     onAccessList: z.boolean(),
     contactNumbers: z.array(z.string().min(1)).min(1),
-    contactEmails: z.array(z.string().min(1)).min(1),
+    contactEmails: z.array(z.string().min(1).email()).min(1),
 })
 export type userToCompany = z.infer<typeof userToCompanySchema> & {
     user?: user,
