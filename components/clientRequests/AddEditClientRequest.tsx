@@ -306,7 +306,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
             {(userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany") && (
                 <>
-                    <button className='button2' style={{ justifySelf: "flex-start" }}
+                    <button className='button3'
                         onClick={async () => {
                             try {
                                 //client only refresh button
@@ -319,7 +319,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                                 consoleAndToastError(error)
                             }
                         }}
-                    >refresh users visiting</button>
+                    >refresh clients</button>
                 </>
             )}
 

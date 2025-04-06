@@ -11,11 +11,9 @@ import styles from "./page.module.css"
 //Danielle is department manager - head - need other email
 
 //to do
-//edit department goes by id - check if admin, or someone with admin access, same with companies
 //form validation
 //one recursive form - view mode, add/edit
-//make security attribute based
-//add remove button on array map - add required label
+//on array map - add required label
 //admin dashboard edit all database models - CRUD
 //client request normal full form - run checklist on add/update client request - add: admin, client, dept with manage - update: admin, client from comp, dept with manage 
 
