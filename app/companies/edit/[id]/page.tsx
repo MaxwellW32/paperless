@@ -15,7 +15,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         try {
             const { accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: params.id })
 
-            //app adming / department admin can edit
+            //app admin / company admin can edit
             if (accessLevel === "admin") {
                 localCanEditCompany = true
             }

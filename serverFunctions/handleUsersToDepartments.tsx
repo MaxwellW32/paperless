@@ -18,17 +18,19 @@ export async function addUsersToDepartments(newUsersToDepartmentsObj: newUserToD
     return addedUserToDepartment[0]
 }
 
-export async function updateUsersToDepartments(usersToDepartmentsId: userToDepartment["id"], updatedUsersToDepartmentsObj: Partial<updateUserToDepartment>) {
+export async function updateUsersToDepartments(usersToDepartmentsId: userToDepartment["id"], updatedUsersToDepartmentsObj: Partial<updateUserToDepartment>): Promise<userToDepartment> {
     //security check
     await ensureUserIsAdmin()
 
     updateUserToDepartmentSchema.partial().parse(updatedUsersToDepartmentsObj)
 
-    await db.update(usersToDepartments)
+    const [updatedUserDepartment] = await db.update(usersToDepartments)
         .set({
             ...updatedUsersToDepartmentsObj
         })
-        .where(eq(usersToDepartments.id, usersToDepartmentsId));
+        .where(eq(usersToDepartments.id, usersToDepartmentsId)).returning()
+
+    return updatedUserDepartment
 }
 
 export async function deleteUsersToDepartments(usersToDepartmentsId: userToDepartment["id"]) {

@@ -99,7 +99,7 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                     {session.user.accessLevel === "admin" && (
                         <li className={styles.moreIntemsItem}
                         >
-                            <Link href={"/admins"}>admin dashboard</Link>
+                            <Link href={"/admin"}>admin dashboard</Link>
                         </li>
                     )}
 

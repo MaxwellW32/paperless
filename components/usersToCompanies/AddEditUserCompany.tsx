@@ -5,45 +5,46 @@ import { deepClone } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray/SimpleDisplayStringArray'
-import { department, newUserToDepartment, newUserToDepartmentSchema, updateUserToDepartmentSchema, user, userDepartmentAccessLevel, userToDepartment, userToDepartmentSchema } from '@/types'
-import { addUsersToDepartments, updateUsersToDepartments } from '@/serverFunctions/handleUsersToDepartments'
-import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { getUsers } from '@/serverFunctions/handleUser'
+import { company, companyAccessLevel, newUserToCompany, newUserToCompanySchema, updateUserToCompanySchema, user, userToCompany, userToCompanySchema } from '@/types'
+import { addUsersToCompanies, updateUsersToCompanies } from '@/serverFunctions/handleUsersToCompanies'
+import { getCompanies } from '@/serverFunctions/handleCompanies'
 
-export default function AddEditUserDepartment({ sentUserDepartment, departmentsStarter, submissionFunction }: { sentUserDepartment?: userToDepartment, departmentsStarter: department[], submissionFunction?: () => void }) {
-    const initialFormObj: newUserToDepartment = {
+export default function AddEditUserCompany({ sentUserCompany, companiesStarter, submissionFunction }: { sentUserCompany?: userToCompany, companiesStarter: company[], submissionFunction?: () => void }) {
+    const initialFormObj: newUserToCompany = {
         userId: "",
-        departmentId: "",
-        departmentAccessLevel: "regular",
+        companyId: "",
+        companyAccessLevel: "regular",
+        onAccessList: false,
         contactNumbers: [],
         contactEmails: [],
     }
 
     //assign either a new form, or the safe values on an update form
-    const [formObj, formObjSet] = useState<Partial<userToDepartment>>(deepClone(sentUserDepartment === undefined ? initialFormObj : updateUserToDepartmentSchema.parse(sentUserDepartment)))
+    const [formObj, formObjSet] = useState<Partial<userToCompany>>(deepClone(sentUserCompany === undefined ? initialFormObj : updateUserToCompanySchema.parse(sentUserCompany)))
 
-    type userDepartmentKeys = keyof Partial<userToDepartment>
-    const [formErrors, formErrorsSet] = useState<Partial<{ [key in userDepartmentKeys]: string }>>({})
+    type userCompanyKeys = keyof Partial<userToCompany>
+    const [formErrors, formErrorsSet] = useState<Partial<{ [key in userCompanyKeys]: string }>>({})
 
-    const departmentAccessLevelOptions: userDepartmentAccessLevel[] = ["admin", "elevated", "regular"]
+    const companyAccessLevelOptions: companyAccessLevel[] = ["admin", "elevated", "regular"]
 
     const [activeUserId, activeUserIdSet] = useState<user["id"] | undefined>(undefined)
     const [users, usersSet] = useState<user[]>([])
     const [userNameSearch, userNameSearchSet] = useState("")
     const userNameSearchDebounce = useRef<NodeJS.Timeout>()
 
-    const [activeDepartmentId, activeDepartmentIdSet] = useState<department["id"] | undefined>(undefined)
-    const [departments, departmentsSet] = useState<department[]>([...departmentsStarter])
+    const [activeCompanyId, activeCompanyIdSet] = useState<company["id"] | undefined>(undefined)
+    const [companies, companiesSet] = useState<company[]>([...companiesStarter])
 
     //handle changes from above
     useEffect(() => {
-        if (sentUserDepartment === undefined) return
+        if (sentUserCompany === undefined) return
 
-        formObjSet(deepClone(updateUserToDepartmentSchema.parse(sentUserDepartment)))
+        formObjSet(deepClone(updateUserToCompanySchema.parse(sentUserCompany)))
 
-    }, [sentUserDepartment])
+    }, [sentUserCompany])
 
-    function checkIfValid(seenFormObj: Partial<userToDepartment>, seenName: keyof Partial<userToDepartment>, schema: typeof userToDepartmentSchema) {
+    function checkIfValid(seenFormObj: Partial<userToCompany>, seenName: keyof Partial<userToCompany>, schema: typeof userToCompanySchema) {
         // @ts-expect-error type
         const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
 
@@ -76,35 +77,35 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
         try {
             toast.success("submittting")
 
-            //new department
-            if (sentUserDepartment === undefined) {
+            //new company
+            if (sentUserCompany === undefined) {
                 if (activeUserId === undefined) throw new Error("user id not seen")
-                if (activeDepartmentId === undefined) throw new Error("department id not seen")
+                if (activeCompanyId === undefined) throw new Error("company id not seen")
 
                 //assign info onto object
                 formObj.userId = activeUserId
-                formObj.departmentId = activeDepartmentId
+                formObj.companyId = activeCompanyId
 
-                const validatedNewUserToDepartment = newUserToDepartmentSchema.parse(formObj)
+                const validatedNewUserToCompany = newUserToCompanySchema.parse(formObj)
 
                 //send up to server
-                await addUsersToDepartments(validatedNewUserToDepartment)
+                await addUsersToCompanies(validatedNewUserToCompany)
 
                 toast.success("submitted")
                 formObjSet(deepClone(initialFormObj))
 
                 //reset
                 activeUserIdSet(undefined)
-                activeDepartmentIdSet(undefined)
+                activeCompanyIdSet(undefined)
 
             } else {
                 //validate
-                const validatedUpdatedDepartment = updateUserToDepartmentSchema.parse(formObj)
+                const validatedUpdatedCompany = updateUserToCompanySchema.parse(formObj)
 
                 //update
-                await updateUsersToDepartments(sentUserDepartment.id, validatedUpdatedDepartment)
+                await updateUsersToCompanies(sentUserCompany.id, validatedUpdatedCompany)
 
-                toast.success("userToDepartment updated")
+                toast.success("userToCompany updated")
             }
 
             //notify above that form submitted
@@ -119,7 +120,7 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
 
     return (
         <form className={styles.form} action={() => { }}>
-            {sentUserDepartment === undefined && (
+            {sentUserCompany === undefined && (
                 <>
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                         <label>search users by name</label>
@@ -155,7 +156,7 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                                             <button className='button1' style={{ backgroundColor: eachUser.id === activeUserId ? "rgb(var(--color1))" : "" }}
                                                 onClick={() => {
                                                     try {
-                                                        if (!eachUser.fromDepartment) throw new Error("user not from a department")
+                                                        if (eachUser.fromDepartment) throw new Error("user not from a company")
                                                         toast.success(`${eachUser.name} selected!`)
 
                                                         activeUserIdSet(eachUser.id)
@@ -178,26 +179,26 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                                 try {
                                     toast.success("searching")
 
-                                    departmentsSet(await getDepartments({ departmentIdBeingAccessed: "" }))
+                                    companiesSet(await getCompanies({}))
 
                                 } catch (error) {
                                     consoleAndToastError(error)
                                 }
                             }}
-                        >search departments</button>
+                        >search companies</button>
 
-                        {departments.length > 0 && (
+                        {companies.length > 0 && (
                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
-                                {departments.map(eachDepartment => {
+                                {companies.map(eachCompany => {
                                     return (
-                                        <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                            <h3>{eachDepartment.name}</h3>
+                                        <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                            <h3>{eachCompany.name}</h3>
 
-                                            <button className='button1' style={{ backgroundColor: eachDepartment.id === activeDepartmentId ? "rgb(var(--color1))" : "" }}
+                                            <button className='button1' style={{ backgroundColor: eachCompany.id === activeCompanyId ? "rgb(var(--color1))" : "" }}
                                                 onClick={() => {
-                                                    toast.success(`${eachDepartment.name} selected!`)
+                                                    toast.success(`${eachCompany.name} selected!`)
 
-                                                    activeDepartmentIdSet(eachDepartment.id)
+                                                    activeCompanyIdSet(eachCompany.id)
                                                 }}
                                             >select</button>
                                         </div>
@@ -209,25 +210,25 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                 </>
             )}
 
-            {formObj.departmentAccessLevel !== undefined && (
+            {formObj.companyAccessLevel !== undefined && (
                 <>
-                    <label>select user access level in department</label>
+                    <label>select user access level in company</label>
 
-                    <select value={formObj.departmentAccessLevel}
+                    <select value={formObj.companyAccessLevel}
                         onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
-                            const eachAccessLevel = event.target.value as userDepartmentAccessLevel
+                            const eachAccessLevel = event.target.value as companyAccessLevel
 
                             formObjSet(prevFormObj => {
                                 const newFormObj = { ...prevFormObj }
-                                if (newFormObj.departmentAccessLevel === undefined) return prevFormObj
+                                if (newFormObj.companyAccessLevel === undefined) return prevFormObj
 
-                                newFormObj.departmentAccessLevel = eachAccessLevel
+                                newFormObj.companyAccessLevel = eachAccessLevel
 
                                 return newFormObj
                             })
                         }}
                     >
-                        {departmentAccessLevelOptions.map(eachAccessLevel => {
+                        {companyAccessLevelOptions.map(eachAccessLevel => {
 
                             return (
                                 <option key={eachAccessLevel} value={eachAccessLevel}
@@ -255,7 +256,7 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                         })
                     }}
                     onBlur={() => {
-                        checkIfValid(formObj, "contactNumbers", userToDepartmentSchema)
+                        checkIfValid(formObj, "contactNumbers", userToCompanySchema)
                     }}
                     addFunction={() => {
                         formObjSet(prevFormObj => {
@@ -298,7 +299,7 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                         })
                     }}
                     onBlur={() => {
-                        checkIfValid(formObj, "contactEmails", userToDepartmentSchema)
+                        checkIfValid(formObj, "contactEmails", userToCompanySchema)
                     }}
                     addFunction={() => {
                         formObjSet(prevFormObj => {
@@ -324,9 +325,34 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                 />
             )}
 
+            {formObj.onAccessList !== undefined && (
+                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                    <label>can company user visit site?</label>
+
+                    <button className='button1'
+                        onClick={() => {
+                            formObjSet(prevFormObj => {
+                                const newFormObj = { ...prevFormObj }
+                                if (newFormObj.onAccessList === undefined) return prevFormObj
+
+                                newFormObj.onAccessList = !newFormObj.onAccessList
+
+                                return newFormObj
+                            })
+                        }}
+                    >{formObj.onAccessList ? "can visit" : "can't visit"}</button>
+
+                    {formErrors["onAccessList"] !== undefined && (
+                        <>
+                            <p className='errorText'>{formErrors["onAccessList"]}</p>
+                        </>
+                    )}
+                </div>
+            )}
+
             <button className='button1' style={{ justifySelf: "center" }}
                 onClick={handleSubmit}
-            >{sentUserDepartment !== undefined ? "update" : "submit"}</button>
+            >{sentUserCompany !== undefined ? "update" : "submit"}</button>
         </form>
     )
 }
