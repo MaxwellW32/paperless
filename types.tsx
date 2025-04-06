@@ -190,7 +190,7 @@ export const checklistItemEmailSchema = z.object({
     type: z.literal("email"),
     to: z.string().min(1),
     subject: z.string().min(1),
-    email: z.string().min(1).email(),
+    email: z.string().min(1),
     completed: z.boolean(),
 })
 export type checklistItemEmailType = z.infer<typeof checklistItemEmailSchema>

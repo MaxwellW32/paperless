@@ -1,6 +1,6 @@
 export default function TextInput({
-    name, value, onChange, label, type, id, errors, errorColor = "#ff6c87", onBlur, placeHolder, ...elProps }: {
-        name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, onBlur?: (e: React.FocusEvent<HTMLInputElement, Element>) => void, label?: string, type?: string, id?: string, errors?: string, errorColor?: string, placeHolder?: string
+    name, value, onChange, label, type, id, errors, onBlur, placeHolder, ...elProps }: {
+        name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, onBlur?: (e: React.FocusEvent<HTMLInputElement, Element>) => void, label?: string, type?: string, id?: string, errors?: string, placeHolder?: string
     } & React.HTMLAttributes<HTMLDivElement>) {
     return (
         <div {...elProps} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", ...elProps?.style }}>

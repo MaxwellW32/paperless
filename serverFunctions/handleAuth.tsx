@@ -34,7 +34,7 @@ export async function ensureCanAccessDepartment({ departmentIdBeingAccessed, all
     //validation
     departmentSchema.shape.id.parse(departmentIdBeingAccessed)
 
-    const seenUserToDepartment = await getSpecificUsersToDepartments(session.user.id, departmentIdBeingAccessed, false)
+    const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: departmentIdBeingAccessed, runSecurityCheck: false })
     if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
 
     //auth role validation

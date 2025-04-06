@@ -33,13 +33,14 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                 }
 
             } catch (error) {
+                console.log(`$error canShowViewDepartment`, error);
             }
         }
         search()
 
     }, [userDepartmentCompanySelection])
 
-    //get canShowViewDepartment on load
+    //get canShowViewCompany on load
     useEffect(() => {
         const search = async () => {
             try {
@@ -55,6 +56,7 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                 }
 
             } catch (error) {
+                console.log(`$error canShowViewCompany`, error);
             }
         }
         search()

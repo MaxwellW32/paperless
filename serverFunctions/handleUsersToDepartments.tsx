@@ -41,24 +41,46 @@ export async function deleteUsersToDepartments(usersToDepartmentsId: userToDepar
     await db.delete(usersToDepartments).where(eq(usersToDepartments.id, usersToDepartmentsId));
 }
 
-export async function getSpecificUsersToDepartments(userId: user["id"], departmentId: department["id"], runSecurityCheck = true): Promise<userToDepartment | undefined> {
-    //security
-    if (runSecurityCheck) {
-        await ensureUserIsAdmin()
-    }
+export async function getSpecificUsersToDepartments(options: { type: "id", userDepartmentId: userToDepartment["id"] } | { type: "both", userId: user["id"], departmentId: department["id"], runSecurityCheck?: boolean }): Promise<userToDepartment | undefined> {
+    if (options.type === "id") {
+        userToDepartmentSchema.shape.id.parse(options.userDepartmentId)
 
-    userSchema.shape.id.parse(userId)
-    departmentSchema.shape.id.parse(departmentId)
+        const result = await db.query.usersToDepartments.findFirst({
+            where: eq(usersToDepartments.id, options.userDepartmentId),
+            with: {
+                user: true,
+                department: true,
+            }
+        });
 
-    const result = await db.query.usersToDepartments.findFirst({
-        where: and(eq(usersToDepartments.userId, userId), eq(usersToDepartments.departmentId, departmentId)),
-        with: {
-            user: true,
-            department: true,
+        return result
+
+    } else if (options.type === "both") {
+        if (options.runSecurityCheck === undefined) {
+            options.runSecurityCheck = true
         }
-    });
 
-    return result
+        //security
+        if (options.runSecurityCheck) {
+            await ensureUserIsAdmin()
+        }
+
+        userSchema.shape.id.parse(options.userId)
+        departmentSchema.shape.id.parse(options.departmentId)
+
+        const result = await db.query.usersToDepartments.findFirst({
+            where: and(eq(usersToDepartments.userId, options.userId), eq(usersToDepartments.departmentId, options.departmentId)),
+            with: {
+                user: true,
+                department: true,
+            }
+        });
+
+        return result
+
+    } else {
+        throw new Error("invalid selection")
+    }
 }
 
 export async function getUsersToDepartments(option: { type: "user", userId: user["id"] } | { type: "department", departmentId: department["id"] }): Promise<userToDepartment[]> {

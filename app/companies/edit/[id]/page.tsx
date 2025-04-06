@@ -22,6 +22,7 @@ export default async function Page({ params }: { params: { id: string } }) {
 
         } catch (error) {
             localCanEditCompany = false
+            console.log(`$error in checkanEditCompany`, error);
         }
 
         return localCanEditCompany

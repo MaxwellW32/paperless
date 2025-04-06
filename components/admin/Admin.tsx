@@ -1,6 +1,6 @@
 "use client"
 import { getChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
-import { checklistStarter, company, department } from '@/types'
+import { checklistStarter, company, department, userToDepartment } from '@/types'
 import React, { useEffect, useMemo, useState } from 'react'
 import ShowMore from '../showMore/ShowMore'
 import AddEditChecklistStarter from '../checklistStarters/AddEditChecklistStarter'
@@ -8,6 +8,8 @@ import { getDepartments } from '@/serverFunctions/handleDepartments'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
+import { getUsersToDepartments } from '@/serverFunctions/handleUsersToDepartments'
+import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 
 export default function Admin() {
     const screenOptions = ["checklistStarters", "departments", "companies"] as const
@@ -16,6 +18,7 @@ export default function Admin() {
     const [screenSelection, screenSelectionSet] = useState<screenSelectionType | undefined>(undefined)
     const [departments, departmentsSet] = useState<department[]>([])
     const [companies, companiesSet] = useState<company[]>([])
+    const [usersToDepartments, usersToDepartmentsSet] = useState<userToDepartment[]>([])
 
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", overflow: "auto", padding: "1rem" }}>
@@ -28,9 +31,9 @@ export default function Admin() {
                     onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
                         if (event.target.value === "") return
 
-                        const eachStarterType = event.target.value as screenSelectionType
+                        const eachScreenOption = event.target.value as screenSelectionType
 
-                        screenSelectionSet(eachStarterType)
+                        screenSelectionSet(eachScreenOption)
                     }}
                 >
                     <option value={''}
@@ -67,9 +70,14 @@ export default function Admin() {
 
                             <button className='button1'
                                 onClick={async () => {
-                                    toast.success("searching")
+                                    try {
+                                        toast.success("searching")
 
-                                    departmentsSet(await getDepartments({ departmentIdBeingAccessed: "" }))
+                                        departmentsSet(await getDepartments({ departmentIdBeingAccessed: "" }))
+
+                                    } catch (error) {
+                                        consoleAndToastError(error)
+                                    }
                                 }}
                             >get departments</button>
 
@@ -83,6 +91,54 @@ export default function Admin() {
                                                 <Link href={`departments/edit/${eachDepartment.id}`} target='_blank'>
                                                     <button className='button1'>edit department</button>
                                                 </Link>
+
+                                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                    <Link href={`usersToDepartments/add`} target='_blank'>
+                                                        <button className='button1'>add userToDepartment</button>
+                                                    </Link>
+
+                                                    <ShowMore
+                                                        label='usersToDepartments'
+                                                        content={
+                                                            <>
+                                                                <button className='button1'
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            toast.success("searching")
+
+                                                                            usersToDepartmentsSet(await getUsersToDepartments({ type: "department", departmentId: eachDepartment.id }))
+
+                                                                        } catch (error) {
+                                                                            consoleAndToastError(error)
+                                                                        }
+                                                                    }}
+                                                                >get usersToDepartments</button>
+
+                                                                {usersToDepartments.length > 0 && (
+                                                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "300px", overflow: "auto" }} className='snap'>
+                                                                        {usersToDepartments.map(eachUserToDepartment => {
+                                                                            if (eachUserToDepartment.departmentId !== eachDepartment.id) return null
+
+                                                                            if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
+
+                                                                            return (
+                                                                                <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                                                    <h3>{eachUserToDepartment.user.name}</h3>
+
+                                                                                    <h3>{eachUserToDepartment.department.name}</h3>
+
+                                                                                    <Link href={`usersToDepartments/edit/${eachUserToDepartment.id}`} target='_blank'>
+                                                                                        <button className='button1'>edit userToDepartment</button>
+                                                                                    </Link>
+                                                                                </div>
+                                                                            )
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        }
+                                                    />
+                                                </div>
                                             </div>
                                         )
                                     })}
@@ -99,9 +155,14 @@ export default function Admin() {
 
                             <button className='button1'
                                 onClick={async () => {
-                                    toast.success("searching")
+                                    try {
+                                        toast.success("searching")
 
-                                    companiesSet(await getCompanies({}))
+                                        companiesSet(await getCompanies({}))
+
+                                    } catch (error) {
+                                        consoleAndToastError(error)
+                                    }
                                 }}
                             >get companies</button>
 

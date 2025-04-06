@@ -22,6 +22,7 @@ export default async function Page({ params }: { params: { id: string } }) {
 
         } catch (error) {
             localCanEditDepartment = false
+            console.log(`$error in checkanEditDepartment`, error);
         }
 
         return localCanEditDepartment

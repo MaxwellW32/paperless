@@ -2,9 +2,8 @@
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { updateUser, updateUserSchema, user, userSchema } from "@/types";
-import { eq } from "drizzle-orm";
-import { sessionCheckWithError } from "./handleAuth";
-// import { v4 as uuidV4 } from "uuid";
+import { eq, like } from "drizzle-orm";
+import { ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth";
 
 export async function updateTheUser(userId: user["id"], userObj: Partial<updateUser>): Promise<user> {
     await sessionCheckWithError()
@@ -43,4 +42,30 @@ export async function getSpecificUser(userId: user["id"]): Promise<user | undefi
     });
 
     return result
+}
+
+
+export async function getUsers(option: { type: "name", name: string } | { type: "all" }, limit = 50, offset = 0): Promise<user[]> {
+    await ensureUserIsAdmin()
+
+    if (option.type === "name") {
+        const results = await db.query.users.findMany({
+            limit: limit,
+            offset: offset,
+            where: like(users.name, `%${option.name.toLowerCase()}%`),
+        });
+
+        return results
+
+    } else if (option.type === "all") {
+        const results = await db.query.users.findMany({
+            limit: limit,
+            offset: offset,
+        });
+
+        return results
+
+    } else {
+        throw new Error("invalid selection")
+    }
 }
