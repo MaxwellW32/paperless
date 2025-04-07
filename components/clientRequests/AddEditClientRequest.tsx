@@ -203,7 +203,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 validatedNewClientRequest.checklist = markLatestFormAsComplete(validatedNewClientRequest.checklist)
 
                 //send up to server
-                await addClientRequests(validatedNewClientRequest)
+                await addClientRequests(validatedNewClientRequest, { companyIdForAuth: activeCompanyId, departmentIdForAuth: department !== undefined ? department.id : undefined })
 
                 toast.success("submitted")
 
@@ -221,7 +221,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 //mark as complete
                 validatedUpdatedClientRequest.checklist = markLatestFormAsComplete(validatedUpdatedClientRequest.checklist)
 
-                const clientRequestAuth: clientRequestAuthType = { clientRequestIdBeingAccessed: sentClientRequest.id, departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }
+                const clientRequestAuth: clientRequestAuthType = { clientRequestIdBeingAccessed: sentClientRequest.id, departmentIdForAuth: department !== undefined ? department.id : undefined }
 
                 //update
                 await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, clientRequestAuth)

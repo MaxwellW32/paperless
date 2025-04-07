@@ -57,7 +57,7 @@ export async function deleteDepartments(deparmentId: department["id"]) {
     await db.delete(departments).where(eq(departments.id, deparmentId));
 }
 
-export async function getSpecificDepartment(deparmentId: department["id"], departmentAuth: departmentAuthType, runAuth = true): Promise<department | undefined> {
+export async function getSpecificDepartment(deparmentId: department["id"], runAuth = true): Promise<department | undefined> {
     departmentSchema.shape.id.parse(deparmentId)
 
     if (runAuth) {

@@ -25,10 +25,14 @@ export default function MoreNavOptions({ session }: { session: Session }) {
 
             //check if non admin user can edit company/department 
             if (userDepartmentCompanySelection.type === "userDepartment") {
-                canViewEditDepartmentSet(await resolveFuncToBool(await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId }, "u")))
+                canViewEditDepartmentSet(await resolveFuncToBool(async () => {
+                    await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId }, "u")
+                }));
 
             } else if (userDepartmentCompanySelection.type === "userCompany") {
-                canViewEditCompanySet(await resolveFuncToBool(await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId }, "u")))
+                canViewEditCompanySet(await resolveFuncToBool(async () => {
+                    await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId }, "u")
+                }));
             }
         }
         search()

@@ -44,6 +44,8 @@ export default function Page() {
 
     }, [activeScreen, activeClientRequests, clientRequestsHistory])
 
+    const [canAddNewRequest, canAddNewRequestSet] = useState(false)
+
     //get checklist starters
     useEffect(() => {
         const search = async () => {
@@ -75,7 +77,7 @@ export default function Page() {
                     //if user is from department
                     if (userDepartmentCompanySelection.type === "userDepartment") {
                         //regular department user
-                        newClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId, allowElevatedAccess: true })
+                        newClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
 
                     } else if (userDepartmentCompanySelection.type === "userCompany") {
                         //set active requests from client
@@ -100,7 +102,7 @@ export default function Page() {
         }
         search()
 
-    }, [userDepartmentCompanySelection, refreshObj["clientRequests"]])
+    }, [session, userDepartmentCompanySelection, refreshObj["clientRequests"]])
 
     //send ws update
     useEffect(() => {
@@ -119,7 +121,34 @@ export default function Page() {
         const search = async () => {
             if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
 
-            seenDepartmentSet(await getSpecificDepartment(userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId }))
+            seenDepartmentSet(await getSpecificDepartment(userDepartmentCompanySelection.seenUserToDepartment.departmentId))
+        }
+        search()
+
+    }, [userDepartmentCompanySelection])
+
+
+    //check if can add client request
+    useEffect(() => {
+        const search = async () => {
+            let newClientRequestAuth: clientRequestAuthType = {}
+
+            if (userDepartmentCompanySelection === null) {
+                newClientRequestAuth = {}
+
+            } else if (userDepartmentCompanySelection !== null) {
+                if (userDepartmentCompanySelection.type === "userCompany") {
+                    newClientRequestAuth = { companyIdForAuth: userDepartmentCompanySelection.seenUserToCompany.companyId }
+
+                } else {
+                    //for department
+                    newClientRequestAuth = { departmentIdForAuth: userDepartmentCompanySelection.seenUserToDepartment.departmentId }
+                }
+            }
+
+            canAddNewRequestSet(await resolveFuncToBool(async () => {
+                await ensureCanAccessClientRequest(newClientRequestAuth, "c")
+            }))
         }
         search()
 
@@ -207,14 +236,6 @@ export default function Page() {
         }
     }
 
-    if (session === null) {
-        return (
-            <p>Please login</p>
-        )
-    }
-
-    const canAddNewRequest = (session.user.accessLevel === "admin") || (userDepartmentCompanySelection !== null && ((userDepartmentCompanySelection.type === "userCompany") || (userDepartmentCompanySelection.type === "userDepartment" && seenDepartment !== undefined && seenDepartment.canManageRequests)))
-
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
             <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
@@ -249,7 +270,7 @@ export default function Page() {
 
                             {makingNewRequest && activeScreen !== undefined && activeScreen.type === "newRequest" && (
                                 <select value={activeScreen.activeChecklistStarterType}
-                                    onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
+                                    onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
                                         if (event.target.value === "") return
 
                                         const eachStarterType = event.target.value
@@ -294,7 +315,9 @@ export default function Page() {
                             //ensure can edit checklist item                            
                             if (activeChecklistItem !== undefined && activeChecklistItem.type === "manual") {
                                 //search 
-                                canAccess = await resolveFuncToBool(ensureCanAccessClientRequest({ clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }, "u"))
+                                canAccess = await resolveFuncToBool(async () => {
+                                    await ensureCanAccessClientRequest({ clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }, "u")
+                                })
                             }
 
                             return (

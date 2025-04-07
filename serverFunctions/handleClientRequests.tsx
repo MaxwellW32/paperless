@@ -4,11 +4,11 @@ import { clientRequests } from "@/db/schema"
 import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
-import { ensureCanAccessClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
+import { ensureCanAccessClientRequest, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
 
-export async function addClientRequests(newClientRequestObj: newClientRequest, clientRequestAuth: clientRequestAuthType runAutomation = true): Promise<clientRequest> {
+export async function addClientRequests(newClientRequestObj: newClientRequest, clientRequestAuth: clientRequestAuthType, runAutomation = true): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
-    const session = await ensureCanAccessClientRequest(clientRequestAuth, "c")
+    const { session } = await ensureCanAccessClientRequest(clientRequestAuth, "c")
 
     newClientRequestSchema.parse(newClientRequestObj)
 
@@ -98,58 +98,64 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
 }
 
 export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"], companyAuth: companyAuthType, } | { type: "all" }, filter: { type: "status", status: clientRequestStatusType, getOppositeOfStatus: boolean } | { type: "date" }, limit = 50, offset = 0): Promise<clientRequest[]> {
-    if (option.type === "user") {
-        await ensureUserIsAdmin()
+    return []
 
-        //make sure you are that user
-        userSchema.shape.id.parse(option.userId)
+    // if (option.type === "user") {
+    //     //security check
+    //     await ensureUserIsAdmin()
 
-        const results = await db.query.clientRequests.findMany({
-            limit: limit,
-            offset: offset,
-            where: filter.type === "status" ? and(eq(clientRequests.userId, option.userId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
-            with: {
-                checklistStarter: true
-            },
-        });
+    //     //make sure you are that user
+    //     userSchema.shape.id.parse(option.userId)
 
-        return results
+    //     const results = await db.query.clientRequests.findMany({
+    //         limit: limit,
+    //         offset: offset,
+    //         where: filter.type === "status" ? and(eq(clientRequests.userId, option.userId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
+    //         with: {
+    //             checklistStarter: true
+    //         },
+    //     });
 
-    } else if (option.type === "company") {
-        //security check
-        await sessionCheckWithError()
+    //     return results
 
-        companySchema.shape.id.parse(option.companyId)
+    // } else if (option.type === "company") {
+    //     //security check
+    //     await sessionCheckWithError()
 
-        const results = await db.query.clientRequests.findMany({
-            limit: limit,
-            offset: offset,
-            where: filter.type === "status" ? and(eq(clientRequests.userId, option.companyId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
-            with: {
-                checklistStarter: true
-            },
-        });
+    //     companySchema.shape.id.parse(option.companyId)
 
-        return results
+    //     const results = await db.query.clientRequests.findMany({
+    //         limit: limit,
+    //         offset: offset,
+    //         where: filter.type === "status" ? and(eq(clientRequests.companyId, option.companyId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
+    //         with: {
+    //             checklistStarter: true
+    //         },
+    //     });
 
-    } else if (option.type === "all") {
-        await ensureUserIsAdmin()
+    //     return results
 
-        const results = await db.query.clientRequests.findMany({
-            limit: limit,
-            offset: offset,
-            where: filter.type === "status" ? filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status) : undefined,
-            with: {
-                checklistStarter: true,
-                company: true
-            },
-        });
+    // } else if (option.type === "all") {
+    //     //security check
+    //     await ensureUserIsAdmin()
 
-        return results
+    //     console.log(`$seen hit for all`);
 
-    } else {
-        throw new Error("invalid selection")
-    }
+    //     const results = await db.query.clientRequests.findMany({
+    //         limit: limit,
+    //         offset: offset,
+    //         where: filter.type === "status" ? filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status) : undefined,
+    //         with: {
+    //             checklistStarter: true,
+    //             company: true
+    //         },
+    //     });
+
+    //     return results
+
+    // } else {
+    //     throw new Error("invalid selection")
+    // }
 }
 
 export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], departmentAuth: departmentAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
@@ -170,7 +176,7 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
     const requestsForDepartmentSignoff = results.filter(eachClientRequest => {
         //check if signoff is needed from department
         const seenIncompleteChecklistItem = eachClientRequest.checklist.find(eachChecklistItem => !eachChecklistItem.completed)
-        if (seenIncompleteChecklistItem === undefined) throw new Error("not seeing a checklist item incomplete")
+        if (seenIncompleteChecklistItem === undefined) return false
 
         if (seenIncompleteChecklistItem.type !== "manual" || seenIncompleteChecklistItem.for.type !== "department" || seenIncompleteChecklistItem.for.departmenId !== departmentId) {
             return false

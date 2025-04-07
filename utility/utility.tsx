@@ -25,18 +25,15 @@ export function formatLocalDateTime(dateInput: Date) {
     return customDateTime
 }
 
-export async function resolveFuncToBool(seenFunc: unknown): Promise<boolean> {
+export async function resolveFuncToBool(seenFunc: () => Promise<void>): Promise<boolean> {
     try {
-        if (typeof seenFunc === "function") {
-            seenFunc()
+        await seenFunc()
 
-            return true
-        }
+        return true
 
     } catch (error) {
-        console.log(`$checkErrorFunction`, error);
+        let seenError = error
+        seenError = null
         return false
     }
-
-    return false
 }

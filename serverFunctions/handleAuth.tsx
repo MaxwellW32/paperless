@@ -132,7 +132,7 @@ export async function ensureCanAccessCompany(companyAuth: companyAuthType, crudO
             const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: companyAuth.departmentIdForAuth, runSecurityCheck: false })
             if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
 
-            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, { departmentIdBeingAccessed: "" }, false)
+            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, false)
             if (seenDepartment === undefined) throw new Error("not seeing department")
 
             if (!seenDepartment.canManageRequests) throw new Error("this department can't manage requests")
@@ -203,7 +203,7 @@ export async function ensureCanAccessClientRequest(clientReqAuth: clientRequestA
             if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
 
             //ensure department has edit permissions
-            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, { departmentIdBeingAccessed: "" }, false)
+            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, false)
             if (seenDepartment === undefined) throw new Error("not seeing department")
 
             //ensure department can make changes
@@ -243,9 +243,10 @@ export async function ensureCanAccessClientRequest(clientReqAuth: clientRequestA
         }
 
     } else if (crudOption === "u") {
+        if (clientReqAuth.clientRequestIdBeingAccessed === undefined) throw new Error("not seeing clientRequestIdBeingAccessed")
+
         if (!session.user.fromDepartment) {
             //client
-            if (clientReqAuth.clientRequestIdBeingAccessed === undefined) throw new Error("not seeing clientRequestIdBeingAccessed")
 
             //get client request
             const seenClientRequest = await getSpecificClientRequest(clientReqAuth.clientRequestIdBeingAccessed, clientReqAuth, false)
@@ -259,7 +260,6 @@ export async function ensureCanAccessClientRequest(clientReqAuth: clientRequestA
 
         } else {
             //department
-            if (clientReqAuth.clientRequestIdBeingAccessed === undefined) throw new Error("not seeing clientRequestIdBeingAccessed")
 
             //validation
             if (clientReqAuth.departmentIdForAuth === undefined) throw new Error("not seeing departmentIdForAuth")

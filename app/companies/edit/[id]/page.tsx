@@ -6,7 +6,9 @@ import { resolveFuncToBool } from '@/utility/utility'
 import React from 'react'
 
 export default async function Page({ params }: { params: { id: string } }) {
-    const canEditCompany = await resolveFuncToBool(await ensureCanAccessCompany({ companyIdBeingAccessed: params.id }, "u"))
+    const canEditCompany = await resolveFuncToBool(async () => {
+        await ensureCanAccessCompany({ companyIdBeingAccessed: params.id }, "u")
+    })
 
     const seenCompany: company | undefined = canEditCompany ? await getSpecificCompany(params.id, { companyIdBeingAccessed: params.id }) : undefined
 
