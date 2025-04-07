@@ -8,8 +8,8 @@ export const accessLevelEnum = pgEnum("accessLevel", ["admin"]);
 export const users = pgTable("users", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     fromDepartment: boolean("fromDepartment").notNull().default(false),
-    accessLevel: accessLevelEnum(),
 
+    accessLevel: accessLevelEnum(),
     name: varchar("name", { length: 255 }),
     image: text("image"),
     email: varchar("email", { length: 255 }).unique(),

@@ -9,6 +9,7 @@ import { getUsers } from '@/serverFunctions/handleUser'
 import { company, companyAccessLevel, newUserToCompany, newUserToCompanySchema, updateUserToCompanySchema, user, userToCompany, userToCompanySchema } from '@/types'
 import { addUsersToCompanies, updateUsersToCompanies } from '@/serverFunctions/handleUsersToCompanies'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
+import { ensureUserCanBeAddedToCompany } from '@/utility/validation'
 
 export default function AddEditUserCompany({ sentUserCompany, companiesStarter, submissionFunction }: { sentUserCompany?: userToCompany, companiesStarter: company[], submissionFunction?: () => void }) {
     const initialFormObj: newUserToCompany = {
@@ -122,6 +123,8 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
         <form className={styles.form} action={() => { }}>
             {sentUserCompany === undefined && (
                 <>
+                    <label>user to add</label>
+
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                         <label>search users by name</label>
 
@@ -156,7 +159,9 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
                                             <button className='button1' style={{ backgroundColor: eachUser.id === activeUserId ? "rgb(var(--color1))" : "" }}
                                                 onClick={() => {
                                                     try {
-                                                        if (eachUser.fromDepartment) throw new Error("user not from a company")
+                                                        //validation
+                                                        ensureUserCanBeAddedToCompany(eachUser)
+
                                                         toast.success(`${eachUser.name} selected!`)
 
                                                         activeUserIdSet(eachUser.id)
@@ -173,13 +178,15 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
                         )}
                     </div>
 
+                    <label>company to add</label>
+
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                         <button className='button3'
                             onClick={async () => {
                                 try {
                                     toast.success("searching")
 
-                                    companiesSet(await getCompanies({}))
+                                    companiesSet(await getCompanies())
 
                                 } catch (error) {
                                     consoleAndToastError(error)

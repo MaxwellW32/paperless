@@ -1,12 +1,26 @@
 "use server"
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { updateUser, updateUserSchema, user, userSchema } from "@/types";
-import { eq, like } from "drizzle-orm";
+import { newUser, newUserSchema, updateUser, updateUserSchema, user, userSchema } from "@/types";
+import { eq, like, sql } from "drizzle-orm";
 import { ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth";
 
-export async function updateTheUser(userId: user["id"], userObj: Partial<updateUser>): Promise<user> {
-    await sessionCheckWithError()
+export async function addUsers(newUserObj: newUser): Promise<user> {
+    //security check  
+    await ensureUserIsAdmin()
+
+    newUserSchema.parse(newUserObj)
+
+    //add new request
+    const [addedUser] = await db.insert(users).values({
+        ...newUserObj,
+    }).returning()
+
+    return addedUser
+}
+
+export async function updateUsers(userId: user["id"], userObj: Partial<updateUser>): Promise<user> {
+    await ensureUserIsAdmin()
 
     //validation
     updateUserSchema.partial().parse(userObj)
@@ -20,7 +34,7 @@ export async function updateTheUser(userId: user["id"], userObj: Partial<updateU
     return result
 }
 
-export async function getSpecificUser(userId: user["id"]): Promise<user | undefined> {
+export async function getSpecificUsers(userId: user["id"]): Promise<user | undefined> {
     await sessionCheckWithError()
 
     userSchema.shape.id.parse(userId)
@@ -44,7 +58,6 @@ export async function getSpecificUser(userId: user["id"]): Promise<user | undefi
     return result
 }
 
-
 export async function getUsers(option: { type: "name", name: string } | { type: "all" }, limit = 50, offset = 0): Promise<user[]> {
     await ensureUserIsAdmin()
 
@@ -52,7 +65,9 @@ export async function getUsers(option: { type: "name", name: string } | { type: 
         const results = await db.query.users.findMany({
             limit: limit,
             offset: offset,
-            where: like(users.name, `%${option.name.toLowerCase()}%`),
+            where: (
+                sql`LOWER(${users.name}) LIKE LOWER(${`%${option.name}%`})`
+            )
         });
 
         return results
@@ -68,4 +83,14 @@ export async function getUsers(option: { type: "name", name: string } | { type: 
     } else {
         throw new Error("invalid selection")
     }
+}
+
+export async function deleteUsers(userId: user["id"]) {
+    //security check
+    await ensureUserIsAdmin()
+
+    //validation
+    userSchema.shape.id.parse(userId)
+
+    await db.delete(users).where(eq(users.id, userId));
 }

@@ -244,7 +244,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                     onClick={async () => {
                                                                         toast.success("searching")
 
-                                                                        companiesSet(await getCompanies({}))
+                                                                        companiesSet(await getCompanies())
                                                                     }}
                                                                 >companies</button>
 
@@ -463,7 +463,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                             }}
                                                         />
 
-                                                        <label>Mail: </label>
+                                                        <label>Email Html: </label>
 
                                                         <textarea rows={5} value={eachChecklistItem.email} placeholder='Enter email to send'
                                                             onChange={(e) => {
@@ -490,7 +490,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                     onClick={async () => {
                                                                         toast.success("searching")
 
-                                                                        companiesSet(await getCompanies({}))
+                                                                        companiesSet(await getCompanies())
                                                                     }}
                                                                 >companies</button>
 

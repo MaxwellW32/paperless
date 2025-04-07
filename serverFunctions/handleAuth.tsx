@@ -7,6 +7,10 @@ import { getSpecificUsersToCompanies } from "@/serverFunctions/handleUsersToComp
 import { getSpecificUsersToDepartments } from "@/serverFunctions/handleUsersToDepartments"
 import { authAccessLevelResponseType, clientRequestAuthType, companyAuthType, companySchema, departmentAuthType, departmentSchema } from "@/types"
 
+//reject on no auth
+//return roles 
+//for each resource not edited by admins alone
+
 export async function sessionCheckWithError() {
     const session = await auth()
 
@@ -18,7 +22,17 @@ export async function sessionCheckWithError() {
     }
 }
 
-export async function ensureCanAccessDepartment({ departmentIdBeingAccessed, allowElevatedAccess = false }: departmentAuthType): Promise<authAccessLevelResponseType> {
+export async function ensureUserIsAdmin() {
+    //logged in check
+    const session = await sessionCheckWithError()
+
+    //security
+    if (session.user.accessLevel !== "admin") throw new Error("not authorised to make change - need to be admin")
+
+    return session
+}
+
+export async function ensureCanEditDepartment({ departmentIdBeingAccessed, allowElevatedAccess = false }: departmentAuthType): Promise<authAccessLevelResponseType> {
     //security check - ensures only admin or elevated roles can make change
     const session = await sessionCheckWithError()
 
@@ -41,84 +55,114 @@ export async function ensureCanAccessDepartment({ departmentIdBeingAccessed, all
     return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
 }
 
-export async function ensureCanAccessCompany({ companyIdBeingAccessed, departmentIdForAuth, allowElevatedAccess = false }: companyAuthType): Promise<authAccessLevelResponseType> {
+export async function ensureCanEditCompany({ companyIdBeingAccessed }: companyAuthType): Promise<authAccessLevelResponseType> {
+    //who can edit
+    //company users - company admins can edit company
+    //admin - all edit
+
     //security check - ensures only admin or elevated roles can make change
     const session = await sessionCheckWithError()
 
     //admin pass
     if (session.user.accessLevel === "admin") return { session, accessLevel: "admin" }
 
-    //allow regular access
-    if (allowElevatedAccess) return { session, accessLevel: "elevated" }
-
     //user is from Egov making a change
-    if (session.user.fromDepartment) {
-        if (departmentIdForAuth === undefined) throw new Error("provide departmentId for auth")
-
-        //does the department have edit permissions
-        const seenDepartment = await getSpecificDepartment(departmentIdForAuth, { departmentIdBeingAccessed: "" }, true)
-        if (seenDepartment === undefined) throw new Error("not seeing department")
-
-        //ensure department can make changes
-        if (!seenDepartment.canManageRequests) throw new Error("department doesn't have manage company access")
-
-        //check if in department user has elevated auth
-        return await ensureCanAccessDepartment({ departmentIdBeingAccessed: departmentIdForAuth })
-    }
+    if (session.user.fromDepartment) throw new Error("department user can't edit company")
 
     //ensure clients pass a company id
     if (companyIdBeingAccessed === undefined) throw new Error("provide companyId for auth")
-
-    //validation
     companySchema.shape.id.parse(companyIdBeingAccessed)
 
+    //ensure client is from company
     const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: companyIdBeingAccessed, runSecurityCheck: false })
     if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
+
+    if (seenUserToCompany.companyAccessLevel !== "admin") throw new Error("only company admins can make changes")
 
     //auth role validation
     return { session, accessLevel: seenUserToCompany.companyAccessLevel }
 }
+export async function canUserEditCompany(companyAuth: companyAuthType): Promise<boolean> {
+    try {
+        await ensureCanEditCompany(companyAuth)
+        return true
 
-export async function ensureCanAccesClientRequest(clientReqAuth: clientRequestAuthType): Promise<authAccessLevelResponseType> {
+    } catch (error) {
+        console.log(`$canUserAccesCompany error`, error);
+        return false
+    }
+}
+
+
+export async function ensureCanEditClientRequest(clientReqAuth: clientRequestAuthType): Promise<authAccessLevelResponseType> {
+    //who can edit
+    //company users - can edit checklist if from company - specific forms - manual if waiting on client/email out
+    //department users - can edit checklist if department can manage - and only if manual 
+    //admin - all edit
+    //check checklist at run time to determine access / display different fields of the checklist depending on role
+
     //security check - ensures only admin or elevated roles can make change
     const session = await sessionCheckWithError()
 
     //admin pass
     if (session.user.accessLevel === "admin") return { session, accessLevel: "admin" }
 
-    //allow regular access
-    if (clientReqAuth.allowElevatedAccess) return { session, accessLevel: "elevated" }
+    //get client request
+    const seenClientRequest = await getSpecificClientRequest(clientReqAuth.clientRequestIdBeingAccessed, clientReqAuth, true)
+    if (seenClientRequest === undefined) throw new Error("not seeing clientRequest")
 
-    //if from department you have to be elevated and department capable of change
+    //get latest incomplete checklist item
+    const latestChecklistItem = seenClientRequest.checklist.find(eachChecklistItem => !eachChecklistItem.completed)
+
+    //check department access
     if (session.user.fromDepartment) {
-        if (clientReqAuth.departmentIdForAuth === undefined) throw new Error("provide departmentId for auth")
+        if (clientReqAuth.departmentIdForAuth === undefined) throw new Error("provide department id for auth")
 
-        //does the department have edit permissions
-        const seenDepartment = await getSpecificDepartment(clientReqAuth.departmentIdForAuth, { departmentIdBeingAccessed: "" }, true)
+        //check if user really in department they sent
+        const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: clientReqAuth.departmentIdForAuth, runSecurityCheck: false })
+        if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
+
+        //ensure department has edit permissions
+        const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, { departmentIdBeingAccessed: "" }, true)
         if (seenDepartment === undefined) throw new Error("not seeing department")
 
         //ensure department can make changes
-        if (!seenDepartment.canManageRequests) throw new Error("department doesn't have manage company access")
+        if (!seenDepartment.canManageRequests) throw new Error("department doesn't have manage client request access")
 
-        //check if in department user has elevated auth
-        return await ensureCanAccessDepartment({ departmentIdBeingAccessed: seenDepartment.id })
+        //enusre checklist is waiting for client change
+        if (latestChecklistItem === undefined) throw new Error("not seeing checklist needs to be updated")
+
+        if (latestChecklistItem.type !== "manual") throw new Error("department user can only edit manual checklist items")
+
+        if (latestChecklistItem.for.type !== "department") throw new Error("department user cant update this manual check")
+
+        return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
 
     } else {
-        //get client request
-        const seenClientRequest = await getSpecificClientRequest(clientReqAuth.clientRequestIdBeingAccessed, clientReqAuth, true)
-        if (seenClientRequest === undefined) throw new Error("not seeing clientRequest")
+        //check company access
 
-        //check if in company user has elevated auth
-        return await ensureCanAccessCompany({ companyIdBeingAccessed: seenClientRequest.companyId })
+        //ensure from same company of request
+        const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: seenClientRequest.companyId, runSecurityCheck: false })
+        if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
+
+        //enusre checklist is waiting for client change
+        if (latestChecklistItem === undefined) throw new Error("not seeing checklist needs to be updated")
+
+        if (latestChecklistItem.type === "email") throw new Error("client cant update email checklist item")
+
+        if (latestChecklistItem.type === "manual" && latestChecklistItem.for.type !== "company") throw new Error("client cant update this manual check")
+
+        return { session, accessLevel: seenUserToCompany.companyAccessLevel }
+    }
+}
+export async function canUserEditClientRequest(clientReqAuth: clientRequestAuthType): Promise<boolean> {
+    try {
+        await ensureCanEditClientRequest(clientReqAuth)
+        return true
+
+    } catch (error) {
+        console.log(`$canUserAccesClientRequest error`, error);
+        return false
     }
 }
 
-export async function ensureUserIsAdmin() {
-    //security check - ensures only admin
-    const session = await sessionCheckWithError()
-
-    //security
-    if (session.user.accessLevel !== "admin") throw new Error("not authorised to make change, need to be admin")
-
-    return session
-}

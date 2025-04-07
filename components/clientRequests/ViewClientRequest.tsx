@@ -5,7 +5,7 @@ import { clientRequest, company, department, user } from '@/types'
 import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import Moment from 'react-moment';
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
-import { getSpecificUser } from '@/serverFunctions/handleUser'
+import { getSpecificUsers } from '@/serverFunctions/handleUser'
 import { formatLocalDateTime } from '@/utility/utility'
 
 export default function ViewClientRequest({ sentClientRequest, department }: { sentClientRequest: clientRequest, department?: department }) {
@@ -28,7 +28,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
         const search = async () => {
             const seenUsersPre: (user | undefined)[] = await Promise.all(
                 sentClientRequest.clientsAccessingSite.map(async eachUserId => {
-                    return await getSpecificUser(eachUserId)
+                    return await getSpecificUsers(eachUserId)
                 })
             )
 

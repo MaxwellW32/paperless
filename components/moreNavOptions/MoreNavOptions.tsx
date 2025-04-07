@@ -1,7 +1,7 @@
 "use client"
 import Image from "next/image"
 import { useEffect, useState } from "react"
-import defaultImage2 from "@/public/defaultImage2.jpg"
+import noImage from "@/public/noImage.jpg"
 import styles from "./styles.module.css"
 import SignOutButton from "../SignOutButton"
 import { Session } from "next-auth"
@@ -9,7 +9,12 @@ import Link from "next/link"
 import { useAtom } from "jotai"
 import { userDepartmentCompanySelection } from "@/types"
 import { userDepartmentCompanySelectionGlobal } from "@/utility/globalState"
-import { ensureCanAccessCompany, ensureCanAccessDepartment } from "@/serverFunctions/handleAuth"
+import { ensureCanEditCompany, ensureCanEditDepartment } from "@/serverFunctions/handleAuth"
+
+//make api to get folder
+//get all names from folder
+//loop over that array
+//set the variable
 
 export default function MoreNavOptions({ session }: { session: Session }) {
     const [showingNav, showingNavSet] = useState(false)
@@ -26,7 +31,7 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                 //enusre only runs for users in department 
                 if (userDepartmentCompanySelection.type !== "userDepartment") return
 
-                const { accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
+                const { accessLevel } = await ensureCanEditDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
 
                 if (accessLevel === "admin") {
                     canViewEditDepartmentSet(true)
@@ -49,7 +54,7 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                 //enusre only runs for users in department 
                 if (userDepartmentCompanySelection.type !== "userCompany") return
 
-                const { accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId })
+                const { accessLevel } = await ensureCanEditCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId })
 
                 if (accessLevel === "admin") {
                     canViewEditCompanySet(true)
@@ -65,7 +70,7 @@ export default function MoreNavOptions({ session }: { session: Session }) {
 
     return (
         <div className={styles.contDiv}>
-            <Image alt="logo" src={session.user.image ?? defaultImage2} width={30} height={30} style={{ objectFit: "cover" }}
+            <Image alt="logo" src={session.user.image !== null ? session.user.image : noImage} width={30} height={30} style={{ objectFit: "cover" }}
                 onClick={() => { showingNavSet(prev => !prev) }}
             />
 

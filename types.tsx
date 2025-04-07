@@ -69,8 +69,8 @@ export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema
 export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
 export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
-export type clientRequestAuthType = { clientRequestIdBeingAccessed: clientRequest["id"], departmentIdForAuth?: department["id"], allowElevatedAccess?: boolean }
-export type companyAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"], allowElevatedAccess?: boolean }
+export type clientRequestAuthType = { clientRequestIdBeingAccessed: clientRequest["id"], departmentIdForAuth?: department["id"] }
+export type companyAuthType = { companyIdBeingAccessed?: company["id"] }
 export type departmentAuthType = { departmentIdBeingAccessed: department["id"], allowElevatedAccess?: boolean }
 
 export type userDepartmentCompanySelection = {
@@ -231,6 +231,7 @@ export type checklistItemType = z.infer<typeof checklistItemSchema>
 
 //keep synced with db schema
 export const userAccessSchema = z.enum(["admin"])
+export type userAccessLevel = z.infer<typeof userAccessSchema>
 
 export const userSchema = z.object({
     id: z.string().min(1),
@@ -247,11 +248,11 @@ export type user = z.infer<typeof userSchema> & {
     usersToCompanies?: userToCompany[],
 }
 
-export const adminUpdateUserSchema = userSchema.omit({ id: true, emailVerified: true, })
-export type adminUpdateUser = z.infer<typeof adminUpdateUserSchema>
-
-export const updateUserSchema = userSchema.omit({ id: true, accessLevel: true, emailVerified: true, })
+export const updateUserSchema = userSchema.omit({ id: true })
 export type updateUser = z.infer<typeof updateUserSchema>
+
+export const newUserSchema = userSchema.omit({ id: true, emailVerified: true })
+export type newUser = z.infer<typeof newUserSchema>
 
 
 

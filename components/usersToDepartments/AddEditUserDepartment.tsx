@@ -9,6 +9,7 @@ import { department, newUserToDepartment, newUserToDepartmentSchema, updateUserT
 import { addUsersToDepartments, updateUsersToDepartments } from '@/serverFunctions/handleUsersToDepartments'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { getUsers } from '@/serverFunctions/handleUser'
+import { ensureUserCanBeAddedToDepartment } from '@/utility/validation'
 
 export default function AddEditUserDepartment({ sentUserDepartment, departmentsStarter, submissionFunction }: { sentUserDepartment?: userToDepartment, departmentsStarter: department[], submissionFunction?: () => void }) {
     const initialFormObj: newUserToDepartment = {
@@ -121,6 +122,8 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
         <form className={styles.form} action={() => { }}>
             {sentUserDepartment === undefined && (
                 <>
+                    <label>user to add</label>
+
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                         <label>search users by name</label>
 
@@ -155,7 +158,9 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                                             <button className='button1' style={{ backgroundColor: eachUser.id === activeUserId ? "rgb(var(--color1))" : "" }}
                                                 onClick={() => {
                                                     try {
-                                                        if (!eachUser.fromDepartment) throw new Error("user not from a department")
+                                                        //validation
+                                                        ensureUserCanBeAddedToDepartment(eachUser)
+
                                                         toast.success(`${eachUser.name} selected!`)
 
                                                         activeUserIdSet(eachUser.id)
@@ -171,6 +176,8 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                             </div>
                         )}
                     </div>
+
+                    <label>department to add</label>
 
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                         <button className='button3'

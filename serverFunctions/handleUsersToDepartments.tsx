@@ -4,12 +4,19 @@ import { usersToDepartments } from "@/db/schema"
 import { department, departmentSchema, newUserToDepartment, newUserToDepartmentSchema, updateUserToDepartment, updateUserToDepartmentSchema, user, userSchema, userToDepartment, userToDepartmentSchema } from "@/types"
 import { ensureUserIsAdmin } from '@/serverFunctions/handleAuth'
 import { and, eq } from "drizzle-orm"
+import { getSpecificUsers } from "./handleUser"
+import { ensureUserCanBeAddedToDepartment } from "@/utility/validation"
 
 export async function addUsersToDepartments(newUsersToDepartmentsObj: newUserToDepartment): Promise<userToDepartment> {
     //security check - ensures only admin or elevated roles can make change
     await ensureUserIsAdmin()
 
     newUserToDepartmentSchema.parse(newUsersToDepartmentsObj)
+
+    //ensure user can be added to company
+    const seenUser = await getSpecificUsers(newUsersToDepartmentsObj.userId)
+    if (seenUser === undefined) throw new Error("not seeing user")
+    ensureUserCanBeAddedToDepartment(seenUser)
 
     const addedUserToDepartment = await db.insert(usersToDepartments).values({
         ...newUsersToDepartmentsObj,

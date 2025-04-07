@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import TextInput from '../textInput/TextInput'
 import { z } from "zod"
 import { company, companySchema, newCompany, newCompanySchema, smallAdminUpdateCompanySchema, updateCompanySchema } from '@/types'
-import { ensureCanAccessCompany } from '@/serverFunctions/handleAuth'
+import { ensureCanEditCompany } from '@/serverFunctions/handleAuth'
 import { addCompanies, updateCompanies } from '@/serverFunctions/handleCompanies'
 import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray/SimpleDisplayStringArray'
 
@@ -34,7 +34,7 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
             try {
                 if (sentCompany === undefined) return
 
-                const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: sentCompany.id })
+                const { session, accessLevel } = await ensureCanEditCompany({ companyIdBeingAccessed: sentCompany.id })
 
                 if (session.user.accessLevel === "admin") {
                     //app admin

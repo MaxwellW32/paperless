@@ -4,47 +4,51 @@ import { clientRequests } from "@/db/schema"
 import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
-import { ensureCanAccesClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin } from "./handleAuth"
+import { ensureCanEditClientRequest, ensureCanEditCompany, ensureCanEditDepartment, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
 
-export async function addClientRequests(newClientRequestObj: newClientRequest): Promise<clientRequest> {
+export async function addClientRequests(newClientRequestObj: newClientRequest, departmentIdForAuth?: clientRequestAuthType["departmentIdForAuth"], runAutomation = true): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
-    const { session } = await ensureCanAccesClientRequest({ clientRequestIdBeingAccessed: "", allowElevatedAccess: true })
+    const session = await sessionCheckWithError()
 
     newClientRequestSchema.parse(newClientRequestObj)
 
     //add new request
-    const addedClientRequest = await db.insert(clientRequests).values({
+    const [addedClientRequest] = await db.insert(clientRequests).values({
         userId: session.user.id,
         status: "in-progress",
         dateSubmitted: new Date,
         ...newClientRequestObj,
     }).returning()
 
-    return addedClientRequest[0]
+    if (runAutomation) {
+        await runChecklistAutomation(addedClientRequest.id, addedClientRequest.checklist, { clientRequestIdBeingAccessed: addedClientRequest.id, departmentIdForAuth })
+    }
+
+    return addedClientRequest
 }
 
-export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
+export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType, runAutomation = true): Promise<clientRequest> {
     //security check
-    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
-    if (accessLevel === "regular") throw new Error("not access to update client request")
+    await ensureCanEditClientRequest(clientRequestAuth)
 
-    let validatedUpdatedClientRequestObj: Partial<clientRequest> | undefined = undefined
-    validatedUpdatedClientRequestObj = updateClientRequestSchema.partial().parse(updatedClientRequestObj)
-
-    if (validatedUpdatedClientRequestObj === undefined) throw new Error("not seeing updated client request object")
+    updateClientRequestSchema.partial().parse(updatedClientRequestObj)
 
     const [updatedClientRequest] = await db.update(clientRequests)
         .set({
-            ...validatedUpdatedClientRequestObj
+            ...updatedClientRequestObj
         })
         .where(eq(clientRequests.id, clientRequestId)).returning()
+
+    if (runAutomation) {
+        await runChecklistAutomation(updatedClientRequest.id, updatedClientRequest.checklist, clientRequestAuth)
+    }
 
     return updatedClientRequest
 }
 
 export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
     //security check
-    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
+    await ensureCanEditClientRequest(clientRequestAuth)
     clientRequestSchema.shape.id.parse(clientRequestId)
 
     //get client request
@@ -57,18 +61,12 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
     }
 
     //send update
-    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, accessLevel === "admin" ? clientRequestAuth : { clientRequestIdBeingAccessed: clientRequestAuth.clientRequestIdBeingAccessed, allowElevatedAccess: true })
+    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, clientRequestAuth)
     return updatedClientRequest
 }
 
-export async function deleteClientRequests(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType) {
-    //security check
-    const { accessLevel } = await ensureCanAccesClientRequest(clientRequestAuth)
-
-    if (accessLevel !== "admin") {
-        throw new Error("not access to delete client request")
-    }
-
+export async function deleteClientRequests(clientRequestId: clientRequest["id"]) {
+    await ensureUserIsAdmin()
     //validation
     clientRequestSchema.shape.id.parse(clientRequestId)
 
@@ -80,7 +78,7 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
 
     if (!skipAuth) {
         //security check
-        await ensureCanAccesClientRequest(clientRequestAuth)
+        await ensureCanEditClientRequest(clientRequestAuth)
     }
 
     const result = await db.query.clientRequests.findFirst({
@@ -93,7 +91,7 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
     return result
 }
 
-export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"], companyAuth: companyAuthType, } | { type: "all" }, status: clientRequestStatusType, getOppositeOfStatus: boolean, limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"], companyAuth: companyAuthType, } | { type: "all" }, filter: { type: "status", status: clientRequestStatusType, getOppositeOfStatus: boolean } | { type: "date" }, limit = 50, offset = 0): Promise<clientRequest[]> {
     if (option.type === "user") {
         await ensureUserIsAdmin()
 
@@ -103,7 +101,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
         const results = await db.query.clientRequests.findMany({
             limit: limit,
             offset: offset,
-            where: and(eq(clientRequests.userId, option.userId), getOppositeOfStatus ? ne(clientRequests.status, status) : eq(clientRequests.status, status)),
+            where: filter.type === "status" ? and(eq(clientRequests.userId, option.userId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
             with: {
                 checklistStarter: true
             },
@@ -113,14 +111,14 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
     } else if (option.type === "company") {
         //security check
-        await ensureCanAccessCompany(option.companyAuth)
+        await ensureCanEditCompany(option.companyAuth)
 
         companySchema.shape.id.parse(option.companyId)
 
         const results = await db.query.clientRequests.findMany({
             limit: limit,
             offset: offset,
-            where: and(eq(clientRequests.companyId, option.companyId), getOppositeOfStatus ? ne(clientRequests.status, status) : eq(clientRequests.status, status)),
+            where: filter.type === "status" ? and(eq(clientRequests.userId, option.companyId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
             with: {
                 checklistStarter: true
             },
@@ -134,9 +132,10 @@ export async function getClientRequests(option: { type: "user", userId: user["id
         const results = await db.query.clientRequests.findMany({
             limit: limit,
             offset: offset,
-            where: getOppositeOfStatus ? ne(clientRequests.status, status) : eq(clientRequests.status, status),
+            where: filter.type === "status" ? filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status) : undefined,
             with: {
-                checklistStarter: true
+                checklistStarter: true,
+                company: true
             },
         });
 
@@ -149,7 +148,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
 export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], departmentAuth: departmentAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
-    await ensureCanAccessDepartment(departmentAuth)
+    await ensureCanEditDepartment(departmentAuth)
 
     //get client requests in progress
     const results = await db.query.clientRequests.findMany({

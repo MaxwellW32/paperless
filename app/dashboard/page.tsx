@@ -6,7 +6,7 @@ import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStar
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
-import { getClientRequests, getClientRequestsForDepartments, runChecklistAutomation, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
+import { getClientRequests, getClientRequestsForDepartments, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 import { useSession } from 'next-auth/react'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
@@ -14,6 +14,7 @@ import ViewClientRequest from '@/components/clientRequests/ViewClientRequest'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { updateRefreshObj } from '@/utility/utility'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
+import { canUserEditClientRequest } from '@/serverFunctions/handleAuth'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -63,10 +64,10 @@ export default function Page() {
                 //if admin
                 if (session.user.accessLevel === "admin") {
                     //if app admin get all active requests
-                    newClientRequests = await getClientRequests({ type: "all" }, 'in-progress', false)
+                    newClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: false })
 
                     //get history
-                    clientRequestsHistory = await getClientRequests({ type: "all" }, 'in-progress', true)
+                    clientRequestsHistory = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: true })
 
                 } else {
                     if (userDepartmentCompanySelection === null) return
@@ -78,10 +79,10 @@ export default function Page() {
 
                     } else if (userDepartmentCompanySelection.type === "userCompany") {
                         //set active requests from client
-                        newClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, 'in-progress', false)
+                        newClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, { type: "status", status: 'in-progress', getOppositeOfStatus: false })
 
                         //set client requests history
-                        clientRequestsHistory = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, 'in-progress', true)
+                        clientRequestsHistory = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, { type: "status", status: 'in-progress', getOppositeOfStatus: true })
                     }
                 }
 
@@ -280,48 +281,20 @@ export default function Page() {
                     <div className={styles.clientRequests}>
                         <h3>Active requests</h3>
 
-                        {activeClientRequests.map(eachActiveClientRequest => {
+                        {activeClientRequests.map(async eachActiveClientRequest => {
                             //furthest non complete item
                             const activeChecklistItemIndex = eachActiveClientRequest.checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
                             const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachActiveClientRequest.checklist[activeChecklistItemIndex] : undefined
 
-                            let canEditRequest = false
-                            let canEditRequestPrompt = false
-                            let newClientRequestAuth: clientRequestAuthType | undefined = undefined
+                            let newClientRequestAuth: clientRequestAuthType = { clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userDepartment" ? userDepartmentCompanySelection.seenUserToDepartment.departmentId : undefined }
                             const progressBar: number | undefined = activeChecklistItemIndex !== -1 ? (activeChecklistItemIndex + 1) / eachActiveClientRequest.checklist.length : undefined
+
+                            let canAccess = false
 
                             //ensure can edit checklist item                            
                             if (activeChecklistItem !== undefined && activeChecklistItem.type === "manual") {
-                                if (session.user.accessLevel === "admin") {
-                                    canEditRequestPrompt = true
-                                    newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id }
-
-                                } else {
-                                    if (userDepartmentCompanySelection === null) return
-
-                                    //if manual signoff is meant for department
-                                    if (activeChecklistItem.for.type === "department" && userDepartmentCompanySelection.type === "userDepartment" && activeChecklistItem.for.departmenId === userDepartmentCompanySelection.seenUserToDepartment.departmentId) {
-                                        canEditRequestPrompt = true
-                                        newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id, allowElevatedAccess: true }
-
-                                        //if manual signoff is meant for company
-                                    } else if (activeChecklistItem.for.type === "company" && userDepartmentCompanySelection.type === "userCompany" && activeChecklistItem.for.companyId === userDepartmentCompanySelection.seenUserToCompany.companyId) {
-                                        canEditRequestPrompt = true
-                                        newClientRequestAuth = { clientRequestIdBeingAccessed: eachActiveClientRequest.id }
-                                    }
-                                }
-                            }
-
-                            //who can edit the request
-                            if (session.user.accessLevel === "admin") {
-                                canEditRequest = true
-
-                            } else {
-                                if (userDepartmentCompanySelection === null) return
-
-                                if (userDepartmentCompanySelection.type === "userCompany" && userDepartmentCompanySelection.seenUserToCompany.companyAccessLevel !== "regular") {
-                                    canEditRequest = true
-                                }
+                                //search 
+                                canAccess = await canUserEditClientRequest(newClientRequestAuth)
                             }
 
                             return (
@@ -351,7 +324,7 @@ export default function Page() {
                                             }}
                                         >view</button>
 
-                                        {canEditRequest && (
+                                        {canAccess && (
                                             <button style={{ justifySelf: "flex-end" }} className='button2'
                                                 onClick={() => {
                                                     //making view request
@@ -362,28 +335,20 @@ export default function Page() {
                                                 }}
                                             >edit</button>
                                         )}
-
                                     </div>
 
-                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && canEditRequestPrompt && (
+                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && canAccess && (
                                         <div>
                                             <label>{activeChecklistItem.prompt}</label>
 
                                             <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
                                                 runAction={async () => {
                                                     try {
-                                                        if (newClientRequestAuth === undefined) return
-
-                                                        const newCompletedManualChecklistItem = activeChecklistItem
+                                                        const newCompletedManualChecklistItem = { ...activeChecklistItem }
                                                         newCompletedManualChecklistItem.completed = true
 
                                                         //update server
-                                                        const latestClientRequest = await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, newClientRequestAuth)
-
-                                                        //run automation
-                                                        await runChecklistAutomation(latestClientRequest.id, latestClientRequest.checklist, newClientRequestAuth)
-
-                                                        //server change happened
+                                                        await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, newClientRequestAuth)
 
                                                         //update locally
                                                         refreshObjSet(prevRefreshObj => {

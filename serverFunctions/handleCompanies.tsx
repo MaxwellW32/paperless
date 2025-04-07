@@ -2,7 +2,7 @@
 import { db } from "@/db"
 import { companies } from "@/db/schema"
 import { company, companyAuthType, companySchema, newCompany, newCompanySchema, smallAdminUpdateCompanySchema, updateCompanySchema } from "@/types"
-import { ensureCanAccessCompany, ensureUserIsAdmin } from "./handleAuth"
+import { ensureCanEditCompany, ensureUserIsAdmin } from "./handleAuth"
 
 import { eq } from "drizzle-orm"
 
@@ -22,7 +22,7 @@ export async function addCompanies(newCompanyObj: newCompany): Promise<company> 
 
 export async function updateCompanies(companyId: company["id"], updatedCompanyObj: Partial<company>) {
     //security check - only app admins / company admin
-    const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
+    const { session, accessLevel } = await ensureCanEditCompany({ companyIdBeingAccessed: companyId })
 
     let validatedUpdatedCompanyObj: Partial<company> | undefined = undefined
 
@@ -62,7 +62,7 @@ export async function getSpecificCompany(companyId: company["id"], companyAuth: 
     companySchema.shape.id.parse(companyId)
 
     //security check
-    await ensureCanAccessCompany(companyAuth)
+    await ensureCanEditCompany(companyAuth)
 
     const result = await db.query.companies.findFirst({
         where: eq(companies.id, companyId),
@@ -71,9 +71,11 @@ export async function getSpecificCompany(companyId: company["id"], companyAuth: 
     return result
 }
 
-export async function getCompanies(companyAuth: companyAuthType): Promise<company[]> {
+export async function getCompanies(skipCheck = false): Promise<company[]> {
     //security check
-    await ensureCanAccessCompany(companyAuth)
+    if (!skipCheck) {
+        await ensureUserIsAdmin()
+    }
 
     const results = await db.query.companies.findMany({
         with: {

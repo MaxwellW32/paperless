@@ -1,14 +1,13 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import styles from "./admin.module.css"
-import { checklistStarter, department, company, userToDepartment, userToCompany } from '@/types'
-import { getChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
+import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest } from '@/types'
+import { getChecklistStarters, getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
-import ShowMore from '../showMore/ShowMore'
 import AddEditChecklistStarter from '../checklistStarters/AddEditChecklistStarter'
 import { getUsersToDepartments } from '@/serverFunctions/handleUsersToDepartments'
 import AddEditCompany from '../companies/AddEditCompany'
@@ -16,29 +15,46 @@ import AddEditDepartment from '../departments/AddEditDepartment'
 import AddEditUserDepartment from '../usersToDepartments/AddEditUserDepartment'
 import AddEditUserCompany from '../usersToCompanies/AddEditUserCompany'
 import { getUsersToCompanies } from '@/serverFunctions/handleUsersToCompanies'
+import * as schema from "@/db/schema"
+import AddEditUser from '../users/AddEditUser'
+import { getUsers } from '@/serverFunctions/handleUser'
+import AddEditClientRequest from '../clientRequests/AddEditClientRequest'
+import { getClientRequests } from '@/serverFunctions/handleClientRequests'
+import ChooseChecklistStarter from '../checklistStarters/ChooseChecklistStarter'
+
+type schemaType = typeof schema;
+type schemaTableNamesType = keyof schemaType;
+type activeScreenType = schemaTableNamesType
 
 export default function Page() {
-    const activeScreenOptions = ["checklistStarters", "departments", "companies", "usersToDepartments", "usersToCompanies"] as const
-    type activeScreenType = typeof activeScreenOptions[number]
-    const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>(undefined)
+    const allTables = Object.keys(schema) as schemaTableNamesType[];
+    const editableTables = allTables.filter(key => !key.endsWith("Relations") && !key.endsWith("Enum") && key !== "accounts" && key !== "sessions" && key !== "verificationTokens").sort((a, b) => a.localeCompare(b)) //get all tables defined in the schema, sort it alphabetically
 
+    const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>(undefined)
     const [showingSideBar, showingSideBarSet] = useState(true)
+    const [checklistStarterTypes, checklistStarterTypesSet] = useState<checklistStarter["type"][] | undefined>()
+    const [chosenChecklistStarterType, chosenChecklistStarterTypeSet] = useState<checklistStarter["type"] | undefined>()
+
+    const [users, usersSet] = useState<user[]>([])
+    const [checklistStarters, checklistStartersSet] = useState<checklistStarter[]>([])
+    const [clientRequests, clientRequestsSet] = useState<clientRequest[]>([])
     const [departments, departmentsSet] = useState<department[]>([])
     const [companies, companiesSet] = useState<company[]>([])
     const [usersToDepartments, usersToDepartmentsSet] = useState<userToDepartment[]>([])
     const [usersToCompanies, usersToCompaniesSet] = useState<userToCompany[]>([])
 
     const [adding, addingSet] = useState<Partial<{ [key in activeScreenType]: boolean }>>({})
+
     const [editing, editingSet] = useState<{
-        usersToDepartments?: {
-            userToDepartmentId: userToDepartment["id"]
-        },
-        usersToCompanies?: {
-            userToCompanyId: userToCompany["id"]
-        },
+        users?: user,
+        checklistStarters?: checklistStarter,
+        clientRequests?: clientRequest,
+        usersToDepartments?: userToDepartment,
+        usersToCompanies?: userToCompany,
     }>({})
 
-    //usersToDepartments - get by department - selection menu
+    const searchDebounce = useRef<NodeJS.Timeout>()
+
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
             <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
@@ -62,11 +78,11 @@ export default function Page() {
                     <option value={''}
                     >select a screen</option>
 
-                    {activeScreenOptions.map(eachActiveScreenOption => {
+                    {editableTables.map(eachEditableTableName => {
 
                         return (
-                            <option key={eachActiveScreenOption} value={eachActiveScreenOption}
-                            >{eachActiveScreenOption}</option>
+                            <option key={eachEditableTableName} value={eachEditableTableName}
+                            >{eachEditableTableName}</option>
                         )
                     })}
                 </select>
@@ -85,27 +101,230 @@ export default function Page() {
                     {activeScreen !== undefined ? (
                         <>
                             {activeScreen === "checklistStarters" && (
-                                <ShowMore
-                                    label='checklist starters'
-                                    content={
-                                        <ChecklistStartersScreen />
-                                    }
-                                />
+                                <>
+                                    <AddResourceButton
+                                        adding={adding}
+                                        addingSet={addingSet}
+                                        keyName={"checklistStarters"}
+                                    />
+
+                                    {adding.checklistStarters === true && (
+                                        <AddEditChecklistStarter />
+                                    )}
+
+                                    <button className='button3'
+                                        onClick={async () => {
+                                            try {
+                                                toast.success("searching")
+
+                                                checklistStartersSet(await getChecklistStarters())
+
+                                            } catch (error) {
+                                                consoleAndToastError(error)
+                                            }
+                                        }}
+                                    >search checklist starters</button>
+
+                                    {checklistStarters.length > 0 && (
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                                            {checklistStarters.map(eachCheckliststarter => {
+
+                                                return (
+                                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                        <h3>{eachCheckliststarter.type}</h3>
+
+                                                        {((editing.checklistStarters !== undefined && editing.checklistStarters.id === eachCheckliststarter.id) || (editing.checklistStarters === undefined)) && (
+                                                            <>
+                                                                <button className='button1'
+                                                                    onClick={() => {
+                                                                        editingSet(prevEditing => {
+                                                                            const newEditing = { ...prevEditing }
+
+                                                                            //set / reset editing
+                                                                            newEditing.checklistStarters = newEditing.checklistStarters === undefined ? eachCheckliststarter : undefined
+
+                                                                            return newEditing
+                                                                        })
+                                                                    }}
+                                                                >{editing.checklistStarters !== undefined ? "cancel edit" : "edit checklistStarters"}</button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {editing.checklistStarters !== undefined && (
+                                        <>
+                                            <h3>Edit form:</h3>
+
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                <AddEditChecklistStarter
+                                                    sentChecklistStarter={editing.checklistStarters}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
+
+                            {activeScreen === "clientRequests" && (
+                                <>
+                                    <AddResourceButton
+                                        adding={adding}
+                                        addingSet={addingSet}
+                                        keyName={"clientRequests"}
+                                    />
+
+                                    {adding.clientRequests === true && (
+                                        <>
+                                            <button className='button3'
+                                                onClick={async () => {
+                                                    toast.success("searching")
+
+                                                    checklistStarterTypesSet(await getChecklistStartersTypes())
+                                                }}
+                                            >search checklistStarters</button>
+
+                                            <select defaultValue={""}
+                                                onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
+                                                    if (event.target.value === "") return
+
+                                                    const eachStarterType = event.target.value as checklistStarter["type"]
+
+                                                    chosenChecklistStarterTypeSet(eachStarterType)
+                                                }}
+                                            >
+                                                <option value={''}
+                                                >select a request</option>
+
+                                                {checklistStarterTypes !== undefined && checklistStarterTypes.map(eachStarterType => {
+
+                                                    return (
+                                                        <option key={eachStarterType} value={eachStarterType}
+
+                                                        >{eachStarterType}</option>
+                                                    )
+                                                })}
+                                            </select>
+
+                                            {chosenChecklistStarterType !== undefined && (
+                                                <ChooseChecklistStarter seenChecklistStarterType={chosenChecklistStarterType} />
+                                            )}
+                                        </>
+                                    )}
+
+                                    <button className='button3'
+                                        onClick={async () => {
+                                            try {
+                                                toast.success("searching")
+
+                                                clientRequestsSet(await getClientRequests({ type: "all" }, { type: "date" }))
+
+                                            } catch (error) {
+                                                consoleAndToastError(error)
+                                            }
+                                        }}
+                                    >search client requests</button>
+
+                                    {clientRequests.length > 0 && (
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                            {clientRequests.map(eachClientRequest => {
+                                                if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
+
+                                                return (
+                                                    <div key={eachClientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                        <h3>type: {eachClientRequest.checklistStarter.type}</h3>
+
+                                                        <h3>company: {eachClientRequest.company.name}</h3>
+
+                                                        {((editing.clientRequests !== undefined && editing.clientRequests.id === eachClientRequest.id) || (editing.clientRequests === undefined)) && (
+                                                            <>
+                                                                <button className='button1'
+                                                                    onClick={() => {
+                                                                        editingSet(prevEditing => {
+                                                                            const newEditing = { ...prevEditing }
+
+                                                                            //set / reset editing
+                                                                            newEditing.clientRequests = newEditing.clientRequests === undefined ? eachClientRequest : undefined
+
+                                                                            return newEditing
+                                                                        })
+                                                                    }}
+                                                                >{editing.clientRequests !== undefined ? "cancel edit" : "edit clientRequests"}</button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {editing.clientRequests !== undefined && (
+                                        <>
+                                            <h3>Edit form:</h3>
+
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                <AddEditClientRequest
+                                                    sentClientRequest={editing.clientRequests}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
+
+                            {activeScreen === "companies" && (
+                                <>
+                                    <AddResourceButton
+                                        adding={adding}
+                                        addingSet={addingSet}
+                                        keyName={"companies"}
+                                    />
+
+                                    {adding.companies === true && (
+                                        <AddEditCompany />
+                                    )}
+
+                                    <button className='button3'
+                                        onClick={async () => {
+                                            try {
+                                                toast.success("searching")
+
+                                                companiesSet(await getCompanies())
+
+                                            } catch (error) {
+                                                consoleAndToastError(error)
+                                            }
+                                        }}
+                                    >search companies</button>
+
+                                    {companies.length > 0 && (
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                                            {companies.map(eachCompany => {
+                                                return (
+                                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                        <h3>{eachCompany.name}</h3>
+
+                                                        <Link href={`companies/edit/${eachCompany.id}`} target='_blank'>
+                                                            <button className='button1'>edit company</button>
+                                                        </Link>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </>
                             )}
 
                             {activeScreen === "departments" && (
                                 <>
-                                    <button className='button1'
-                                        onClick={() => {
-                                            addingSet(prevAdding => {
-                                                const newAdding = { ...prevAdding }
-                                                if (newAdding.departments === undefined) newAdding.departments = false
-
-                                                newAdding.departments = !newAdding.departments
-                                                return newAdding
-                                            })
-                                        }}
-                                    >{adding.departments ? "close" : "add department"}</button>
+                                    <AddResourceButton
+                                        adding={adding}
+                                        addingSet={addingSet}
+                                        keyName={"departments"}
+                                    />
 
                                     {adding.departments === true && (
                                         <AddEditDepartment />
@@ -134,12 +353,6 @@ export default function Page() {
                                                         <Link href={`departments/edit/${eachDepartment.id}`} target='_blank'>
                                                             <button className='button1'>edit department</button>
                                                         </Link>
-
-                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                            <Link href={`usersToDepartments/add`} target='_blank'>
-                                                                <button className='button1'>add userToDepartment</button>
-                                                            </Link>
-                                                        </div>
                                                     </div>
                                                 )
                                             })}
@@ -148,68 +361,90 @@ export default function Page() {
                                 </>
                             )}
 
-                            {activeScreen === "companies" && (
+                            {activeScreen === "users" && (
                                 <>
-                                    <button className='button1'
-                                        onClick={() => {
-                                            addingSet(prevAdding => {
-                                                const newAdding = { ...prevAdding }
-                                                if (newAdding.companies === undefined) newAdding.companies = false
+                                    <AddResourceButton
+                                        adding={adding}
+                                        addingSet={addingSet}
+                                        keyName={"users"}
+                                    />
 
-                                                newAdding.companies = !newAdding.companies
-                                                return newAdding
-                                            })
-                                        }}
-                                    >{adding.companies ? "close" : "add company"}</button>
-
-                                    {adding.companies === true && (
-                                        <AddEditCompany />
+                                    {adding.users === true && (
+                                        <AddEditUser />
                                     )}
 
-                                    <button className='button3'
-                                        onClick={async () => {
-                                            try {
-                                                toast.success("searching")
+                                    <label>search users by name</label>
 
-                                                companiesSet(await getCompanies({}))
+                                    <input type='text' placeholder='enter name to search' defaultValue={""}
+                                        onChange={async (e) => {
+                                            try {
+                                                if (searchDebounce.current) clearTimeout(searchDebounce.current)
+
+                                                searchDebounce.current = setTimeout(async () => {
+                                                    if (e.target.value === "") return
+
+                                                    toast.success("searching")
+
+                                                    usersSet(await getUsers({ type: "name", name: e.target.value }))
+                                                }, 1000);
 
                                             } catch (error) {
                                                 consoleAndToastError(error)
                                             }
                                         }}
-                                    >search companies</button>
+                                    />
 
-                                    {companies.length > 0 && (
+                                    {users.length > 0 && (
                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
-                                            {companies.map(eachCompany => {
-                                                return (
-                                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                        <h3>{eachCompany.name}</h3>
+                                            {users.map(eachUser => {
 
-                                                        <Link href={`companies/edit/${eachCompany.id}`} target='_blank'>
-                                                            <button className='button1'>edit company</button>
-                                                        </Link>
+                                                return (
+                                                    <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                        <h3>{eachUser.name}</h3>
+
+                                                        {((editing.users !== undefined && editing.users.id === eachUser.id) || (editing.users === undefined)) && (
+                                                            <>
+                                                                <button className='button1'
+                                                                    onClick={() => {
+                                                                        editingSet(prevEditing => {
+                                                                            const newEditing = { ...prevEditing }
+
+                                                                            //set / reset editing
+                                                                            newEditing.users = newEditing.users === undefined ? eachUser : undefined
+
+                                                                            return newEditing
+                                                                        })
+                                                                    }}
+                                                                >{editing.users !== undefined ? "cancel edit" : "edit users"}</button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 )
                                             })}
                                         </div>
+                                    )}
+
+                                    {editing.users !== undefined && (
+                                        <>
+                                            <h3>Edit form:</h3>
+
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                <AddEditUser
+                                                    sentUser={editing.users}
+                                                />
+                                            </div>
+                                        </>
                                     )}
                                 </>
                             )}
 
                             {activeScreen === "usersToDepartments" && (
                                 <>
-                                    <button className='button1'
-                                        onClick={() => {
-                                            addingSet(prevAdding => {
-                                                const newAdding = { ...prevAdding }
-                                                if (newAdding.usersToDepartments === undefined) newAdding.usersToDepartments = false
-
-                                                newAdding.usersToDepartments = !newAdding.usersToDepartments
-                                                return newAdding
-                                            })
-                                        }}
-                                    >{adding.usersToDepartments ? "close" : "add userToDepartment"}</button>
+                                    <AddResourceButton
+                                        adding={adding}
+                                        addingSet={addingSet}
+                                        keyName={"usersToDepartments"}
+                                    />
 
                                     {adding.usersToDepartments === true && (
                                         <AddEditUserDepartment departmentsStarter={departments} />
@@ -279,12 +514,12 @@ export default function Page() {
                                                                     const newEditing = { ...prevEditing }
 
                                                                     //set / reset editing
-                                                                    newEditing.usersToDepartments = newEditing.usersToDepartments === undefined ? { userToDepartmentId: eachUserToDepartment.id } : undefined
+                                                                    newEditing.usersToDepartments = newEditing.usersToDepartments === undefined ? eachUserToDepartment : undefined
 
                                                                     return newEditing
                                                                 })
                                                             }}
-                                                        >{editing.usersToDepartments ? "cancel edit" : "edit userToDepartment"}</button>
+                                                        >{editing.usersToDepartments !== undefined ? "cancel edit" : "edit userToDepartment"}</button>
                                                     </div>
                                                 )
                                             })}
@@ -297,7 +532,7 @@ export default function Page() {
 
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                                 <AddEditUserDepartment
-                                                    sentUserDepartment={usersToDepartments.find(eachUserToDepartment => editing.usersToDepartments !== undefined && eachUserToDepartment.id === editing.usersToDepartments.userToDepartmentId)}
+                                                    sentUserDepartment={editing.usersToDepartments}
                                                     departmentsStarter={departments}
                                                 />
                                             </div>
@@ -308,17 +543,11 @@ export default function Page() {
 
                             {activeScreen === "usersToCompanies" && (
                                 <>
-                                    <button className='button1'
-                                        onClick={() => {
-                                            addingSet(prevAdding => {
-                                                const newAdding = { ...prevAdding }
-                                                if (newAdding.usersToCompanies === undefined) newAdding.usersToCompanies = false
-
-                                                newAdding.usersToCompanies = !newAdding.usersToCompanies
-                                                return newAdding
-                                            })
-                                        }}
-                                    >{adding.usersToCompanies ? "close" : "add userToCompany"}</button>
+                                    <AddResourceButton
+                                        adding={adding}
+                                        addingSet={addingSet}
+                                        keyName={"usersToCompanies"}
+                                    />
 
                                     {adding.usersToCompanies === true && (
                                         <AddEditUserCompany companiesStarter={companies} />
@@ -329,7 +558,7 @@ export default function Page() {
                                             try {
                                                 toast.success("searching")
 
-                                                companiesSet(await getCompanies({}))
+                                                companiesSet(await getCompanies())
 
                                             } catch (error) {
                                                 consoleAndToastError(error)
@@ -387,12 +616,12 @@ export default function Page() {
                                                                     const newEditing = { ...prevEditing }
 
                                                                     //set / reset editing
-                                                                    newEditing.usersToCompanies = newEditing.usersToCompanies === undefined ? { userToCompanyId: eachUserToCompany.id } : undefined
+                                                                    newEditing.usersToCompanies = newEditing.usersToCompanies === undefined ? eachUserToCompany : undefined
 
                                                                     return newEditing
                                                                 })
                                                             }}
-                                                        >{editing.usersToCompanies ? "cancel edit" : "edit usersToCompanies"}</button>
+                                                        >{editing.usersToCompanies !== undefined ? "cancel edit" : "edit usersToCompanies"}</button>
                                                     </div>
                                                 )
                                             })}
@@ -405,7 +634,7 @@ export default function Page() {
 
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                                 <AddEditUserCompany
-                                                    sentUserCompany={usersToCompanies.find(eachUserToCompany => editing.usersToCompanies !== undefined && eachUserToCompany.id === editing.usersToCompanies.userToCompanyId)}
+                                                    sentUserCompany={editing.usersToCompanies}
                                                     companiesStarter={companies}
                                                 />
                                             </div>
@@ -423,62 +652,18 @@ export default function Page() {
     )
 }
 
-function ChecklistStartersScreen() {
-    const [activeChecklistStarterType, activeChecklistStarterTypeSet] = useState<checklistStarter["type"] | undefined>()
-    const [checklistStarters, checklistStartersSet] = useState<checklistStarter[] | undefined>()
-    const activeChecklistStarter = useMemo<checklistStarter | undefined>(() => {
-        if (checklistStarters === undefined || activeChecklistStarterType === undefined) return undefined
-
-        return checklistStarters.find(eachChecklistStarter => eachChecklistStarter.type === activeChecklistStarterType)
-
-    }, [checklistStarters, activeChecklistStarterType])
-
-
-    useEffect(() => {
-        handleGetChecklistStarters()
-
-    }, [])
-
-    async function handleGetChecklistStarters() {
-        const results = await getChecklistStarters()
-        checklistStartersSet(results)
-    }
-
+function AddResourceButton({ keyName, adding, addingSet }: { keyName: activeScreenType, adding: Partial<{ [key in activeScreenType]: boolean }>, addingSet: React.Dispatch<React.SetStateAction<Partial<{ [key in activeScreenType]: boolean }>>> }) {
     return (
-        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-            <ShowMore
-                label='add checklist starter'
-                content={
-                    <AddEditChecklistStarter
-                        submissionAction={handleGetChecklistStarters}
-                    />
-                }
-            />
+        <button className='button1'
+            onClick={() => {
+                addingSet(prevAdding => {
+                    const newAdding = { ...prevAdding }
+                    if (newAdding[keyName] === undefined) newAdding[keyName] = false
 
-            {checklistStarters !== undefined && checklistStarters.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
-                    {checklistStarters.map(eachChecklistStarter => {
-                        return (
-                            <button key={eachChecklistStarter.type} className='button1' style={{ backgroundColor: eachChecklistStarter.type === activeChecklistStarter?.type ? "rgb(var(--color1))" : "" }}
-                                onClick={() => {
-                                    activeChecklistStarterTypeSet(eachChecklistStarter.type)
-                                }}
-                            >{eachChecklistStarter.type}</button>
-                        )
-                    })}
-                </div>
-            )}
-
-            {activeChecklistStarter !== undefined && (
-                <ShowMore
-                    label='edit checklist starter'
-                    content={
-                        <AddEditChecklistStarter sentChecklistStarter={activeChecklistStarter}
-                            submissionAction={handleGetChecklistStarters}
-                        />
-                    }
-                />
-            )}
-        </div>
+                    newAdding[keyName] = !newAdding[keyName]
+                    return newAdding
+                })
+            }}
+        >{adding[keyName] ? "close" : `add ${keyName}`}</button>
     )
 }

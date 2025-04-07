@@ -5,11 +5,11 @@ import Image from "next/image"
 import logo from "@/public/logo.png"
 import MoreNavOptions from "../moreNavOptions/MoreNavOptions"
 import CompanyDepartmentSelection from "../CompanyDepartmentSelection"
-import { getSpecificUser } from "@/serverFunctions/handleUser"
+import { getSpecificUsers } from "@/serverFunctions/handleUser"
 
 export default async function Nav() {
     const session = await auth()
-    const seenUser = session !== null ? await getSpecificUser(session.user.id) : undefined
+    const seenUser = session !== null ? await getSpecificUsers(session.user.id) : undefined
 
     return (
         <nav className={styles.nav}>

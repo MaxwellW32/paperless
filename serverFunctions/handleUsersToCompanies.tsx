@@ -1,13 +1,20 @@
 "use server"
 import { db } from "@/db"
 import { usersToCompanies } from "@/db/schema"
-import { company, companyAuthType, companySchema, newUserToCompany, newUserToCompanySchema, updateUserToCompany, updateUserToCompanySchema, user, userSchema, userToCompany, userToCompanySchema } from "@/types"
-import { ensureCanAccessCompany, ensureUserIsAdmin } from "./handleAuth"
+import { company, companySchema, newUserToCompany, newUserToCompanySchema, updateUserToCompany, updateUserToCompanySchema, user, userSchema, userToCompany, userToCompanySchema } from "@/types"
+import { ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
 import { and, eq } from "drizzle-orm"
+import { getSpecificUsers } from "./handleUser"
+import { ensureUserCanBeAddedToCompany } from "@/utility/validation"
 
 export async function addUsersToCompanies(newUsersToCompaniesObj: newUserToCompany): Promise<userToCompany> {
     //security check - ensures only admin or elevated roles can make change
     await ensureUserIsAdmin()
+
+    //ensure user can be added to company
+    const seenUser = await getSpecificUsers(newUsersToCompaniesObj.userId)
+    if (seenUser === undefined) throw new Error("not seeing user")
+    ensureUserCanBeAddedToCompany(seenUser)
 
     newUserToCompanySchema.parse(newUsersToCompaniesObj)
 
@@ -118,10 +125,11 @@ export async function getUsersToCompanies(option: { type: "user", userId: user["
     }
 }
 
-export async function getUsersToCompaniesWithVisitAccess(companyId: company["id"], companyAuth: companyAuthType): Promise<userToCompany[]> {
+export async function getUsersToCompaniesWithVisitAccess(companyId: company["id"]): Promise<userToCompany[]> {
     companySchema.shape.id.parse(companyId)
 
-    await ensureCanAccessCompany(companyAuth)
+    //validation
+    await sessionCheckWithError()
 
     const result = await db.query.usersToCompanies.findMany({
         where: and(eq(usersToCompanies.companyId, companyId), eq(usersToCompanies.onAccessList, true)),
