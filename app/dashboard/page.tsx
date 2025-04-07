@@ -12,9 +12,9 @@ import { useSession } from 'next-auth/react'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import ViewClientRequest from '@/components/clientRequests/ViewClientRequest'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
-import { updateRefreshObj } from '@/utility/utility'
+import { resolveFuncToBool, updateRefreshObj } from '@/utility/utility'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
-import { canUserAccessClientRequest } from '@/serverFunctions/handleAuth'
+import { ensureCanAccessClientRequest } from '@/serverFunctions/handleAuth'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -294,7 +294,7 @@ export default function Page() {
                             //ensure can edit checklist item                            
                             if (activeChecklistItem !== undefined && activeChecklistItem.type === "manual") {
                                 //search 
-                                canAccess = await canUserAccessClientRequest(newClientRequestAuth, "edit")
+                                canAccess = await resolveFuncToBool(ensureCanAccessClientRequest({ clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }, "u"))
                             }
 
                             return (

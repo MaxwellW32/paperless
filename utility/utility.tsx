@@ -24,3 +24,19 @@ export function formatLocalDateTime(dateInput: Date) {
     const customDateTime = dateInput.toLocaleString('en-US', options);
     return customDateTime
 }
+
+export async function resolveFuncToBool(seenFunc: unknown): Promise<boolean> {
+    try {
+        if (typeof seenFunc === "function") {
+            seenFunc()
+
+            return true
+        }
+
+    } catch (error) {
+        console.log(`$checkErrorFunction`, error);
+        return false
+    }
+
+    return false
+}

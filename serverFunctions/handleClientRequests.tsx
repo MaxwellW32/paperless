@@ -4,11 +4,11 @@ import { clientRequests } from "@/db/schema"
 import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
-import { ensureUserCanAccessClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
+import { ensureCanAccessClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
 
-export async function addClientRequests(newClientRequestObj: newClientRequest, runAutomation = true): Promise<clientRequest> {
+export async function addClientRequests(newClientRequestObj: newClientRequest, clientRequestAuth: clientRequestAuthType runAutomation = true): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
-    const session = await sessionCheckWithError()
+    const session = await ensureCanAccessClientRequest(clientRequestAuth, "c")
 
     newClientRequestSchema.parse(newClientRequestObj)
 
@@ -30,7 +30,7 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, r
 export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType, runAutomation = true, runAuth = true): Promise<clientRequest> {
     if (runAuth) {
         //security check
-        await ensureUserCanAccessClientRequest(clientRequestAuth)
+        await ensureCanAccessClientRequest(clientRequestAuth, "u")
     }
 
     updateClientRequestSchema.partial().parse(updatedClientRequestObj)
@@ -51,9 +51,10 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
 export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType, runAuth = true): Promise<clientRequest> {
     if (runAuth) {
         //security check
-        await ensureUserCanAccessClientRequest(clientRequestAuth)
-        clientRequestSchema.shape.id.parse(clientRequestId)
+        await ensureCanAccessClientRequest(clientRequestAuth, "u")
     }
+
+    clientRequestSchema.shape.id.parse(clientRequestId)
 
     //get client request
     const seenClientRequest = await getSpecificClientRequest(clientRequestId, clientRequestAuth, runAuth)
@@ -69,8 +70,9 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
     return updatedClientRequest
 }
 
-export async function deleteClientRequests(clientRequestId: clientRequest["id"]) {
-    await ensureUserIsAdmin()
+export async function deleteClientRequests(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType) {
+    await ensureCanAccessClientRequest(clientRequestAuth, "d")
+
     //validation
     clientRequestSchema.shape.id.parse(clientRequestId)
 
@@ -82,7 +84,7 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
 
     if (runAuth) {
         //security check
-        await ensureUserCanAccessClientRequest(clientRequestAuth)
+        await ensureCanAccessClientRequest(clientRequestAuth, "r")
     }
 
     const result = await db.query.clientRequests.findFirst({
@@ -115,7 +117,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
     } else if (option.type === "company") {
         //security check
-        await ensureCanAccessCompany(option.companyAuth)
+        await sessionCheckWithError()
 
         companySchema.shape.id.parse(option.companyId)
 
@@ -152,7 +154,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
 export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], departmentAuth: departmentAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
-    await ensureCanAccessDepartment(departmentAuth)
+    await sessionCheckWithError()
 
     //get client requests in progress
     const results = await db.query.clientRequests.findMany({

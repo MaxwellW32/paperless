@@ -251,7 +251,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                 <button className='button1'
                                                                     onClick={async () => {
                                                                         toast.success("searching")
-                                                                        const seenDepartments = await getDepartments({ departmentIdBeingAccessed: "" })
+                                                                        const seenDepartments = await getDepartments()
 
                                                                         departmentsSet(seenDepartments)
                                                                     }}
@@ -497,7 +497,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                 <button className='button1'
                                                                     onClick={async () => {
                                                                         toast.success("searching")
-                                                                        const seenDepartments = await getDepartments({ departmentIdBeingAccessed: "" })
+                                                                        const seenDepartments = await getDepartments()
 
                                                                         departmentsSet(seenDepartments)
                                                                     }}

@@ -33,7 +33,7 @@ export default function AddEditDepartment({ sentDepartment }: { sentDepartment?:
             try {
                 if (sentDepartment === undefined) return
 
-                const { session, accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: sentDepartment.id })
+                const { session, accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: sentDepartment.id }, "u")
 
                 if (session.user.accessLevel === "admin") {
                     //app admin

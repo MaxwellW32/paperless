@@ -5,7 +5,7 @@ import { getSpecificClientRequest } from "@/serverFunctions/handleClientRequests
 import { getSpecificDepartment } from "@/serverFunctions/handleDepartments"
 import { getSpecificUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies"
 import { getSpecificUsersToDepartments } from "@/serverFunctions/handleUsersToDepartments"
-import { authAccessLevelResponseType, clientRequestAuthType, companyAuthType, companySchema, departmentAuthType, departmentSchema, viewOptionType } from "@/types"
+import { authAccessLevelResponseType, clientRequestAuthType, companyAuthType, companySchema, departmentAuthType, departmentSchema, crudOptionType } from "@/types"
 
 //reject on no auth
 //return roles 
@@ -32,135 +32,266 @@ export async function ensureUserIsAdmin() {
     return session
 }
 
-export async function ensureCanAccessDepartment({ departmentIdBeingAccessed }: departmentAuthType, viewOption: viewOptionType): Promise<authAccessLevelResponseType> {
+export async function ensureCanAccessDepartment(departmentAuth: departmentAuthType, crudOption: crudOptionType): Promise<authAccessLevelResponseType> {
     //security check - ensures only admin or elevated roles can make change
     const session = await sessionCheckWithError()
 
-    //who can access a department
-    //admin - view/edit...
-    //company users - view no - edit no...
-    //department users - view - admin users in their own department...
-
     //admin pass
-    if (session.user.accessLevel === "admin") return { session, accessLevel: "admin" }
+    if (session.user.accessLevel === "admin") return { session, accessLevel: session.user.accessLevel }
 
-    //user is from Egov making a change
-    if (!session.user.fromDepartment) throw new Error("not from department")
+    if (crudOption === "c") {
+        //if not admin - can't make company
+        if (session.user.accessLevel !== "admin") throw new Error("need to be admin to create department")
 
-    //validation
-    departmentSchema.shape.id.parse(departmentIdBeingAccessed)
+        return { session, accessLevel: session.user.accessLevel }
 
-    //ensure user exists in department
-    const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: departmentIdBeingAccessed, runSecurityCheck: false })
-    if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
+    } else if (crudOption === "r") {
+        if (!session.user.fromDepartment) {
+            //client
+            throw new Error("client cant access department record")
 
-    if (viewOption === "edit" && seenUserToDepartment.departmentAccessLevel !== "admin") throw new Error("only department admin users can make change")
+        } else {
+            //from department
 
-    //auth role validation
-    return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+            //validation
+            departmentSchema.shape.id.parse(departmentAuth.departmentIdBeingAccessed)
+
+            //ensure user exists in department
+            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: departmentAuth.departmentIdBeingAccessed, runSecurityCheck: false })
+            if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
+
+            return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+        }
+
+    } else if (crudOption === "u") {
+        if (!session.user.fromDepartment) {
+            //client
+            throw new Error("client cant update department")
+
+        } else {
+            //from department
+
+            //validation
+            departmentSchema.shape.id.parse(departmentAuth.departmentIdBeingAccessed)
+
+            //ensure user exists in department
+            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: departmentAuth.departmentIdBeingAccessed, runSecurityCheck: false })
+            if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
+
+            //ensure only department admin can update
+            if (seenUserToDepartment.departmentAccessLevel !== "admin") throw new Error("not authorised to update")
+
+            return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+        }
+
+    } else if (crudOption === "d") {
+        //if not admin - can't delete department
+        if (session.user.accessLevel !== "admin") throw new Error("need to be admin to delete department")
+
+        return { session, accessLevel: session.user.accessLevel }
+
+    } else {
+        throw new Error("invalid selection")
+    }
 }
 
-export async function ensureCanAccessCompany({ companyIdBeingAccessed }: companyAuthType, viewOption: viewOptionType): Promise<authAccessLevelResponseType> {
+export async function ensureCanAccessCompany(companyAuth: companyAuthType, crudOption: crudOptionType): Promise<authAccessLevelResponseType> {
     //security check - ensures only admin or elevated roles can make change
     const session = await sessionCheckWithError()
 
-    //who can access a company
-    //admin - view/edit...
-    //company users - view - admins can edit
-    //department users - view - no edit
-
     //admin pass
-    if (session.user.accessLevel === "admin") return { session, accessLevel: "admin" }
+    if (session.user.accessLevel === "admin") return { session, accessLevel: session.user.accessLevel }
 
-    //user is from Egov making a change
-    if (session.user.fromDepartment && viewOption === "edit") throw new Error("department user can't edit company")
+    if (crudOption === "c") {
+        //if not admin - can't make company
+        if (session.user.accessLevel !== "admin") throw new Error("need to be admin to create company")
 
-    //ensure clients pass a company id
-    if (companyIdBeingAccessed === undefined) throw new Error("provide companyId for auth")
-    companySchema.shape.id.parse(companyIdBeingAccessed)
+        return { session, accessLevel: session.user.accessLevel }
 
-    //ensure client is from company
-    const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: companyIdBeingAccessed, runSecurityCheck: false })
-    if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
+    } else if (crudOption === "r") {
+        if (!session.user.fromDepartment) {
+            //client
 
-    if (seenUserToCompany.companyAccessLevel !== "admin" && viewOption === "edit") throw new Error("only company admins can make changes")
+            //validation
+            if (companyAuth.companyIdBeingAccessed === undefined) throw new Error("provide companyId for auth")
 
-    //auth role validation
-    return { session, accessLevel: seenUserToCompany.companyAccessLevel }
+            //ensure client is from company
+            const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: companyAuth.companyIdBeingAccessed, runAuth: false })
+            if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
+
+            return { session, accessLevel: seenUserToCompany.companyAccessLevel }
+
+        } else {
+            //from department
+            if (companyAuth.departmentIdForAuth === undefined) throw new Error("provide department id for auth")
+
+            //validation
+            departmentSchema.shape.id.parse(companyAuth.departmentIdForAuth)
+
+            //ensure user exists in department
+            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: companyAuth.departmentIdForAuth, runSecurityCheck: false })
+            if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
+
+            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, { departmentIdBeingAccessed: "" }, false)
+            if (seenDepartment === undefined) throw new Error("not seeing department")
+
+            if (!seenDepartment.canManageRequests) throw new Error("this department can't manage requests")
+
+            return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+        }
+
+    } else if (crudOption === "u") {
+        if (!session.user.fromDepartment) {
+            //client
+
+            //validation
+            if (companyAuth.companyIdBeingAccessed === undefined) throw new Error("provide companyId for auth")
+
+            //ensure client is from company
+            const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: companyAuth.companyIdBeingAccessed, runAuth: false })
+            if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
+
+            //ensure company admin
+            if (seenUserToCompany.companyAccessLevel !== "admin") throw new Error("only company admins can edit")
+
+            return { session, accessLevel: seenUserToCompany.companyAccessLevel }
+
+        } else {
+            //from department
+            throw new Error("department user can't edit company")
+        }
+
+    } else if (crudOption === "d") {
+        //if not admin - can't delete company
+        if (session.user.accessLevel !== "admin") throw new Error("need to be admin to delete company")
+
+        return { session, accessLevel: session.user.accessLevel }
+
+    } else {
+        throw new Error("invalid selection")
+    }
 }
 
-export async function ensureUserCanAccessClientRequest(clientReqAuth: clientRequestAuthType, viewOption: viewOptionType): Promise<authAccessLevelResponseType> {
-    //who can access client request
-    //admin - view/edit...
-    //company users - view - edit same company as request, can only edit client request...
-    //department users - view - edit if department can make change
-
+export async function ensureCanAccessClientRequest(clientReqAuth: clientRequestAuthType, crudOption: crudOptionType): Promise<authAccessLevelResponseType> {
     //security check - ensures only admin or elevated roles can make change
     const session = await sessionCheckWithError()
 
     //admin pass
-    if (session.user.accessLevel === "admin") return { session, accessLevel: "admin" }
+    if (session.user.accessLevel === "admin") return { session, accessLevel: session.user.accessLevel }
 
-    //get client request
-    const seenClientRequest = await getSpecificClientRequest(clientReqAuth.clientRequestIdBeingAccessed, clientReqAuth, false)
-    if (seenClientRequest === undefined) throw new Error("not seeing clientRequest")
+    if (crudOption === "c") {
+        if (!session.user.fromDepartment) {
+            //client
+            if (clientReqAuth.companyIdForAuth === undefined) throw new Error("not seeing companyIdForAuth")
 
-    //get latest incomplete checklist item
-    const latestChecklistItem = seenClientRequest.checklist.find(eachChecklistItem => !eachChecklistItem.completed)
+            //ensure client is from company on request
+            const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: clientReqAuth.companyIdForAuth, runAuth: false })
+            if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
 
-    //check department access
-    if (session.user.fromDepartment) {
-        if (clientReqAuth.departmentIdForAuth === undefined) throw new Error("provide department id for auth")
+            return { session, accessLevel: seenUserToCompany.companyAccessLevel }
 
-        //check if user is really in department they sent
-        const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: clientReqAuth.departmentIdForAuth, runSecurityCheck: false })
-        if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
+        } else {
+            //department
 
-        if (viewOption === "edit") {
+            //validation
+            if (clientReqAuth.departmentIdForAuth === undefined) throw new Error("not seeing departmentIdForAuth")
+
+            departmentSchema.shape.id.parse(clientReqAuth.departmentIdForAuth)
+
+            //ensure user exists in department
+            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: clientReqAuth.departmentIdForAuth, runSecurityCheck: false })
+            if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
+
             //ensure department has edit permissions
-            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, { departmentIdBeingAccessed: "" }, true)
+            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, { departmentIdBeingAccessed: "" }, false)
             if (seenDepartment === undefined) throw new Error("not seeing department")
 
             //ensure department can make changes
             if (!seenDepartment.canManageRequests) throw new Error("department doesn't have manage client request access")
 
+            return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+        }
+
+    } else if (crudOption === "r") {
+        if (!session.user.fromDepartment) {
+            //client
+            if (clientReqAuth.clientRequestIdBeingAccessed === undefined) throw new Error("not seeing clientRequestIdBeingAccessed")
+
+            //get client request
+            const seenClientRequest = await getSpecificClientRequest(clientReqAuth.clientRequestIdBeingAccessed, clientReqAuth, false)
+            if (seenClientRequest === undefined) throw new Error("not seeing clientRequest")
+
+            //ensure client is from company on request
+            const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: seenClientRequest.companyId, runAuth: false })
+            if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
+
+            return { session, accessLevel: seenUserToCompany.companyAccessLevel }
+
+        } else {
+            //department
+
+            //validation
+            if (clientReqAuth.departmentIdForAuth === undefined) throw new Error("not seeing departmentIdForAuth")
+
+            departmentSchema.shape.id.parse(clientReqAuth.departmentIdForAuth)
+
+            //ensure user exists in department
+            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: clientReqAuth.departmentIdForAuth, runSecurityCheck: false })
+            if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
+
+            return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+        }
+
+    } else if (crudOption === "u") {
+        if (!session.user.fromDepartment) {
+            //client
+            if (clientReqAuth.clientRequestIdBeingAccessed === undefined) throw new Error("not seeing clientRequestIdBeingAccessed")
+
+            //get client request
+            const seenClientRequest = await getSpecificClientRequest(clientReqAuth.clientRequestIdBeingAccessed, clientReqAuth, false)
+            if (seenClientRequest === undefined) throw new Error("not seeing clientRequest")
+
+            //ensure client is from company on request
+            const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: seenClientRequest.companyId, runAuth: false })
+            if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
+
+            return { session, accessLevel: seenUserToCompany.companyAccessLevel }
+
+        } else {
+            //department
+            if (clientReqAuth.clientRequestIdBeingAccessed === undefined) throw new Error("not seeing clientRequestIdBeingAccessed")
+
+            //validation
+            if (clientReqAuth.departmentIdForAuth === undefined) throw new Error("not seeing departmentIdForAuth")
+            departmentSchema.shape.id.parse(clientReqAuth.departmentIdForAuth)
+
+            //ensure user exists in department
+            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: clientReqAuth.departmentIdForAuth, runSecurityCheck: false })
+            if (seenUserToDepartment === undefined) throw new Error("not seeing userToDepartment info")
+
+            //get client request
+            const seenClientRequest = await getSpecificClientRequest(clientReqAuth.clientRequestIdBeingAccessed, clientReqAuth, false)
+            if (seenClientRequest === undefined) throw new Error("not seeing clientRequest")
+
+            //get latest incomplete checklist item
+            const latestChecklistItem = seenClientRequest.checklist.find(eachChecklistItem => !eachChecklistItem.completed)
+
             //enusre checklist is waiting for client change
             if (latestChecklistItem === undefined) throw new Error("not seeing checklist needs to be updated")
 
-            if (latestChecklistItem.type !== "manual") throw new Error("department user can only edit manual checklist items")
+            if (latestChecklistItem.type !== "manual") throw new Error("checklist type is not manual")
+            if (latestChecklistItem.for.type !== "department") throw new Error("not meant for department signoff")
 
-            if (latestChecklistItem.for.type !== "department") throw new Error("department user cant update this manual check")
+            return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
         }
 
-        return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+    } else if (crudOption === "d") {
+        //if not admin - can't delete department
+        if (session.user.accessLevel !== "admin") throw new Error("need to be admin to delete client request")
+
+        return { session, accessLevel: session.user.accessLevel }
 
     } else {
-        //check company access
-
-        //ensure client from same company that made request
-        const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: seenClientRequest.companyId, runSecurityCheck: false })
-        if (seenUserToCompany === undefined) throw new Error("not seeing seenUserToCompany info")
-
-        if (viewOption === "edit") {
-            //enusre checklist is waiting for client change
-            if (latestChecklistItem === undefined) throw new Error("not seeing checklist needs to be updated")
-
-            if (latestChecklistItem.type === "email") throw new Error("client cant update email checklist item")
-
-            if (latestChecklistItem.type === "manual" && latestChecklistItem.for.type !== "company") throw new Error("client cant update this manual check")
-        }
-
-        return { session, accessLevel: seenUserToCompany.companyAccessLevel }
-    }
-}
-export async function canUserAccessClientRequest(clientReqAuth: clientRequestAuthType, viewOption: viewOptionType): Promise<boolean> {
-    try {
-        await ensureUserCanAccessClientRequest(clientReqAuth, viewOption)
-        return true
-
-    } catch (error) {
-        console.log(`$canUserAccessClientRequest err`, error);
-
-        return false
+        throw new Error("invalid selection")
     }
 }

@@ -69,8 +69,8 @@ export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema
 export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
 export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
-export type clientRequestAuthType = { clientRequestIdBeingAccessed: clientRequest["id"], departmentIdForAuth?: department["id"] }
-export type companyAuthType = { companyIdBeingAccessed?: company["id"] }
+export type clientRequestAuthType = { clientRequestIdBeingAccessed?: clientRequest["id"], companyIdForAuth?: company["id"], departmentIdForAuth?: department["id"] }
+export type companyAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"] }
 export type departmentAuthType = { departmentIdBeingAccessed: department["id"] }
 
 export type userDepartmentCompanySelection = {
@@ -97,7 +97,7 @@ export type activeScreenType = {
 
 export type authAccessLevelResponseType = { session: Session, accessLevel: userDepartmentAccessLevel | companyAccessLevel }
 
-export type viewOptionType = "view" | "edit"
+export type crudOptionType = "c" | "r" | "u" | "d"
 
 
 

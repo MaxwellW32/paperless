@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm"
 
 export async function addCompanies(newCompanyObj: newCompany): Promise<company> {
     //security check - ensures only admin can add
-    await ensureUserIsAdmin()
+    await ensureCanAccessCompany({ companyIdBeingAccessed: "" }, "c")
 
     newCompanySchema.parse(newCompanyObj)
 
@@ -22,7 +22,7 @@ export async function addCompanies(newCompanyObj: newCompany): Promise<company> 
 
 export async function updateCompanies(companyId: company["id"], updatedCompanyObj: Partial<company>) {
     //security check - only app admins / company admin
-    const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
+    const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: companyId }, "u")
 
     let validatedUpdatedCompanyObj: Partial<company> | undefined = undefined
 
@@ -50,7 +50,7 @@ export async function updateCompanies(companyId: company["id"], updatedCompanyOb
 
 export async function deleteCompanies(companyId: company["id"]) {
     //security check
-    await ensureUserIsAdmin()
+    await ensureCanAccessCompany({ companyIdBeingAccessed: companyId }, "d")
 
     //validation
     companySchema.shape.id.parse(companyId)
@@ -59,10 +59,10 @@ export async function deleteCompanies(companyId: company["id"]) {
 }
 
 export async function getSpecificCompany(companyId: company["id"], companyAuth: companyAuthType): Promise<company | undefined> {
-    companySchema.shape.id.parse(companyId)
-
     //security check
-    await ensureCanAccessCompany(companyAuth)
+    await ensureCanAccessCompany(companyAuth, "r")
+
+    companySchema.shape.id.parse(companyId)
 
     const result = await db.query.companies.findFirst({
         where: eq(companies.id, companyId),

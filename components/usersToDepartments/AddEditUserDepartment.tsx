@@ -185,7 +185,7 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                                 try {
                                     toast.success("searching")
 
-                                    departmentsSet(await getDepartments({ departmentIdBeingAccessed: "" }))
+                                    departmentsSet(await getDepartments())
 
                                 } catch (error) {
                                     consoleAndToastError(error)

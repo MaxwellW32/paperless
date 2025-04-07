@@ -34,7 +34,7 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
             try {
                 if (sentCompany === undefined) return
 
-                const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: sentCompany.id })
+                const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: sentCompany.id }, "u")
 
                 if (session.user.accessLevel === "admin") {
                     //app admin

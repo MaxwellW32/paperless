@@ -48,7 +48,7 @@ export async function deleteUsersToCompanies(usersToCompaniesId: userToCompany["
     await db.delete(usersToCompanies).where(eq(usersToCompanies.id, usersToCompaniesId));
 }
 
-export async function getSpecificUsersToCompanies(options: { type: "id", userCompanyId: userToCompany["id"] } | { type: "both", userId: user["id"], companyId: company["id"], runSecurityCheck?: boolean }): Promise<userToCompany | undefined> {
+export async function getSpecificUsersToCompanies(options: { type: "id", userCompanyId: userToCompany["id"] } | { type: "both", userId: user["id"], companyId: company["id"], runAuth?: boolean }): Promise<userToCompany | undefined> {
     if (options.type === "id") {
         userToCompanySchema.shape.id.parse(options.userCompanyId)
 
@@ -63,12 +63,12 @@ export async function getSpecificUsersToCompanies(options: { type: "id", userCom
         return result
 
     } else if (options.type === "both") {
-        if (options.runSecurityCheck === undefined) {
-            options.runSecurityCheck = true
+        if (options.runAuth === undefined) {
+            options.runAuth = true
         }
 
         //security
-        if (options.runSecurityCheck) {
+        if (options.runAuth) {
             await ensureUserIsAdmin()
         }
 

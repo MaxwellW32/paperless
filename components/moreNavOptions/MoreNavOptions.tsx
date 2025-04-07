@@ -10,11 +10,7 @@ import { useAtom } from "jotai"
 import { userDepartmentCompanySelection } from "@/types"
 import { userDepartmentCompanySelectionGlobal } from "@/utility/globalState"
 import { ensureCanAccessCompany, ensureCanAccessDepartment } from "@/serverFunctions/handleAuth"
-
-//make api to get folder
-//get all names from folder
-//loop over that array
-//set the variable
+import { resolveFuncToBool } from "@/utility/utility"
 
 export default function MoreNavOptions({ session }: { session: Session }) {
     const [showingNav, showingNavSet] = useState(false)
@@ -25,43 +21,14 @@ export default function MoreNavOptions({ session }: { session: Session }) {
     //get canViewEditDepartment on load
     useEffect(() => {
         const search = async () => {
-            try {
-                if (userDepartmentCompanySelection === null) return
+            if (userDepartmentCompanySelection === null) return
 
-                //enusre only runs for users in department 
-                if (userDepartmentCompanySelection.type !== "userDepartment") return
+            //check if non admin user can edit company/department 
+            if (userDepartmentCompanySelection.type === "userDepartment") {
+                canViewEditDepartmentSet(await resolveFuncToBool(await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId }, "u")))
 
-                const { accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
-
-                if (accessLevel === "admin") {
-                    canViewEditDepartmentSet(true)
-                }
-
-            } catch (error) {
-                console.log(`$error canShowViewDepartment`, error);
-            }
-        }
-        search()
-
-    }, [userDepartmentCompanySelection])
-
-    //get canShowViewCompany on load
-    useEffect(() => {
-        const search = async () => {
-            try {
-                if (userDepartmentCompanySelection === null) return
-
-                //enusre only runs for users in department 
-                if (userDepartmentCompanySelection.type !== "userCompany") return
-
-                const { accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId })
-
-                if (accessLevel === "admin") {
-                    canViewEditCompanySet(true)
-                }
-
-            } catch (error) {
-                console.log(`$error canShowViewCompany`, error);
+            } else if (userDepartmentCompanySelection.type === "userCompany") {
+                canViewEditCompanySet(await resolveFuncToBool(await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId }, "u")))
             }
         }
         search()
