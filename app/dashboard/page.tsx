@@ -14,7 +14,7 @@ import ViewClientRequest from '@/components/clientRequests/ViewClientRequest'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { updateRefreshObj } from '@/utility/utility'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
-import { canUserEditClientRequest } from '@/serverFunctions/handleAuth'
+import { canUserAccessClientRequest } from '@/serverFunctions/handleAuth'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -294,7 +294,7 @@ export default function Page() {
                             //ensure can edit checklist item                            
                             if (activeChecklistItem !== undefined && activeChecklistItem.type === "manual") {
                                 //search 
-                                canAccess = await canUserEditClientRequest(newClientRequestAuth)
+                                canAccess = await canUserAccessClientRequest(newClientRequestAuth, "edit")
                             }
 
                             return (

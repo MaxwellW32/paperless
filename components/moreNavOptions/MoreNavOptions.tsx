@@ -9,7 +9,7 @@ import Link from "next/link"
 import { useAtom } from "jotai"
 import { userDepartmentCompanySelection } from "@/types"
 import { userDepartmentCompanySelectionGlobal } from "@/utility/globalState"
-import { ensureCanEditCompany, ensureCanEditDepartment } from "@/serverFunctions/handleAuth"
+import { ensureCanAccessCompany, ensureCanAccessDepartment } from "@/serverFunctions/handleAuth"
 
 //make api to get folder
 //get all names from folder
@@ -31,7 +31,7 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                 //enusre only runs for users in department 
                 if (userDepartmentCompanySelection.type !== "userDepartment") return
 
-                const { accessLevel } = await ensureCanEditDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
+                const { accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
 
                 if (accessLevel === "admin") {
                     canViewEditDepartmentSet(true)
@@ -54,7 +54,7 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                 //enusre only runs for users in department 
                 if (userDepartmentCompanySelection.type !== "userCompany") return
 
-                const { accessLevel } = await ensureCanEditCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId })
+                const { accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId })
 
                 if (accessLevel === "admin") {
                     canViewEditCompanySet(true)

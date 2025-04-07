@@ -1,5 +1,5 @@
 import AddEditDepartment from '@/components/departments/AddEditDepartment'
-import { ensureCanEditDepartment } from '@/serverFunctions/handleAuth'
+import { ensureCanAccessDepartment } from '@/serverFunctions/handleAuth'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import { department } from '@/types'
 import React from 'react'
@@ -13,7 +13,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         let localCanEditDepartment: boolean = false
 
         try {
-            const { accessLevel } = await ensureCanEditDepartment({ departmentIdBeingAccessed: params.id })
+            const { accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: params.id })
 
             //app admin / department admin can edit
             if (accessLevel === "admin") {

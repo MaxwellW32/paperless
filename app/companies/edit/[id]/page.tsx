@@ -1,5 +1,5 @@
 import AddEditCompany from '@/components/companies/AddEditCompany'
-import { ensureCanEditCompany } from '@/serverFunctions/handleAuth'
+import { ensureCanAccessCompany } from '@/serverFunctions/handleAuth'
 import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import { company } from '@/types'
 import React from 'react'
@@ -13,7 +13,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         let localCanEditCompany: boolean = false
 
         try {
-            const { accessLevel } = await ensureCanEditCompany({ companyIdBeingAccessed: params.id })
+            const { accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: params.id })
 
             //app admin / company admin can edit
             if (accessLevel === "admin") {

@@ -2,7 +2,7 @@
 import { db } from "@/db"
 import { companies } from "@/db/schema"
 import { company, companyAuthType, companySchema, newCompany, newCompanySchema, smallAdminUpdateCompanySchema, updateCompanySchema } from "@/types"
-import { ensureCanEditCompany, ensureUserIsAdmin } from "./handleAuth"
+import { ensureCanAccessCompany, ensureUserIsAdmin } from "./handleAuth"
 
 import { eq } from "drizzle-orm"
 
@@ -22,7 +22,7 @@ export async function addCompanies(newCompanyObj: newCompany): Promise<company> 
 
 export async function updateCompanies(companyId: company["id"], updatedCompanyObj: Partial<company>) {
     //security check - only app admins / company admin
-    const { session, accessLevel } = await ensureCanEditCompany({ companyIdBeingAccessed: companyId })
+    const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: companyId })
 
     let validatedUpdatedCompanyObj: Partial<company> | undefined = undefined
 
@@ -62,7 +62,7 @@ export async function getSpecificCompany(companyId: company["id"], companyAuth: 
     companySchema.shape.id.parse(companyId)
 
     //security check
-    await ensureCanEditCompany(companyAuth)
+    await ensureCanAccessCompany(companyAuth)
 
     const result = await db.query.companies.findFirst({
         where: eq(companies.id, companyId),

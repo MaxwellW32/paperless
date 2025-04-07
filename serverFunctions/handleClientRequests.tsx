@@ -4,9 +4,9 @@ import { clientRequests } from "@/db/schema"
 import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
-import { ensureCanEditClientRequest, ensureCanEditCompany, ensureCanEditDepartment, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
+import { ensureUserCanAccessClientRequest, ensureCanAccessCompany, ensureCanAccessDepartment, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
 
-export async function addClientRequests(newClientRequestObj: newClientRequest, departmentIdForAuth?: clientRequestAuthType["departmentIdForAuth"], runAutomation = true): Promise<clientRequest> {
+export async function addClientRequests(newClientRequestObj: newClientRequest, runAutomation = true): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
     const session = await sessionCheckWithError()
 
@@ -21,15 +21,17 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, d
     }).returning()
 
     if (runAutomation) {
-        await runChecklistAutomation(addedClientRequest.id, addedClientRequest.checklist, { clientRequestIdBeingAccessed: addedClientRequest.id, departmentIdForAuth })
+        await runChecklistAutomation(addedClientRequest.id, addedClientRequest.checklist)
     }
 
     return addedClientRequest
 }
 
-export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType, runAutomation = true): Promise<clientRequest> {
-    //security check
-    await ensureCanEditClientRequest(clientRequestAuth)
+export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType, runAutomation = true, runAuth = true): Promise<clientRequest> {
+    if (runAuth) {
+        //security check
+        await ensureUserCanAccessClientRequest(clientRequestAuth)
+    }
 
     updateClientRequestSchema.partial().parse(updatedClientRequestObj)
 
@@ -40,19 +42,21 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
         .where(eq(clientRequests.id, clientRequestId)).returning()
 
     if (runAutomation) {
-        await runChecklistAutomation(updatedClientRequest.id, updatedClientRequest.checklist, clientRequestAuth)
+        await runChecklistAutomation(updatedClientRequest.id, updatedClientRequest.checklist)
     }
 
     return updatedClientRequest
 }
 
-export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType): Promise<clientRequest> {
-    //security check
-    await ensureCanEditClientRequest(clientRequestAuth)
-    clientRequestSchema.shape.id.parse(clientRequestId)
+export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType, runAuth = true): Promise<clientRequest> {
+    if (runAuth) {
+        //security check
+        await ensureUserCanAccessClientRequest(clientRequestAuth)
+        clientRequestSchema.shape.id.parse(clientRequestId)
+    }
 
     //get client request
-    const seenClientRequest = await getSpecificClientRequest(clientRequestId, clientRequestAuth)
+    const seenClientRequest = await getSpecificClientRequest(clientRequestId, clientRequestAuth, runAuth)
     if (seenClientRequest === undefined) throw new Error("not seeing client request")
 
     //validation
@@ -61,7 +65,7 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
     }
 
     //send update
-    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, clientRequestAuth)
+    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, clientRequestAuth, runAuth)
     return updatedClientRequest
 }
 
@@ -73,12 +77,12 @@ export async function deleteClientRequests(clientRequestId: clientRequest["id"])
     await db.delete(clientRequests).where(eq(clientRequests.id, clientRequestId));
 }
 
-export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType, skipAuth = false): Promise<clientRequest | undefined> {
+export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType, runAuth = true): Promise<clientRequest | undefined> {
     clientRequestSchema.shape.id.parse(clientRequestId)
 
-    if (!skipAuth) {
+    if (runAuth) {
         //security check
-        await ensureCanEditClientRequest(clientRequestAuth)
+        await ensureUserCanAccessClientRequest(clientRequestAuth)
     }
 
     const result = await db.query.clientRequests.findFirst({
@@ -111,7 +115,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
     } else if (option.type === "company") {
         //security check
-        await ensureCanEditCompany(option.companyAuth)
+        await ensureCanAccessCompany(option.companyAuth)
 
         companySchema.shape.id.parse(option.companyId)
 
@@ -148,7 +152,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
 export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], departmentAuth: departmentAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check
-    await ensureCanEditDepartment(departmentAuth)
+    await ensureCanAccessDepartment(departmentAuth)
 
     //get client requests in progress
     const results = await db.query.clientRequests.findMany({
@@ -176,7 +180,7 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
     return requestsForDepartmentSignoff
 }
 
-export async function runChecklistAutomation(clientRequestId: clientRequest["id"], seenChecklist: checklistItemType[], clientRequestAuth: clientRequestAuthType,) {
+export async function runChecklistAutomation(clientRequestId: clientRequest["id"], seenChecklist: checklistItemType[]) {
     //checklist that can be updated
     let checklist = seenChecklist
 
@@ -188,7 +192,7 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
     if (latestChecklistItem === undefined) {
         await updateClientRequests(clientRequestId, {
             status: "completed"
-        }, clientRequestAuth)
+        }, { clientRequestIdBeingAccessed: "" }, false, false)
 
         return
     }
@@ -211,7 +215,7 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
         latestChecklistItem.completed = true
 
         //update
-        const newUpdatedClientRequest = await updateClientRequestsChecklist(clientRequestId, latestChecklistItem, latestChecklistItemIndex, clientRequestAuth)
+        const newUpdatedClientRequest = await updateClientRequestsChecklist(clientRequestId, latestChecklistItem, latestChecklistItemIndex, { clientRequestIdBeingAccessed: "" }, false)
 
         //update checklist 
         checklist = newUpdatedClientRequest.checklist
@@ -222,5 +226,5 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
         return
     }
 
-    await runChecklistAutomation(clientRequestId, checklist, clientRequestAuth)
+    await runChecklistAutomation(clientRequestId, checklist)
 }

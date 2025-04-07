@@ -71,7 +71,7 @@ export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
 export type clientRequestAuthType = { clientRequestIdBeingAccessed: clientRequest["id"], departmentIdForAuth?: department["id"] }
 export type companyAuthType = { companyIdBeingAccessed?: company["id"] }
-export type departmentAuthType = { departmentIdBeingAccessed: department["id"], allowElevatedAccess?: boolean }
+export type departmentAuthType = { departmentIdBeingAccessed: department["id"] }
 
 export type userDepartmentCompanySelection = {
     type: "userDepartment",
@@ -97,6 +97,7 @@ export type activeScreenType = {
 
 export type authAccessLevelResponseType = { session: Session, accessLevel: userDepartmentAccessLevel | companyAccessLevel }
 
+export type viewOptionType = "view" | "edit"
 
 
 

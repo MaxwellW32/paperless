@@ -4,7 +4,7 @@ import { departments } from "@/db/schema"
 import { department, departmentAuthType, departmentSchema, newDepartment, newDepartmentSchema, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from "@/types"
 import { ensureUserIsAdmin } from '@/serverFunctions/handleAuth'
 import { eq } from "drizzle-orm"
-import { ensureCanEditDepartment } from "./handleAuth"
+import { ensureCanAccessDepartment } from "./handleAuth"
 
 export async function addDepartments(newDeparmentObj: newDepartment): Promise<department> {
     //security check  
@@ -22,7 +22,7 @@ export async function addDepartments(newDeparmentObj: newDepartment): Promise<de
 
 export async function updateDepartments(deparmentId: department["id"], updatedDepartmentObj: Partial<department>) {
     //security check - ensure only department / admin users
-    const { session, accessLevel } = await ensureCanEditDepartment({ departmentIdBeingAccessed: deparmentId })
+    const { session, accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId })
 
     let validatedUpdatedDepartmentObj: Partial<department> | undefined = undefined
 
@@ -63,7 +63,7 @@ export async function getSpecificDepartment(deparmentId: department["id"], depar
 
     if (!skipAuth) {
         //security check
-        await ensureCanEditDepartment(departmentAuth)
+        await ensureCanAccessDepartment(departmentAuth)
     }
 
     const result = await db.query.departments.findFirst({
@@ -75,7 +75,7 @@ export async function getSpecificDepartment(deparmentId: department["id"], depar
 
 export async function getDepartments(departmentAuth: departmentAuthType): Promise<department[]> {
     //security check
-    await ensureCanEditDepartment(departmentAuth)
+    await ensureCanAccessDepartment(departmentAuth)
 
     const results = await db.query.departments.findMany({
         with: {

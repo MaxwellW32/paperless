@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { department, departmentSchema, newDepartment, newDepartmentSchema, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from '@/types'
 import { addDepartments, updateDepartments } from '@/serverFunctions/handleDepartments'
 import TextInput from '../textInput/TextInput'
-import { ensureCanEditDepartment } from '@/serverFunctions/handleAuth'
+import { ensureCanAccessDepartment } from '@/serverFunctions/handleAuth'
 import { z } from "zod"
 import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray/SimpleDisplayStringArray'
 
@@ -33,7 +33,7 @@ export default function AddEditDepartment({ sentDepartment }: { sentDepartment?:
             try {
                 if (sentDepartment === undefined) return
 
-                const { session, accessLevel } = await ensureCanEditDepartment({ departmentIdBeingAccessed: sentDepartment.id })
+                const { session, accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: sentDepartment.id })
 
                 if (session.user.accessLevel === "admin") {
                     //app admin
