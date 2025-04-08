@@ -357,7 +357,7 @@ export const tapeDepositFormSchema = z.object({
     }).nullable(),
 });
 export type tapeDepositFormType = z.infer<typeof tapeDepositFormSchema>
-export type tapeDepositFormTypeNonNull = NonNullable<tapeDepositFormType["data"]>
+export type tapeDepositFormNonNullDataType = NonNullable<tapeDepositFormType["data"]>
 
 export const tapeWithdrawFormSchema = z.object({
     type: z.literal(formTypesSchema.Values.tapeWithdraw),

@@ -1,22 +1,23 @@
-import { tapeDepositFormSchema, tapeDepositFormType, tapeDepositFormTypeNonNull } from '@/types'
+import { tapeDepositFormSchema, tapeDepositFormType, tapeDepositFormNonNullDataType } from '@/types'
 import { deepClone } from '@/utility/utility'
 import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '@/components/textInput/TextInput'
+import { z } from "zod"
 
 //on deposit search tapes from db
 //if client chooses a tape set it - id will be there
 //when wrapping up request add tapes in list to db - update tapes with id
 
-export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormTypeNonNull) => void }) {
-    const initialFormObj: tapeDepositFormTypeNonNull = {
+export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormNonNullDataType) => void }) {
+    const initialFormObj: tapeDepositFormNonNullDataType = {
         newTapes: [],
         eta: ""
     }
     const [formObj, formObjSet] = useState<tapeDepositFormType["data"]>(deepClone(seenForm !== null ? seenForm : initialFormObj))
 
-    type tapeDepositFormTypeNonNullKeys = keyof tapeDepositFormTypeNonNull
-    const [formErrors, formErrorsSet] = useState<Partial<{ [key in tapeDepositFormTypeNonNullKeys]: string }>>({})
+    type tapeDepositFormTypeNonNullKeys = keyof tapeDepositFormNonNullDataType
+    const [formErrors, formErrorsSet] = useState<Partial<{ [key: string]: string }>>({})
 
     const userInteracting = useRef(false)
 
@@ -41,37 +42,24 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
 
     }, [formObj])
 
-    function checkIfValid(seenFormObj: tapeDepositFormTypeNonNull, seenName: tapeDepositFormTypeNonNullKeys, schema: typeof tapeDepositFormSchema.shape.data): boolean {
-        // @ts-expect-error type
-        const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
+    function checkIfValid(seenFormObj: tapeDepositFormNonNullDataType): boolean {
+        const testSchema = tapeDepositFormSchema.shape.data.safeParse(seenFormObj);
 
-        if (testSchema.success) {//worked
-            formErrorsSet(prevObj => {
-                const newObj = { ...prevObj }
-                delete newObj[seenName]
+        if (testSchema.error === undefined) return true
 
-                return newObj
+        formErrorsSet(prevFormErrors => {
+            const newFormErrors = { ...prevFormErrors }
+
+            testSchema.error.errors.forEach(eachError => {
+                const errorKey = eachError.path.join('/')
+                console.log(`errorKey${errorKey}`)
+                newFormErrors[errorKey] = eachError.message
             })
 
-            return true
+            return newFormErrors
+        })
 
-        } else {
-            formErrorsSet(prevObj => {
-                const newObj = { ...prevObj }
-
-                let errorMessage = ""
-
-                JSON.parse(testSchema.error.message).forEach((eachErrorObj: Error) => {
-                    errorMessage += ` ${eachErrorObj.message}`
-                })
-
-                newObj[seenName] = errorMessage
-
-                return newObj
-            })
-
-            return false
-        }
+        return false
     }
 
     function runSameOnAll() {
@@ -81,7 +69,7 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
     if (formObj === null) return null
 
     return (
-        <form action={() => { }} className={styles.form}>
+        <div className={styles.form}>
             <TextInput
                 name={`eta`}
                 value={formObj.eta}
@@ -99,13 +87,13 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
                         return newFormObj
                     })
                 }}
-                onBlur={() => { checkIfValid(formObj, "eta", tapeDepositFormSchema.shape.data) }}
+                onBlur={() => { checkIfValid(formObj) }}
                 errors={formErrors["eta"]}
             />
 
             <label>tapes</label>
 
-            <button className='button1'
+            <button className='button1' role='button'
                 onClick={() => {
                     runSameOnAll()
 
@@ -113,7 +101,7 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
                         if (prevFormObj === null) return prevFormObj
                         const newFormObj = { ...prevFormObj }
 
-                        const newTape: tapeDepositFormTypeNonNull["newTapes"][number] = {
+                        const newTape: tapeDepositFormNonNullDataType["newTapes"][number] = {
                             initial: "",
                             mediaLabel: ""
                         }
@@ -149,7 +137,8 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj, "newTapes", tapeDepositFormSchema.shape.data) }}
+                                        onBlur={() => { checkIfValid(formObj) }}
+                                        errors={formErrors[`newTapes/${eachNewTapeIndex}/mediaLabel`]}
                                     />
 
                                     <TextInput
@@ -170,18 +159,15 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj, "newTapes", tapeDepositFormSchema.shape.data) }}
+                                        onBlur={() => { checkIfValid(formObj) }}
+                                        errors={formErrors[`newTapes/${eachNewTapeIndex}/initial`]}
                                     />
                                 </div>
                             )
                         })}
                     </div>
-
-                    {formErrors["newTapes"] !== undefined && (
-                        <p className='errorText'>{formErrors["newTapes"]}</p>
-                    )}
                 </>
             )}
-        </form>
+        </div>
     )
 }

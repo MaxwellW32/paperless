@@ -264,7 +264,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                     })}
                                                 </select>
 
-                                                <label>{eachChecklistItem.form.type} selected</label>
+                                                <label>{eachChecklistItem.form.type} form selected</label>
 
                                                 {eachChecklistItem.form.type === "dynamic" && (
                                                     <MakeDynamicChecklistForm seenForm={eachChecklistItem.form.data}
