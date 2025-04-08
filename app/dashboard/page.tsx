@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import styles from "./page.module.css"
 import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, clientRequestAuthType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
-import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
 import { getClientRequests, getClientRequestsForDepartments } from '@/serverFunctions/handleClientRequests'
@@ -355,7 +354,7 @@ export default function Page() {
                 {activeScreen !== undefined ? (
                     <>
                         {activeScreen.type === "newRequest" && activeScreen.activeChecklistStarterType !== undefined && (
-                            <ChooseChecklistStarter seenChecklistStarterType={activeScreen.activeChecklistStarterType} seenDepartment={seenDepartment} />
+                            <AddEditClientRequest seenChecklistStarterType={activeScreen.activeChecklistStarterType} department={seenDepartment} />
                         )}
 
                         {activeScreen.type === "viewRequest" && foundClientRequestToView !== undefined && (

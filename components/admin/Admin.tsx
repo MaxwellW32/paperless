@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react'
 import styles from "./admin.module.css"
 import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest } from '@/types'
-import { getChecklistStarters, getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
+import { getChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import Link from 'next/link'
@@ -20,7 +20,7 @@ import AddEditUser from '../users/AddEditUser'
 import { getUsers } from '@/serverFunctions/handleUser'
 import AddEditClientRequest from '../clientRequests/AddEditClientRequest'
 import { getClientRequests } from '@/serverFunctions/handleClientRequests'
-import ChooseChecklistStarter from '../checklistStarters/ChooseChecklistStarter'
+import DashboardClientRequest from '../clientRequests/DashboardClientRequest'
 
 type schemaType = typeof schema;
 type schemaTableNamesType = keyof schemaType;
@@ -32,8 +32,6 @@ export default function Page() {
 
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>(undefined)
     const [showingSideBar, showingSideBarSet] = useState(true)
-    const [checklistStarterTypes, checklistStarterTypesSet] = useState<checklistStarter["type"][] | undefined>()
-    const [chosenChecklistStarterType, chosenChecklistStarterTypeSet] = useState<checklistStarter["type"] | undefined>()
 
     const [users, usersSet] = useState<user[]>([])
     const [checklistStarters, checklistStartersSet] = useState<checklistStarter[]>([])
@@ -179,39 +177,7 @@ export default function Page() {
 
                                     {adding.clientRequests === true && (
                                         <>
-                                            <button className='button3'
-                                                onClick={async () => {
-                                                    toast.success("searching")
-
-                                                    checklistStarterTypesSet(await getChecklistStartersTypes())
-                                                }}
-                                            >search checklistStarters</button>
-
-                                            <select defaultValue={""}
-                                                onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
-                                                    if (event.target.value === "") return
-
-                                                    const eachStarterType = event.target.value as checklistStarter["type"]
-
-                                                    chosenChecklistStarterTypeSet(eachStarterType)
-                                                }}
-                                            >
-                                                <option value={''}
-                                                >select a request</option>
-
-                                                {checklistStarterTypes !== undefined && checklistStarterTypes.map(eachStarterType => {
-
-                                                    return (
-                                                        <option key={eachStarterType} value={eachStarterType}
-
-                                                        >{eachStarterType}</option>
-                                                    )
-                                                })}
-                                            </select>
-
-                                            {chosenChecklistStarterType !== undefined && (
-                                                <ChooseChecklistStarter seenChecklistStarterType={chosenChecklistStarterType} />
-                                            )}
+                                            <AddEditClientRequest />
                                         </>
                                     )}
 
@@ -220,7 +186,7 @@ export default function Page() {
                                             try {
                                                 toast.success("searching")
 
-                                                clientRequestsSet(await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: false }))
+                                                clientRequestsSet(await getClientRequests({ type: "all" }, { type: "date" }))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)
@@ -229,33 +195,24 @@ export default function Page() {
                                     >search client requests</button>
 
                                     {clientRequests.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "300px" }} className='snap'>
                                             {clientRequests.map(eachClientRequest => {
                                                 if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
 
                                                 return (
-                                                    <div key={eachClientRequest.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                        <h3>type: {eachClientRequest.checklistStarter.type}</h3>
+                                                    <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "rgb(var(--color2))" }}
+                                                        eachClientRequest={eachClientRequest}
+                                                        editButtonFunction={(editing.clientRequests === undefined) || (editing.clientRequests !== undefined && editing.clientRequests.id === eachClientRequest.id) ? () => {
+                                                            editingSet(prevEditing => {
+                                                                const newEditing = { ...prevEditing }
 
-                                                        <h3>company: {eachClientRequest.company.name}</h3>
+                                                                //set / reset editing
+                                                                newEditing.clientRequests = newEditing.clientRequests === undefined ? eachClientRequest : undefined
 
-                                                        {((editing.clientRequests !== undefined && editing.clientRequests.id === eachClientRequest.id) || (editing.clientRequests === undefined)) && (
-                                                            <>
-                                                                <button className='button1'
-                                                                    onClick={() => {
-                                                                        editingSet(prevEditing => {
-                                                                            const newEditing = { ...prevEditing }
-
-                                                                            //set / reset editing
-                                                                            newEditing.clientRequests = newEditing.clientRequests === undefined ? eachClientRequest : undefined
-
-                                                                            return newEditing
-                                                                        })
-                                                                    }}
-                                                                >{editing.clientRequests !== undefined ? "cancel edit" : "edit clientRequests"}</button>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                                return newEditing
+                                                            })
+                                                        } : undefined}
+                                                    />
                                                 )
                                             })}
                                         </div>

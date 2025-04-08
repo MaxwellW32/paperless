@@ -10,7 +10,7 @@ import { updateClientRequestsChecklist } from '@/serverFunctions/handleClientReq
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { updateRefreshObj } from '@/utility/utility'
 
-export default function DashboardClientRequest({ eachClientRequest, viewButtonFunction, editButtonFunction }: { eachClientRequest: clientRequest, viewButtonFunction: () => void, editButtonFunction?: () => void, }) {
+export default function DashboardClientRequest({ eachClientRequest, viewButtonFunction, editButtonFunction, ...elProps }: { eachClientRequest: clientRequest, viewButtonFunction?: () => void, editButtonFunction?: () => void, } & React.HTMLAttributes<HTMLDivElement>) {
     const { data: session } = useSession()
 
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
@@ -24,7 +24,7 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
 
     const newClientRequestAuth: clientRequestAuthType = { clientRequestIdBeingAccessed: eachClientRequest.id, departmentIdForAuth: userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userDepartment" ? userDepartmentCompanySelection.seenUserToDepartment.departmentId : undefined }
 
-    const canEditRequest = userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany"
+    const canEditRequest = (session !== null && session.user.accessLevel === "admin") || (userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany" && userDepartmentCompanySelection.seenUserToCompany.companyId === eachClientRequest.companyId)
     let canAccessManualCheck = false
 
     //ensure can edit checklist item                            
@@ -46,7 +46,7 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
     }
 
     return (
-        <div key={eachClientRequest.id} className={styles.eachClientRequest}>
+        <div {...elProps} className={`${styles.eachClientRequest} ${elProps.className !== undefined ? elProps.className : ""}`}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'center' }}>
                 {eachClientRequest.checklistStarter !== undefined && (
                     <h3>{eachClientRequest.checklistStarter.type}</h3>
@@ -62,9 +62,11 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
             <label>{eachClientRequest.status}</label>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", justifyContent: "flex-end" }}>
-                <button style={{ justifySelf: "flex-end" }} className='button2'
-                    onClick={viewButtonFunction}
-                >view</button>
+                {viewButtonFunction !== undefined && (
+                    <button style={{ justifySelf: "flex-end" }} className='button2'
+                        onClick={viewButtonFunction}
+                    >view</button>
+                )}
 
                 {canEditRequest && editButtonFunction !== undefined && (
                     <button style={{ justifySelf: "flex-end" }} className='button2'

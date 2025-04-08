@@ -12,8 +12,9 @@ import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlo
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 import { useSession } from 'next-auth/react'
 import { getUsersToCompaniesWithVisitAccess } from '@/serverFunctions/handleUsersToCompanies'
+import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 
-export default function AddEditClientRequest({ checklistStarter, sentClientRequest, department }: { checklistStarter?: checklistStarter, sentClientRequest?: clientRequest, department?: department }) {
+export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department }) {
     const { data: session } = useSession()
 
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
@@ -21,15 +22,17 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
     const [, refreshWSObjSet] = useAtom<refreshObjType>(refreshWSObjGlobal)
 
-    const initialFormObj: newClientRequest | undefined = checklistStarter !== undefined ? {
+    const [initialFormObj, initialFormObjSet] = useState<Partial<newClientRequest>>({
         companyId: "",
-        checklist: checklistStarter.checklist,
-        checklistStarterId: checklistStarter.id,
+        checklist: undefined,
+        checklistStarterId: undefined,
         clientsAccessingSite: []
-    } : undefined
+    })
 
     //assign either a new form, or the safe values on an update form
-    const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest === undefined && initialFormObj !== undefined ? initialFormObj : updateClientRequestSchema.parse(sentClientRequest)))
+    const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest === undefined ? initialFormObj : updateClientRequestSchema.parse(sentClientRequest)))
+
+    const [chosenChecklistStarterType, chosenChecklistStarterTypeSet] = useState<checklistStarter["type"] | undefined>(seenChecklistStarterType)
 
     // type clientRequestKeys = keyof Partial<clientRequest>
     // const [formErrors, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
@@ -40,6 +43,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
     const [companies, companiesSet] = useState<company[]>([])
 
     const [usersToCompaniesWithAccess, usersToCompaniesWithAccessSet] = useState<userToCompany[] | undefined>(undefined)
+    const [checklistStarters, checklistStartersSet] = useState<checklistStarter[]>([])
 
     // const editableChecklistFormIndexes = useMemo<number[]>(() => {
     //     if (formObj.checklist === undefined) return []
@@ -88,7 +92,6 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
     // }, [session, userDepartmentCompanySelection, department])
 
     //handle changes from above
-
     useEffect(() => {
         if (sentClientRequest === undefined) return
 
@@ -98,6 +101,56 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
         activeCompanyIdSet(sentClientRequest.companyId)
 
     }, [sentClientRequest])
+
+    //load checklist starters if checklistStarterType undefined
+    useEffect(() => {
+        if (seenChecklistStarterType !== undefined) return
+
+        handleSearchChecklistStarters()
+
+    }, [])
+
+    //set the chosen checklist
+    useEffect(() => {
+        try {
+            const search = async () => {
+                try {
+                    if (chosenChecklistStarterType === undefined) return
+
+                    const seenChecklistStarter = await getSpecificChecklistStarters(chosenChecklistStarterType)
+                    if (seenChecklistStarter === undefined) throw new Error("not seeing checklist")
+
+                    //set the checklist and checklist id in the inital form obj - for when its time to reset
+                    initialFormObjSet(prevInitialFormObj => {
+                        const newInitialFormObj = { ...prevInitialFormObj }
+
+                        newInitialFormObj.checklist = seenChecklistStarter.checklist
+                        newInitialFormObj.checklistStarterId = seenChecklistStarter.id
+
+                        return newInitialFormObj
+                    })
+
+                    //set the checklist and checklist id
+                    formObjSet(prevFormObj => {
+                        const newFormObj = { ...prevFormObj }
+
+                        newFormObj.checklist = seenChecklistStarter.checklist
+                        newFormObj.checklistStarterId = seenChecklistStarter.id
+
+                        return newFormObj
+                    })
+
+                } catch (error) {
+                    consoleAndToastError(error)
+                }
+            }
+            search()
+
+        } catch (error) {
+            consoleAndToastError(error)
+        }
+
+    }, [chosenChecklistStarterType])
 
     //for clients only set active companyId
     useEffect(() => {
@@ -188,7 +241,6 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
 
             toast.success("submittting")
 
-
             if (sentClientRequest === undefined) {
                 //make new client request
 
@@ -207,11 +259,9 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 toast.success("submitted")
 
                 //reset
-                if (initialFormObj !== undefined) {
-                    formObjSet(deepClone(initialFormObj))
+                formObjSet(deepClone(initialFormObj))
 
-                    activeCompanyIdSet(undefined)
-                }
+                activeCompanyIdSet(undefined)
 
             } else {
                 //validate
@@ -248,8 +298,50 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
         usersToCompaniesWithAccessSet(await getUsersToCompaniesWithVisitAccess(companyId))
     }
 
+    async function handleSearchChecklistStarters() {
+        try {
+            checklistStartersSet(await getChecklistStarters())
+
+        } catch (error) {
+            consoleAndToastError(error)
+        }
+    }
+
     return (
         <form className={styles.form} action={() => { }}>
+            {seenChecklistStarterType === undefined && sentClientRequest === undefined && (
+                <>
+                    <label>set the checklist starter</label>
+
+                    <button className='button3'
+                        onClick={handleSearchChecklistStarters}
+                    >
+                        search checklist starters
+                    </button>
+
+                    {checklistStarters.length > 0 && (
+                        <div style={{ display: "flex", gap: "1rem", overflow: "auto" }}>
+                            {checklistStarters.map(eachCheckliststarter => {
+
+                                return (
+                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", flex: "0 0 auto" }}>
+                                        <h3>{eachCheckliststarter.type}</h3>
+
+                                        <button className='button1' style={{ backgroundColor: eachCheckliststarter.type === chosenChecklistStarterType ? "rgb(var(--color1))" : "", }}
+                                            onClick={() => {
+                                                toast.success(`${eachCheckliststarter.type} selected`)
+
+                                                chosenChecklistStarterTypeSet(eachCheckliststarter.type)
+                                            }}
+                                        >select</button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </>
+            )}
+
             {((session !== null && session.user.accessLevel === "admin") || (department !== undefined && department.canManageRequests)) && (
                 <>
                     <label>company for request</label>
