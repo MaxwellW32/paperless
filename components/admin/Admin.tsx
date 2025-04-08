@@ -195,7 +195,7 @@ export default function Page() {
                                     >search client requests</button>
 
                                     {clientRequests.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "300px" }} className='snap'>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "300px", overflow: "auto" }} className='snap'>
                                             {clientRequests.map(eachClientRequest => {
                                                 if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
 
