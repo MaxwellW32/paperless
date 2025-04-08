@@ -4,7 +4,7 @@ import styles from "./style.module.css"
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType } from '@/types'
+import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType } from '@/types'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { useAtom } from 'jotai'
@@ -16,7 +16,6 @@ import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunc
 
 export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department }) {
     const { data: session } = useSession()
-
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
 
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
@@ -28,7 +27,6 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         checklistStarterId: undefined,
         clientsAccessingSite: []
     })
-
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest === undefined ? initialFormObj : updateClientRequestSchema.parse(sentClientRequest)))
 
@@ -44,6 +42,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
     const [usersToCompaniesWithAccess, usersToCompaniesWithAccessSet] = useState<userToCompany[] | undefined>(undefined)
     const [checklistStarters, checklistStartersSet] = useState<checklistStarter[]>([])
+
+    const clientRequestStatusOptions: clientRequestStatusType[] = ["in-progress", "completed", "cancelled", "on-hold"]
 
     // const editableChecklistFormIndexes = useMemo<number[]>(() => {
     //     if (formObj.checklist === undefined) return []
@@ -116,6 +116,9 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
             const search = async () => {
                 try {
                     if (chosenChecklistStarterType === undefined) return
+
+                    //ensure cant change checklist if updating a client request
+                    if (sentClientRequest !== undefined) return
 
                     const seenChecklistStarter = await getSpecificChecklistStarters(chosenChecklistStarterType)
                     if (seenChecklistStarter === undefined) throw new Error("not seeing checklist")
@@ -446,6 +449,36 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                     )}
                 </>
             )}
+
+            {formObj.status !== undefined && session !== null && session.user.accessLevel === "admin" && (
+                <>
+                    <label>status</label>
+
+                    <select value={formObj.status}
+                        onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
+                            const eachAccessLevel = event.target.value as clientRequestStatusType
+
+                            formObjSet(prevFormObj => {
+                                const newFormObj = { ...prevFormObj }
+                                if (newFormObj.status === undefined) return prevFormObj
+
+                                newFormObj.status = eachAccessLevel
+
+                                return newFormObj
+                            })
+                        }}
+                    >
+                        {clientRequestStatusOptions.map(eachStatusOption => {
+
+                            return (
+                                <option key={eachStatusOption} value={eachStatusOption}
+                                >{eachStatusOption}</option>
+                            )
+                        })}
+                    </select>
+                </>
+            )}
+
 
             {formObj.checklist !== undefined && (
                 <>

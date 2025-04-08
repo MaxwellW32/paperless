@@ -15,14 +15,9 @@ import styles from "./page.module.css"
 //one recursive form - view mode, add/edit
 //on array map - add required label
 //admin dashboard edit all database models - CRUD
-//client request normal full form - run checklist on add/update client request - add: admin, client, dept with manage - update: admin, client from comp, dept with manage 
 //checklist form re ordering
-//unique auth for each resource accessed by more than just admin - roles bases validation/data pruning - along with general who can access true/false
-//company and departments only use dashboard
 //ws use refresh/update modes for client requests - get all, or run specific update
-//unique verification for each resource (db table) - error if no access, if access tell level - one file for auth of all resources
-//fix auth - reslve to bool
-//put notes on each auth about who can access
+//way to refresh admin - search properly
 
 export default async function Home() {
 

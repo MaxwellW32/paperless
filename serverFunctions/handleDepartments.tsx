@@ -3,7 +3,7 @@ import { db } from "@/db"
 import { departments } from "@/db/schema"
 import { department, departmentSchema, newDepartment, newDepartmentSchema, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from "@/types"
 import { eq } from "drizzle-orm"
-import { ensureCanAccessDepartment, ensureUserIsAdmin } from "./handleAuth"
+import { ensureCanAccessDepartment } from "./handleAuth"
 import { interpretAuthResponseAndError } from "@/utility/utility"
 
 export async function addDepartments(newDeparmentObj: newDepartment): Promise<department> {
