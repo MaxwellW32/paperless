@@ -249,7 +249,7 @@ export type user = z.infer<typeof userSchema> & {
     usersToCompanies?: userToCompany[],
 }
 
-export const updateUserSchema = userSchema.omit({ id: true })
+export const updateUserSchema = userSchema.omit({ id: true, emailVerified: true })
 export type updateUser = z.infer<typeof updateUserSchema>
 
 export const newUserSchema = userSchema.omit({ id: true, emailVerified: true })

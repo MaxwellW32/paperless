@@ -18,6 +18,7 @@ import styles from "./page.module.css"
 //checklist form re ordering
 //ws use refresh/update modes for client requests - get all, or run specific update
 //way to refresh admin - search properly
+//remove manual company id check - just keep it at manual check
 
 export default async function Home() {
 
