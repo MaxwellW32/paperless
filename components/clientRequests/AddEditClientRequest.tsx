@@ -140,17 +140,13 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         const latestChecklistItemIndex = checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
         if (latestChecklistItemIndex === -1) return checklist
 
-        const latestChecklistItem = checklist[latestChecklistItemIndex]
-
-        //complete the forms sent
-        if (latestChecklistItem.type === "form") {
-            latestChecklistItem.completed = true
-        }
-
         //update in checklist
         checklist = checklist.map((eachChecklist, eachChecklistIndex) => {
             if (eachChecklistIndex === latestChecklistItemIndex) {
-                return latestChecklistItem
+                //complete the forms sent
+                eachChecklist.completed = true
+
+                return eachChecklist
             }
 
             return eachChecklist
@@ -171,6 +167,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
                 //add on company id
                 formObj.companyId = activeCompanyId
+
+                console.log(`formObj`, formObj)
 
                 //validate
                 const validatedNewClientRequest: newClientRequest = newClientRequestSchema.parse(formObj)
@@ -464,6 +462,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
                                                             //set the new form data
                                                             newChecklistItem.form.data = seenLatestForm
+
+                                                            console.log(`seenLatestForm`, seenLatestForm)
 
                                                             newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
 

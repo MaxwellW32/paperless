@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '@/components/textInput/TextInput'
 import { z } from "zod"
+import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 
 //on deposit search tapes from db
 //if client chooses a tape set it - id will be there
@@ -31,19 +32,21 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
 
     //send changes up
     useEffect(() => {
-        if (!userInteracting.current) return
-        userInteracting.current = false
+        if (!userInteracting.current || formObj === null) return
 
-        const isValid = Object.entries(formErrors).length < 1
-        if (!isValid) return
+        const formIsValid = Object.entries(formErrors).length < 1
+        if (!formIsValid) return
 
-        if (formObj === null) return
+        //send the update
         handleFormUpdate(formObj)
+
+        userInteracting.current = false
 
     }, [formObj])
 
     function checkIfValid(seenFormObj: tapeDepositFormNonNullDataType): boolean {
         const testSchema = tapeDepositFormSchema.shape.data.safeParse(seenFormObj);
+        formErrorsSet({})
 
         if (testSchema.error === undefined) return true
 
@@ -52,7 +55,6 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
 
             testSchema.error.errors.forEach(eachError => {
                 const errorKey = eachError.path.join('/')
-                console.log(`errorKey${errorKey}`)
                 newFormErrors[errorKey] = eachError.message
             })
 
@@ -70,27 +72,6 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
 
     return (
         <div className={styles.form}>
-            <TextInput
-                name={`eta`}
-                value={formObj.eta}
-                type={"datetime-local"}
-                label={"expected arrival"}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    runSameOnAll()
-
-                    formObjSet(prevFormObj => {
-                        if (prevFormObj === null) return prevFormObj
-                        const newFormObj = { ...prevFormObj }
-
-                        newFormObj.eta = e.target.value
-
-                        return newFormObj
-                    })
-                }}
-                onBlur={() => { checkIfValid(formObj) }}
-                errors={formErrors["eta"]}
-            />
-
             <label>tapes</label>
 
             <button className='button1' role='button'
@@ -118,9 +99,40 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
                         {formObj.newTapes.map((eachNewTape, eachNewTapeIndex) => {
                             return (
-                                <div key={eachNewTapeIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                <div key={eachNewTapeIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", position: "relative" }}>
+                                    <ConfirmationBox
+                                        text={"remove"}
+                                        confirmationText='are you sure you want to remove?'
+                                        successMessage='removed!'
+                                        float={true}
+                                        confirmationDivProps={{
+                                            style: {
+                                                position: "absolute"
+                                            }
+                                        }}
+                                        buttonProps={{
+                                            className: "button2",
+                                            style: {
+                                                justifySelf: "flex-end"
+                                            }
+                                        }}
+                                        icon={
+                                            <svg style={{ fill: "rgb(var(--shade2))" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"> <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
+                                        }
+                                        runAction={() => {
+                                            formObjSet(prevFormObj => {
+                                                if (prevFormObj === null) return prevFormObj
+                                                const newFormObj = { ...prevFormObj }
+
+                                                newFormObj.newTapes = newFormObj.newTapes.filter((eachNewTapeFilter, eachNewTapeFilterIndex) => eachNewTapeFilterIndex !== eachNewTapeIndex)
+
+                                                return newFormObj
+                                            })
+                                        }}
+                                    />
+
                                     <TextInput
-                                        name={`mediaLabel/${eachNewTapeIndex}`}
+                                        name={`${eachNewTapeIndex}/mediaLabel`}
                                         value={eachNewTape.mediaLabel}
                                         type={"text"}
                                         label={"media label"}
@@ -142,7 +154,7 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
                                     />
 
                                     <TextInput
-                                        name={`initial/${eachNewTapeIndex}`}
+                                        name={`${eachNewTapeIndex}/initial`}
                                         value={eachNewTape.initial}
                                         type={"text"}
                                         label={"initial"}
@@ -168,6 +180,28 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
                     </div>
                 </>
             )}
+
+            <TextInput
+                name={`eta`}
+                value={formObj.eta.split(":00.000Z")[0]}
+                type={"datetime-local"}
+                label={"expected arrival"}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    runSameOnAll()
+
+                    formObjSet(prevFormObj => {
+                        if (prevFormObj === null) return prevFormObj
+                        const newFormObj = { ...prevFormObj }
+
+                        newFormObj.eta = `${e.target.value}:00.000Z`
+
+                        return newFormObj
+                    })
+                }}
+                onBlur={() => { checkIfValid(formObj) }}
+                errors={formErrors["eta"]}
+            />
+
         </div>
     )
 }
