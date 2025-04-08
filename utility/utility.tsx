@@ -1,4 +1,4 @@
-import { refreshObjType } from "@/types"
+import { authAccessLevelResponseType, refreshObjType } from "@/types"
 
 export function deepClone<T>(object: T): T {
     return JSON.parse(JSON.stringify(object))
@@ -36,4 +36,15 @@ export async function resolveFuncToBool(seenFunc: () => Promise<void>): Promise<
         seenError = null
         return false
     }
+}
+
+export function interpretAuthResponseAndError(authResponse: string | authAccessLevelResponseType) {
+    if (typeof authResponse === "string") throw new Error(authResponse)
+
+    return authResponse
+}
+export function interpretAuthResponseAndBool(authResponse: string | authAccessLevelResponseType) {
+    if (typeof authResponse === "string") return false
+
+    return true
 }

@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { deepClone } from '@/utility/utility'
+import { deepClone, interpretAuthResponseAndError } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import { department, departmentSchema, newDepartment, newDepartmentSchema, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from '@/types'
@@ -33,7 +33,8 @@ export default function AddEditDepartment({ sentDepartment }: { sentDepartment?:
             try {
                 if (sentDepartment === undefined) return
 
-                const { session, accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: sentDepartment.id }, "u")
+                const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: sentDepartment.id }, "u")
+                const { session, accessLevel } = interpretAuthResponseAndError(authResponse)
 
                 if (session.user.accessLevel === "admin") {
                     //app admin

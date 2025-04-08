@@ -1,13 +1,15 @@
 "use server"
 import { db } from "@/db"
 import { departments } from "@/db/schema"
-import { department, departmentAuthType, departmentSchema, newDepartment, newDepartmentSchema, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from "@/types"
+import { department, departmentSchema, newDepartment, newDepartmentSchema, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from "@/types"
 import { eq } from "drizzle-orm"
 import { ensureCanAccessDepartment, ensureUserIsAdmin } from "./handleAuth"
+import { interpretAuthResponseAndError } from "@/utility/utility"
 
 export async function addDepartments(newDeparmentObj: newDepartment): Promise<department> {
     //security check  
-    await ensureCanAccessDepartment({ departmentIdBeingAccessed: "" }, "c")
+    const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: "" }, "c")
+    interpretAuthResponseAndError(authResponse)
 
     newDepartmentSchema.parse(newDeparmentObj)
 
@@ -21,7 +23,8 @@ export async function addDepartments(newDeparmentObj: newDepartment): Promise<de
 
 export async function updateDepartments(deparmentId: department["id"], updatedDepartmentObj: Partial<department>) {
     //security check - ensure only department / admin users
-    const { session, accessLevel } = await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId }, "u")
+    const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId }, "u")
+    const { session, accessLevel } = interpretAuthResponseAndError(authResponse)
 
     let validatedUpdatedDepartmentObj: Partial<department> | undefined = undefined
 
@@ -49,7 +52,8 @@ export async function updateDepartments(deparmentId: department["id"], updatedDe
 
 export async function deleteDepartments(deparmentId: department["id"]) {
     //security check
-    await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId }, "d")
+    const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId }, "d")
+    interpretAuthResponseAndError(authResponse)
 
     //validation
     departmentSchema.shape.id.parse(deparmentId)
@@ -62,7 +66,8 @@ export async function getSpecificDepartment(deparmentId: department["id"], runAu
 
     if (runAuth) {
         //security check
-        await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId }, "r")
+        const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: deparmentId }, "r")
+        interpretAuthResponseAndError(authResponse)
     }
 
     const result = await db.query.departments.findFirst({
@@ -74,7 +79,8 @@ export async function getSpecificDepartment(deparmentId: department["id"], runAu
 
 export async function getDepartments(): Promise<department[]> {
     //security check
-    await ensureUserIsAdmin()
+    const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: "" }, "ra")
+    interpretAuthResponseAndError(authResponse)
 
     const results = await db.query.departments.findMany({
         with: {

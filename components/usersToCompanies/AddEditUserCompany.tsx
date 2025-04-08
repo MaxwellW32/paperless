@@ -186,7 +186,7 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
                                 try {
                                     toast.success("searching")
 
-                                    companiesSet(await getCompanies())
+                                    companiesSet(await getCompanies({}))
 
                                 } catch (error) {
                                     consoleAndToastError(error)

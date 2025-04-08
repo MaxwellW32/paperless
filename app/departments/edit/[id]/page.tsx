@@ -2,13 +2,13 @@ import AddEditDepartment from '@/components/departments/AddEditDepartment'
 import { ensureCanAccessDepartment } from '@/serverFunctions/handleAuth'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import { department } from '@/types'
-import { resolveFuncToBool } from '@/utility/utility'
+import { interpretAuthResponseAndBool } from '@/utility/utility'
 import React from 'react'
 
 export default async function Page({ params }: { params: { id: string } }) {
-    const canEditDepartment = await resolveFuncToBool(async () => {
-        await ensureCanAccessDepartment({ departmentIdBeingAccessed: params.id }, "u")
-    })
+    const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: params.id }, "u")
+    const canEditDepartment = interpretAuthResponseAndBool(authResponse)
+
     const seenDepartment: department | undefined = canEditDepartment ? await getSpecificDepartment(params.id) : undefined
 
     if (!canEditDepartment) {

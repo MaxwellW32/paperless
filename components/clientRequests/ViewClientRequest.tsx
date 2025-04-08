@@ -39,22 +39,17 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
 
     }, [sentClientRequest.clientsAccessingSite])
 
-
-
-
     return (
         <main className={styles.main}>
             {seenCompany !== undefined && (
                 <>
-                    <h3>{seenCompany.name}</h3>
+                    <h2>{seenCompany.name}</h2>
                 </>
             )}
 
-            <div>
-                {formatLocalDateTime(sentClientRequest.dateSubmitted)}
+            <h3>{formatLocalDateTime(sentClientRequest.dateSubmitted)}</h3>
 
-                <p><Moment fromNow>{sentClientRequest.dateSubmitted}</Moment></p>
-            </div>
+            <p><Moment fromNow>{sentClientRequest.dateSubmitted}</Moment></p>
 
             <label className='button2' style={{ justifySelf: "flex-start" }}>{sentClientRequest.status}</label>
 

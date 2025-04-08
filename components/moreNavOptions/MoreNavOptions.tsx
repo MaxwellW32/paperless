@@ -10,7 +10,7 @@ import { useAtom } from "jotai"
 import { userDepartmentCompanySelection } from "@/types"
 import { userDepartmentCompanySelectionGlobal } from "@/utility/globalState"
 import { ensureCanAccessCompany, ensureCanAccessDepartment } from "@/serverFunctions/handleAuth"
-import { resolveFuncToBool } from "@/utility/utility"
+import { interpretAuthResponseAndBool } from "@/utility/utility"
 
 export default function MoreNavOptions({ session }: { session: Session }) {
     const [showingNav, showingNavSet] = useState(false)
@@ -25,14 +25,12 @@ export default function MoreNavOptions({ session }: { session: Session }) {
 
             //check if non admin user can edit company/department 
             if (userDepartmentCompanySelection.type === "userDepartment") {
-                canViewEditDepartmentSet(await resolveFuncToBool(async () => {
-                    await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId }, "u")
-                }));
+                const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId }, "u")
+                canViewEditDepartmentSet(interpretAuthResponseAndBool(authResponse));
 
             } else if (userDepartmentCompanySelection.type === "userCompany") {
-                canViewEditCompanySet(await resolveFuncToBool(async () => {
-                    await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId }, "u")
-                }));
+                const authResponse = await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId }, "u")
+                canViewEditCompanySet(interpretAuthResponseAndBool(authResponse));
             }
         }
         search()

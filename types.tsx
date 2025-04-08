@@ -97,7 +97,7 @@ export type activeScreenType = {
 
 export type authAccessLevelResponseType = { session: Session, accessLevel: userDepartmentAccessLevel | companyAccessLevel }
 
-export type crudOptionType = "c" | "r" | "u" | "d"
+export type crudOptionType = "c" | "r" | "ra" | "u" | "d"
 
 
 

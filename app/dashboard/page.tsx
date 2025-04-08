@@ -1,20 +1,20 @@
 "use client"
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistItemType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, clientRequestAuthType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType } from '@/types'
+import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, clientRequestAuthType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import ChooseChecklistStarter from '@/components/checklistStarters/ChooseChecklistStarter'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
-import { getClientRequests, getClientRequestsForDepartments, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
-import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
+import { getClientRequests, getClientRequestsForDepartments } from '@/serverFunctions/handleClientRequests'
 import { useSession } from 'next-auth/react'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import ViewClientRequest from '@/components/clientRequests/ViewClientRequest'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
-import { resolveFuncToBool, updateRefreshObj } from '@/utility/utility'
+import { interpretAuthResponseAndBool, updateRefreshObj } from '@/utility/utility'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
 import { ensureCanAccessClientRequest } from '@/serverFunctions/handleAuth'
+import DashboardClientRequest from '@/components/clientRequests/DashboardClientRequest'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -26,7 +26,7 @@ export default function Page() {
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>()
 
     const [refreshObj, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
-    const [refreshWSObj, refreshWSObjSet] = useAtom<refreshWSObjType>(refreshWSObjGlobal)
+    const [refreshWSObj,] = useAtom<refreshWSObjType>(refreshWSObjGlobal)
 
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
     const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
@@ -60,16 +60,16 @@ export default function Page() {
             try {
                 if (session === null) return
 
-                let newClientRequests: clientRequest[] | undefined = undefined
-                let clientRequestsHistory: clientRequest[] | undefined = undefined
+                let localNewClientRequests: clientRequest[] | undefined = undefined
+                let localHistoryClientRequests: clientRequest[] | undefined = undefined
 
                 //if admin
                 if (session.user.accessLevel === "admin") {
                     //if app admin get all active requests
-                    newClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: false })
+                    localNewClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: false })
 
                     //get history
-                    clientRequestsHistory = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: true })
+                    localHistoryClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: true })
 
                 } else {
                     if (userDepartmentCompanySelection === null) return
@@ -77,23 +77,23 @@ export default function Page() {
                     //if user is from department
                     if (userDepartmentCompanySelection.type === "userDepartment") {
                         //regular department user
-                        newClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
+                        localNewClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
 
                     } else if (userDepartmentCompanySelection.type === "userCompany") {
                         //set active requests from client
-                        newClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, { type: "status", status: 'in-progress', getOppositeOfStatus: false })
+                        localNewClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, { type: "status", status: 'in-progress', getOppositeOfStatus: false })
 
                         //set client requests history
-                        clientRequestsHistory = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, { type: "status", status: 'in-progress', getOppositeOfStatus: true })
+                        localHistoryClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, { type: "status", status: 'in-progress', getOppositeOfStatus: true })
                     }
                 }
 
-                if (newClientRequests !== undefined) {
-                    activeClientRequestsSet(newClientRequests)
+                if (localNewClientRequests !== undefined) {
+                    activeClientRequestsSet(localNewClientRequests)
                 }
 
-                if (clientRequestsHistory !== undefined) {
-                    clientRequestsHistorySet(clientRequestsHistory)
+                if (localHistoryClientRequests !== undefined) {
+                    clientRequestsHistorySet(localHistoryClientRequests)
                 }
 
             } catch (error) {
@@ -127,7 +127,6 @@ export default function Page() {
 
     }, [userDepartmentCompanySelection])
 
-
     //check if can add client request
     useEffect(() => {
         const search = async () => {
@@ -146,9 +145,8 @@ export default function Page() {
                 }
             }
 
-            canAddNewRequestSet(await resolveFuncToBool(async () => {
-                await ensureCanAccessClientRequest(newClientRequestAuth, "c")
-            }))
+            const authResponse = await ensureCanAccessClientRequest(newClientRequestAuth, "c")
+            canAddNewRequestSet(interpretAuthResponseAndBool(authResponse))
         }
         search()
 
@@ -302,101 +300,23 @@ export default function Page() {
                     <div className={styles.clientRequests}>
                         <h3>Active requests</h3>
 
-                        {activeClientRequests.map(async eachActiveClientRequest => {
-                            //furthest non complete item
-                            const activeChecklistItemIndex = eachActiveClientRequest.checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
-                            const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachActiveClientRequest.checklist[activeChecklistItemIndex] : undefined
-
-                            let newClientRequestAuth: clientRequestAuthType = { clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userDepartment" ? userDepartmentCompanySelection.seenUserToDepartment.departmentId : undefined }
-                            const progressBar: number | undefined = activeChecklistItemIndex !== -1 ? (activeChecklistItemIndex + 1) / eachActiveClientRequest.checklist.length : undefined
-
-                            let canAccess = false
-
-                            //ensure can edit checklist item                            
-                            if (activeChecklistItem !== undefined && activeChecklistItem.type === "manual") {
-                                //search 
-                                canAccess = await resolveFuncToBool(async () => {
-                                    await ensureCanAccessClientRequest({ clientRequestIdBeingAccessed: eachActiveClientRequest.id, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }, "u")
-                                })
-                            }
-
+                        {activeClientRequests.map(eachActiveClientRequest => {
                             return (
-                                <div key={eachActiveClientRequest.id} className={styles.eachClientRequest}>
-                                    <div style={{ display: "grid", alignContent: "flex-start" }}>
-                                        {eachActiveClientRequest.checklistStarter !== undefined && (
-                                            <h3>{eachActiveClientRequest.checklistStarter.type}</h3>
-                                        )}
-
-                                        <div className={styles.dateHolder}>
-                                            <p>{eachActiveClientRequest.dateSubmitted.toLocaleDateString()}</p>
-
-                                            <p>{eachActiveClientRequest.dateSubmitted.toLocaleTimeString()}</p>
-                                        </div>
-                                    </div>
-
-                                    <label>{eachActiveClientRequest.status}</label>
-
-                                    <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", justifyContent: "flex-end" }}>
-                                        <button style={{ justifySelf: "flex-end" }} className='button2'
-                                            onClick={() => {
-                                                //making view request
-                                                activeScreenSet({
-                                                    type: "viewRequest",
-                                                    clientRequestId: eachActiveClientRequest.id
-                                                })
-                                            }}
-                                        >view</button>
-
-                                        {canAccess && (
-                                            <button style={{ justifySelf: "flex-end" }} className='button2'
-                                                onClick={() => {
-                                                    //making view request
-                                                    activeScreenSet({
-                                                        type: "editRequest",
-                                                        oldClientRequest: eachActiveClientRequest
-                                                    })
-                                                }}
-                                            >edit</button>
-                                        )}
-                                    </div>
-
-                                    {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && canAccess && (
-                                        <div>
-                                            <label>{activeChecklistItem.prompt}</label>
-
-                                            <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
-                                                runAction={async () => {
-                                                    try {
-                                                        const newCompletedManualChecklistItem = { ...activeChecklistItem }
-                                                        newCompletedManualChecklistItem.completed = true
-
-                                                        //update server
-                                                        await updateClientRequestsChecklist(eachActiveClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, newClientRequestAuth)
-
-                                                        //update locally
-                                                        refreshObjSet(prevRefreshObj => {
-                                                            return updateRefreshObj(prevRefreshObj, "clientRequests")
-                                                        })
-
-                                                        //send off ws
-                                                        refreshWSObjSet(prevWSRefreshObj => {
-                                                            return updateRefreshObj(prevWSRefreshObj, "clientRequests")
-                                                        })
-
-                                                    } catch (error) {
-                                                        consoleAndToastError(error)
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {progressBar !== undefined && (
-                                        <div style={{ position: "relative", height: ".25rem" }}>
-                                            <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${progressBar * 100}%`, backgroundColor: "rgb(var(--color1))" }}></div>
-                                        </div>
-                                    )}
-                                </div>
+                                <DashboardClientRequest key={eachActiveClientRequest.id}
+                                    eachClientRequest={eachActiveClientRequest}
+                                    viewButtonFunction={() => {
+                                        activeScreenSet({
+                                            type: "viewRequest",
+                                            clientRequestId: eachActiveClientRequest.id
+                                        })
+                                    }}
+                                    editButtonFunction={() => {
+                                        activeScreenSet({
+                                            type: "editRequest",
+                                            oldClientRequest: eachActiveClientRequest
+                                        })
+                                    }}
+                                />
                             )
                         })}
                     </div>
@@ -408,19 +328,15 @@ export default function Page() {
 
                         {clientRequestsHistory.map(eachHistoryCientRequest => {
                             return (
-                                <div key={eachHistoryCientRequest.id} className={styles.eachClientRequest}>
-                                    {eachHistoryCientRequest.checklistStarter !== undefined && (
-                                        <h3>{eachHistoryCientRequest.checklistStarter.type}</h3>
-                                    )}
-
-                                    <div className={styles.dateHolder}>
-                                        <p>{eachHistoryCientRequest.dateSubmitted.toLocaleDateString()}</p>
-
-                                        <p>{eachHistoryCientRequest.dateSubmitted.toLocaleTimeString()}</p>
-                                    </div>
-
-                                    <label style={{ backgroundColor: "rgb(var(--shade1))", color: "rgb(var(--shade2))", padding: "1rem", justifySelf: "flex-start", borderRadius: ".5rem" }}>{eachHistoryCientRequest.status}</label>
-                                </div>
+                                <DashboardClientRequest key={eachHistoryCientRequest.id}
+                                    eachClientRequest={eachHistoryCientRequest}
+                                    viewButtonFunction={() => {
+                                        activeScreenSet({
+                                            type: "viewRequest",
+                                            clientRequestId: eachHistoryCientRequest.id
+                                        })
+                                    }}
+                                />
                             )
                         })}
                     </div>

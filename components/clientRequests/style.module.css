@@ -9,3 +9,29 @@
     align-content: flex-start;
     gap: 1rem;
 }
+
+
+
+
+.eachClientRequest {
+    display: grid;
+    align-content: flex-start;
+    gap: 1rem;
+    background-color: rgb(var(--shade2));
+    padding: 1rem;
+}
+
+.eachClientRequest>label {
+    padding: .5rem;
+    background-color: rgb(var(--shade1));
+    color: rgb(var(--shade2));
+    font-size: var(--fontSizeS);
+    justify-self: flex-start;
+}
+
+.dateHolder {
+    display: flex;
+    gap: .5rem;
+    font-size: var(--fontSizeS);
+    justify-self: flex-end;
+}

@@ -220,7 +220,7 @@ export default function Page() {
                                             try {
                                                 toast.success("searching")
 
-                                                clientRequestsSet(await getClientRequests({ type: "all" }, { type: "date" }))
+                                                clientRequestsSet(await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: false }))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)
@@ -292,7 +292,7 @@ export default function Page() {
                                             try {
                                                 toast.success("searching")
 
-                                                companiesSet(await getCompanies())
+                                                companiesSet(await getCompanies({}))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)
@@ -558,7 +558,7 @@ export default function Page() {
                                             try {
                                                 toast.success("searching")
 
-                                                companiesSet(await getCompanies())
+                                                companiesSet(await getCompanies({}))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)

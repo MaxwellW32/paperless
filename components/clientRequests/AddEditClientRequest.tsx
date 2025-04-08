@@ -12,7 +12,6 @@ import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlo
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 import { useSession } from 'next-auth/react'
 import { getUsersToCompaniesWithVisitAccess } from '@/serverFunctions/handleUsersToCompanies'
-import ShowMore from '../showMore/ShowMore'
 
 export default function AddEditClientRequest({ checklistStarter, sentClientRequest, department }: { checklistStarter?: checklistStarter, sentClientRequest?: clientRequest, department?: department }) {
     const { data: session } = useSession()
@@ -261,7 +260,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                                 try {
                                     toast.success("searching")
 
-                                    companiesSet(await getCompanies(true))
+                                    companiesSet(await getCompanies({ departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }))
 
                                 } catch (error) {
                                     consoleAndToastError(error)
@@ -295,6 +294,8 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                     <button className='button3'
                         onClick={async () => {
                             try {
+                                toast.success("searching")
+
                                 //search 
                                 handleSearchUsersToCompaniesWithAccess(userDepartmentCompanySelection.seenUserToCompany.companyId)
 
@@ -310,7 +311,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                 <>
                     {usersToCompaniesWithAccess.length > 0 ? (
                         <>
-                            <label>Clients visiting:</label>
+                            <label>Clients visiting</label>
 
                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
                                 {usersToCompaniesWithAccess.map(eachUserToCompany => {
@@ -375,7 +376,10 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                             if (!canShowFormObj) return null
 
                             return (
-                                <div key={eachChecklistItemIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                <div key={eachChecklistItemIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                    {session.user.accessLevel === "admin" && (
+                                        <label>{eachChecklistItem.type}</label>
+                                    )}
 
                                     {eachChecklistItem.type === "form" && (
                                         <>
@@ -400,10 +404,6 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                                         </>
                                     )}
 
-                                    {session.user.accessLevel === "admin" && (
-                                        <label>{eachChecklistItem.type}</label>
-                                    )}
-
                                     {eachChecklistItem.type === "email" && (
                                         <>
                                             <label>to: </label>
@@ -412,7 +412,7 @@ export default function AddEditClientRequest({ checklistStarter, sentClientReque
                                             <label>subject: </label>
                                             <p>{eachChecklistItem.subject}</p>
 
-                                            <label>email: </label>
+                                            <label>email text: </label>
                                             <p>{eachChecklistItem.email}</p>
                                         </>
                                     )}

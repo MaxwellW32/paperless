@@ -21,7 +21,8 @@ import styles from "./page.module.css"
 //company and departments only use dashboard
 //ws use refresh/update modes for client requests - get all, or run specific update
 //unique verification for each resource (db table) - error if no access, if access tell level - one file for auth of all resources
-//fix auth
+//fix auth - reslve to bool
+//put notes on each auth about who can access
 
 export default async function Home() {
 

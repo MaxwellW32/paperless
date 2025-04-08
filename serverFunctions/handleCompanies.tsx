@@ -3,12 +3,13 @@ import { db } from "@/db"
 import { companies } from "@/db/schema"
 import { company, companyAuthType, companySchema, newCompany, newCompanySchema, smallAdminUpdateCompanySchema, updateCompanySchema } from "@/types"
 import { ensureCanAccessCompany, ensureUserIsAdmin } from "./handleAuth"
-
 import { eq } from "drizzle-orm"
+import { interpretAuthResponseAndError } from "@/utility/utility"
 
 export async function addCompanies(newCompanyObj: newCompany): Promise<company> {
     //security check - ensures only admin can add
-    await ensureCanAccessCompany({ companyIdBeingAccessed: "" }, "c")
+    const authResponse = await ensureCanAccessCompany({ companyIdBeingAccessed: "" }, "c")
+    interpretAuthResponseAndError(authResponse)
 
     newCompanySchema.parse(newCompanyObj)
 
@@ -22,8 +23,8 @@ export async function addCompanies(newCompanyObj: newCompany): Promise<company> 
 
 export async function updateCompanies(companyId: company["id"], updatedCompanyObj: Partial<company>) {
     //security check - only app admins / company admin
-    const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: companyId }, "u")
-
+    const authResponse = await ensureCanAccessCompany({ companyIdBeingAccessed: companyId }, "u")
+    const { session, accessLevel } = interpretAuthResponseAndError(authResponse)
     let validatedUpdatedCompanyObj: Partial<company> | undefined = undefined
 
     if (session.user.accessLevel === "admin") {
@@ -50,7 +51,8 @@ export async function updateCompanies(companyId: company["id"], updatedCompanyOb
 
 export async function deleteCompanies(companyId: company["id"]) {
     //security check
-    await ensureCanAccessCompany({ companyIdBeingAccessed: companyId }, "d")
+    const authResponse = await ensureCanAccessCompany({ companyIdBeingAccessed: companyId }, "d")
+    interpretAuthResponseAndError(authResponse)
 
     //validation
     companySchema.shape.id.parse(companyId)
@@ -60,7 +62,8 @@ export async function deleteCompanies(companyId: company["id"]) {
 
 export async function getSpecificCompany(companyId: company["id"], companyAuth: companyAuthType): Promise<company | undefined> {
     //security check
-    await ensureCanAccessCompany(companyAuth, "r")
+    const authResponse = await ensureCanAccessCompany(companyAuth, "r")
+    interpretAuthResponseAndError(authResponse)
 
     companySchema.shape.id.parse(companyId)
 
@@ -71,11 +74,9 @@ export async function getSpecificCompany(companyId: company["id"], companyAuth: 
     return result
 }
 
-export async function getCompanies(skipCheck = false): Promise<company[]> {
-    //security check
-    if (!skipCheck) {
-        await ensureUserIsAdmin()
-    }
+export async function getCompanies(companyAuth: companyAuthType): Promise<company[]> {
+    const authResponse = await ensureCanAccessCompany(companyAuth, "ra")
+    interpretAuthResponseAndError(authResponse)
 
     const results = await db.query.companies.findMany({
         with: {

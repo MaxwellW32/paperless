@@ -1,14 +1,16 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { authAccessLevelResponseType, checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
 import { ensureCanAccessClientRequest, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
+import { interpretAuthResponseAndError } from "@/utility/utility"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest, clientRequestAuth: clientRequestAuthType, runAutomation = true): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
-    const { session } = await ensureCanAccessClientRequest(clientRequestAuth, "c")
+    const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "c")
+    const { session } = interpretAuthResponseAndError(authResponse)
 
     newClientRequestSchema.parse(newClientRequestObj)
 
@@ -30,7 +32,9 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, c
 export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType, runAutomation = true, runAuth = true): Promise<clientRequest> {
     if (runAuth) {
         //security check
-        await ensureCanAccessClientRequest(clientRequestAuth, "u")
+        const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "u")
+        //ensure its proper auth and not string error
+        interpretAuthResponseAndError(authResponse)
     }
 
     updateClientRequestSchema.partial().parse(updatedClientRequestObj)
@@ -48,10 +52,11 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
     return updatedClientRequest
 }
 
-export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType, runAuth = true): Promise<clientRequest> {
+export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType, runAutomation = true, runAuth = true): Promise<clientRequest> {
     if (runAuth) {
         //security check
-        await ensureCanAccessClientRequest(clientRequestAuth, "u")
+        const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "u")
+        interpretAuthResponseAndError(authResponse)
     }
 
     clientRequestSchema.shape.id.parse(clientRequestId)
@@ -66,12 +71,13 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
     }
 
     //send update
-    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, clientRequestAuth, runAuth)
+    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, clientRequestAuth, runAutomation, runAuth)
     return updatedClientRequest
 }
 
 export async function deleteClientRequests(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType) {
-    await ensureCanAccessClientRequest(clientRequestAuth, "d")
+    const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "d")
+    interpretAuthResponseAndError(authResponse)
 
     //validation
     clientRequestSchema.shape.id.parse(clientRequestId)
@@ -84,7 +90,8 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
 
     if (runAuth) {
         //security check
-        await ensureCanAccessClientRequest(clientRequestAuth, "r")
+        const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "r")
+        interpretAuthResponseAndError(authResponse)
     }
 
     const result = await db.query.clientRequests.findFirst({
@@ -98,64 +105,60 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
 }
 
 export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"], companyAuth: companyAuthType, } | { type: "all" }, filter: { type: "status", status: clientRequestStatusType, getOppositeOfStatus: boolean } | { type: "date" }, limit = 50, offset = 0): Promise<clientRequest[]> {
-    return []
+    if (option.type === "user") {
+        //security check
+        await ensureUserIsAdmin()
 
-    // if (option.type === "user") {
-    //     //security check
-    //     await ensureUserIsAdmin()
+        //make sure you are that user
+        userSchema.shape.id.parse(option.userId)
 
-    //     //make sure you are that user
-    //     userSchema.shape.id.parse(option.userId)
+        const results = await db.query.clientRequests.findMany({
+            limit: limit,
+            offset: offset,
+            where: filter.type === "status" ? and(eq(clientRequests.userId, option.userId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
+            with: {
+                checklistStarter: true
+            },
+        });
 
-    //     const results = await db.query.clientRequests.findMany({
-    //         limit: limit,
-    //         offset: offset,
-    //         where: filter.type === "status" ? and(eq(clientRequests.userId, option.userId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
-    //         with: {
-    //             checklistStarter: true
-    //         },
-    //     });
+        return results
 
-    //     return results
+    } else if (option.type === "company") {
+        //security check
+        await sessionCheckWithError()
 
-    // } else if (option.type === "company") {
-    //     //security check
-    //     await sessionCheckWithError()
+        companySchema.shape.id.parse(option.companyId)
 
-    //     companySchema.shape.id.parse(option.companyId)
+        const results = await db.query.clientRequests.findMany({
+            limit: limit,
+            offset: offset,
+            where: filter.type === "status" ? and(eq(clientRequests.companyId, option.companyId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
+            with: {
+                checklistStarter: true
+            },
+        });
 
-    //     const results = await db.query.clientRequests.findMany({
-    //         limit: limit,
-    //         offset: offset,
-    //         where: filter.type === "status" ? and(eq(clientRequests.companyId, option.companyId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
-    //         with: {
-    //             checklistStarter: true
-    //         },
-    //     });
+        return results
 
-    //     return results
+    } else if (option.type === "all") {
+        //security check
+        await ensureUserIsAdmin()
 
-    // } else if (option.type === "all") {
-    //     //security check
-    //     await ensureUserIsAdmin()
+        const results = await db.query.clientRequests.findMany({
+            limit: limit,
+            offset: offset,
+            where: filter.type === "status" ? filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status) : undefined,
+            with: {
+                checklistStarter: true,
+                company: true
+            },
+        });
 
-    //     console.log(`$seen hit for all`);
+        return results
 
-    //     const results = await db.query.clientRequests.findMany({
-    //         limit: limit,
-    //         offset: offset,
-    //         where: filter.type === "status" ? filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status) : undefined,
-    //         with: {
-    //             checklistStarter: true,
-    //             company: true
-    //         },
-    //     });
-
-    //     return results
-
-    // } else {
-    //     throw new Error("invalid selection")
-    // }
+    } else {
+        throw new Error("invalid selection")
+    }
 }
 
 export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], departmentAuth: departmentAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
@@ -223,7 +226,7 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
         latestChecklistItem.completed = true
 
         //update
-        const newUpdatedClientRequest = await updateClientRequestsChecklist(clientRequestId, latestChecklistItem, latestChecklistItemIndex, { clientRequestIdBeingAccessed: "" }, false)
+        const newUpdatedClientRequest = await updateClientRequestsChecklist(clientRequestId, latestChecklistItem, latestChecklistItemIndex, { clientRequestIdBeingAccessed: "" }, false, false)
 
         //update checklist 
         checklist = newUpdatedClientRequest.checklist

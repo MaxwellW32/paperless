@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { deepClone } from '@/utility/utility'
+import { deepClone, interpretAuthResponseAndError } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import TextInput from '../textInput/TextInput'
@@ -34,7 +34,8 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
             try {
                 if (sentCompany === undefined) return
 
-                const { session, accessLevel } = await ensureCanAccessCompany({ companyIdBeingAccessed: sentCompany.id }, "u")
+                const authResponse = await ensureCanAccessCompany({ companyIdBeingAccessed: sentCompany.id }, "u")
+                const { session, accessLevel } = interpretAuthResponseAndError(authResponse)
 
                 if (session.user.accessLevel === "admin") {
                     //app admin

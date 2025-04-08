@@ -244,7 +244,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                     onClick={async () => {
                                                                         toast.success("searching")
 
-                                                                        companiesSet(await getCompanies())
+                                                                        companiesSet(await getCompanies({}))
                                                                     }}
                                                                 >companies</button>
 
@@ -490,7 +490,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                     onClick={async () => {
                                                                         toast.success("searching")
 
-                                                                        companiesSet(await getCompanies())
+                                                                        companiesSet(await getCompanies({}))
                                                                     }}
                                                                 >companies</button>
 
