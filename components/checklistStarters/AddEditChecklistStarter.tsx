@@ -1,18 +1,17 @@
 "use client"
 import React, { HTMLAttributes, useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import TextInput from '../textInput/TextInput'
-import TextArea from '../textArea/TextArea'
 import { deepClone } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistItemType, checklistStarter, checklistStarterSchema, company, department, newChecklistStarter, newChecklistStarterSchema, updateChecklistStarterSchema } from '@/types'
+import { checklistItemType, checklistStarter, company, department, newChecklistStarter, newChecklistStarterSchema, formTypesType, updateChecklistStarterSchema, checklistItemDynamicFormType, checklistStarterSchema } from '@/types'
 import { addChecklistStarters, updateChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import ConfirmationBox from '../confirmationBox/ConfirmationBox'
-import { MakeRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 import ShowMore from '../showMore/ShowMore'
+import { MakeDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
+import TextInput from '../textInput/TextInput'
 
 export default function AddEditChecklistStarter({ sentChecklistStarter, submissionAction, ...elProps }: { sentChecklistStarter?: checklistStarter, submissionAction?: () => void } & HTMLAttributes<HTMLFormElement>) {
     const initialFormObj: newChecklistStarter = {
@@ -22,31 +21,11 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
 
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<checklistStarter>>(deepClone(sentChecklistStarter !== undefined ? updateChecklistStarterSchema.parse(sentChecklistStarter) : initialFormObj))
+
     type checklistStarterKeys = keyof Partial<checklistStarter>
-
-    type moreFormInfoType = Partial<{
-        [key in Partial<checklistStarterKeys>]: {
-            label?: string,
-            placeHolder?: string,
-            type?: string,
-            required?: boolean
-            inputType: "input" | "textarea",
-        } }>
-    const [moreFormInfo,] = useState<moreFormInfoType>({
-        "type": {
-            label: "type",
-            inputType: "input",
-            placeHolder: "Enter client request type e.g. tape deposit",
-        },
-        "checklist": {
-            label: "checklist",
-            inputType: "input",
-            placeHolder: "Enter checklist",
-        },
-    });
-
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in checklistStarterKeys]: string }>>({})
 
+    const premadeFormTypeOptions: formTypesType[] = ["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther", "dynamic"]
     const checklistTypeOptions: checklistItemType["type"][] = ["form", "email", "manual"]
 
     const [departments, departmentsSet] = useState<department[]>([])
@@ -134,531 +113,579 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
 
     return (
         <form {...elProps} className={styles.form} action={() => { }}>
-            {Object.entries(formObj).map(eachEntry => {
-                const eachKey = eachEntry[0] as checklistStarterKeys
+            {formObj.type !== undefined && (
+                <>
+                    <TextInput
+                        name={"type"}
+                        value={formObj.type}
+                        type={"text"}
+                        label={"type"}
+                        placeHolder={"request type client will select"}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            formObjSet(prevFormObj => {
+                                const newFormObj = { ...prevFormObj }
+                                if (newFormObj.type === undefined) return prevFormObj
 
-                if (moreFormInfo[eachKey] === undefined) return null
+                                newFormObj.type = e.target.value
 
-                if (eachKey === "checklist") {
-                    const seenChecklist = formObj[eachKey]
-                    if (seenChecklist === undefined) return null
+                                return newFormObj
+                            })
+                        }}
+                        onBlur={() => { checkIfValid(formObj, "type", checklistStarterSchema) }}
+                        errors={formErrors["type"]}
+                    />
+                </>
+            )}
 
-                    return (
-                        <div key={eachKey} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", marginTop: "1rem" }}>
-                            <label>Checklist</label>
+            {formObj.checklist !== undefined && (
+                <>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+                        {checklistTypeOptions.map(eachOption => {
+                            return (
+                                <button key={eachOption} className='button1'
+                                    onClick={() => {
+                                        if (formObj.checklist === undefined) return
 
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
-                                {checklistTypeOptions.map(eachOption => {
-                                    return (
-                                        <button key={eachOption} className='button1'
-                                            onClick={() => {
-                                                const newChecklistItem: checklistItemType | null =
-                                                    eachOption === "form" ? {
-                                                        type: "form",
-                                                        data: {},
+                                        const newChecklistItem: checklistItemType | null =
+                                            eachOption === "form" ? {
+                                                type: "form",
+                                                form: {
+                                                    type: "dynamic",
+                                                    data: {}
+                                                },
+                                                completed: false
+                                            } :
+                                                eachOption === "email" ? {
+                                                    type: "email",
+                                                    to: "",
+                                                    subject: "",
+                                                    email: "",
+                                                    completed: false
+                                                } :
+                                                    eachOption === "manual" ? {
+                                                        type: "manual",
+                                                        for: {
+                                                            type: "department",
+                                                            departmenId: ""
+                                                        },
+                                                        prompt: "",
                                                         completed: false
-                                                    } :
-                                                        eachOption === "email" ? {
-                                                            type: "email",
-                                                            to: "",
-                                                            subject: "",
-                                                            email: "",
-                                                            completed: false
-                                                        } :
-                                                            eachOption === "manual" ? {
-                                                                type: "manual",
-                                                                for: {
-                                                                    type: "department",
-                                                                    departmenId: ""
-                                                                },
-                                                                prompt: "",
-                                                                completed: false
-                                                            } : null
+                                                    } : null
 
-                                                if (newChecklistItem === null) return
+                                        if (newChecklistItem === null) return
 
-                                                const newChecklist = [...seenChecklist, newChecklistItem]
+                                        const newChecklist = [...formObj.checklist, newChecklistItem]
+
+                                        updateChecklist(newChecklist)
+                                    }}
+                                >add {eachOption}</button>
+                            )
+                        })}
+                    </div>
+
+                    {formObj.checklist.length > 0 && (
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                            {formObj.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
+                                let foundCompany: company | undefined = undefined
+                                let foundDepartment: department | undefined = undefined
+
+                                if (eachChecklistItem.type === "manual") {
+                                    if (eachChecklistItem.for.type === "company" && companies.length > 0) {
+                                        foundCompany = companies.find(eachCompany => eachChecklistItem.for.type === "company" && eachCompany.id === eachChecklistItem.for.companyId)
+                                    }
+
+                                    if (eachChecklistItem.for.type === "department" && departments.length > 0) {
+                                        foundDepartment = departments.find(eachDepartment => eachChecklistItem.for.type === "department" && eachDepartment.id === eachChecklistItem.for.departmenId)
+                                    }
+                                }
+
+                                return (
+                                    <div key={eachChecklistItemIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade4))", padding: "1rem" }}>
+                                        <ConfirmationBox text='remove' confirmationText='are you sure you want to remove?' successMessage='removed!'
+                                            buttonProps={{
+                                                style: {
+                                                    justifySelf: "flex-end"
+                                                }
+                                            }}
+                                            runAction={async () => {
+                                                if (formObj.checklist === undefined) return
+
+                                                const newChecklist = formObj.checklist.filter((eachChecklistFilter, eachChecklistFilterIndex) => eachChecklistFilterIndex !== eachChecklistItemIndex)
 
                                                 updateChecklist(newChecklist)
                                             }}
-                                        >add {eachOption}</button>
-                                    )
-                                })}
-                            </div>
+                                        />
 
-                            {seenChecklist.length > 0 && (
-                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                    {seenChecklist.map((eachChecklistItem, eachChecklistItemIndex) => {
-                                        let foundCompany: company | undefined = undefined
-                                        let foundDepartment: department | undefined = undefined
+                                        <label>{eachChecklistItem.type}</label>
 
-                                        if (eachChecklistItem.type === "manual") {
-                                            if (eachChecklistItem.for.type === "company" && companies.length > 0) {
-                                                foundCompany = companies.find(eachCompany => eachChecklistItem.for.type === "company" && eachCompany.id === eachChecklistItem.for.companyId)
-                                            }
+                                        {eachChecklistItem.type === "form" && (
+                                            <>
+                                                <label>select form type</label>
 
-                                            if (eachChecklistItem.for.type === "department" && departments.length > 0) {
-                                                foundDepartment = departments.find(eachDepartment => eachChecklistItem.for.type === "department" && eachDepartment.id === eachChecklistItem.for.departmenId)
-                                            }
-                                        }
+                                                <select defaultValue={""}
+                                                    onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
+                                                        if (event.target.value === "") return
+                                                        if (formObj.checklist === undefined) return
 
-                                        return (
-                                            <div key={eachChecklistItemIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade4))", padding: "1rem" }}>
-                                                <ConfirmationBox text='remove' confirmationText='are you sure you want to remove?' successMessage='removed!'
-                                                    buttonProps={{
-                                                        style: {
-                                                            justifySelf: "flex-end"
+                                                        const eachFormType = event.target.value as formTypesType
+
+                                                        //edit new checklist item
+                                                        const newChecklistItem = { ...eachChecklistItem }
+
+                                                        //update form type
+                                                        newChecklistItem.form.type = eachFormType
+
+                                                        if (newChecklistItem.form.type === "dynamic") {
+                                                            const newDynamicFormData: checklistItemDynamicFormType["data"] = {}
+
+                                                            newChecklistItem.form.data = newDynamicFormData
+
+                                                            //set to null as starting value
+                                                        } else {
+                                                            newChecklistItem.form.data = null
                                                         }
-                                                    }}
-                                                    runAction={async () => {
-                                                        const newChecklist = seenChecklist.filter((eachChecklistFilter, eachChecklistFilterIndex) => eachChecklistFilterIndex !== eachChecklistItemIndex)
+
+                                                        //edit new checklist at index
+                                                        const newChecklist = [...formObj.checklist]
+                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
 
                                                         updateChecklist(newChecklist)
                                                     }}
-                                                />
+                                                >
+                                                    <option value={""}
+                                                    >select</option>
 
-                                                <label>{eachChecklistItem.type}</label>
+                                                    {premadeFormTypeOptions.map(eachFormType => {
 
-                                                {eachChecklistItem.type === "form" && (
-                                                    <MakeRecursiveChecklistForm seenForm={eachChecklistItem.data}
+                                                        return (
+                                                            <option key={eachFormType} value={eachFormType}
+                                                            >{eachFormType}</option>
+                                                        )
+                                                    })}
+                                                </select>
+
+                                                <label>{eachChecklistItem.form.type} selected</label>
+
+                                                {eachChecklistItem.form.type === "dynamic" && (
+                                                    <MakeDynamicChecklistForm seenForm={eachChecklistItem.form.data}
                                                         handleFormUpdate={(seenLatestForm) => {
+                                                            if (formObj.checklist === undefined) return
+
                                                             //edit new checklist item
                                                             const newChecklistItem = { ...eachChecklistItem }
-                                                            newChecklistItem.data = seenLatestForm
+                                                            if (newChecklistItem.form.type !== "dynamic") return
+
+                                                            newChecklistItem.form.data = seenLatestForm
 
                                                             //edit new checklist at index
-                                                            const newChecklist = [...seenChecklist]
+                                                            const newChecklist = [...formObj.checklist]
                                                             newChecklist[eachChecklistItemIndex] = newChecklistItem
 
                                                             updateChecklist(newChecklist)
                                                         }}
                                                     />
                                                 )}
+                                            </>
+                                        )}
 
-                                                {eachChecklistItem.type === "email" && (
-                                                    <>
-                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+                                        {eachChecklistItem.type === "email" && (
+                                            <>
+                                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
 
-                                                                <button className='button1'
-                                                                    onClick={async () => {
-                                                                        toast.success("searching")
+                                                        <button className='button1'
+                                                            onClick={async () => {
+                                                                toast.success("searching")
 
-                                                                        companiesSet(await getCompanies({}))
-                                                                    }}
-                                                                >companies</button>
+                                                                companiesSet(await getCompanies({}))
+                                                            }}
+                                                        >companies</button>
 
-                                                                <button className='button1'
-                                                                    onClick={async () => {
-                                                                        toast.success("searching")
-                                                                        const seenDepartments = await getDepartments()
+                                                        <button className='button1'
+                                                            onClick={async () => {
+                                                                toast.success("searching")
+                                                                const seenDepartments = await getDepartments()
 
-                                                                        departmentsSet(seenDepartments)
-                                                                    }}
-                                                                >departments</button>
-                                                            </div>
+                                                                departmentsSet(seenDepartments)
+                                                            }}
+                                                        >departments</button>
+                                                    </div>
 
-                                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                                                                {companies.length > 0 && (
-                                                                    <>
-                                                                        <ShowMore
-                                                                            label='companies'
-                                                                            content={
-                                                                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
-                                                                                    {companies.map(eachCompany => {
-                                                                                        return (
-                                                                                            <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
-                                                                                                <h3>{eachCompany.name}</h3>
+                                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                                        {companies.length > 0 && (
+                                                            <>
+                                                                <ShowMore
+                                                                    label='companies'
+                                                                    content={
+                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                            {companies.map(eachCompany => {
+                                                                                return (
+                                                                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                                                        <h3>{eachCompany.name}</h3>
 
-                                                                                                {eachCompany.emails.length > 0 && (
-                                                                                                    <>
-                                                                                                        <h3>company emails</h3>
+                                                                                        {eachCompany.emails.length > 0 && (
+                                                                                            <>
+                                                                                                <h3>company emails</h3>
 
-                                                                                                        <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-                                                                                                            {eachCompany.emails.map((eachCompanyEmail, eachCompanyEmailIndex) => {
-                                                                                                                return (
-                                                                                                                    <button key={eachCompanyEmailIndex} className='button3'
-                                                                                                                        onClick={() => {
-                                                                                                                            //edit new checklist item
-                                                                                                                            const newChecklistItem = { ...eachChecklistItem }
-                                                                                                                            newChecklistItem.to = eachCompanyEmail
+                                                                                                <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                                                                                                    {eachCompany.emails.map((eachCompanyEmail, eachCompanyEmailIndex) => {
+                                                                                                        return (
+                                                                                                            <button key={eachCompanyEmailIndex} className='button3'
+                                                                                                                onClick={() => {
+                                                                                                                    if (formObj.checklist === undefined) return
 
-                                                                                                                            //edit new checklist at index
-                                                                                                                            const newChecklist = [...seenChecklist]
-                                                                                                                            newChecklist[eachChecklistItemIndex] = newChecklistItem
+                                                                                                                    //edit new checklist item
+                                                                                                                    const newChecklistItem = { ...eachChecklistItem }
+                                                                                                                    newChecklistItem.to = eachCompanyEmail
 
-                                                                                                                            updateChecklist(newChecklist)
-                                                                                                                        }}
-                                                                                                                    >{eachCompanyEmail}</button>
-                                                                                                                )
-                                                                                                            })}
-                                                                                                        </div>
-                                                                                                    </>
-                                                                                                )}
+                                                                                                                    //edit new checklist at index
+                                                                                                                    const newChecklist = [...formObj.checklist]
+                                                                                                                    newChecklist[eachChecklistItemIndex] = newChecklistItem
 
-                                                                                                {eachCompany.usersToCompanies !== undefined && eachCompany.usersToCompanies.length > 0 && (
-                                                                                                    <>
-                                                                                                        <p>company user emails:</p>
+                                                                                                                    updateChecklist(newChecklist)
+                                                                                                                }}
+                                                                                                            >{eachCompanyEmail}</button>
+                                                                                                        )
+                                                                                                    })}
+                                                                                                </div>
+                                                                                            </>
+                                                                                        )}
 
-                                                                                                        <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-                                                                                                            {eachCompany.usersToCompanies.map(eachUserCompany => {
-                                                                                                                if (eachUserCompany.user === undefined) return null
+                                                                                        {eachCompany.usersToCompanies !== undefined && eachCompany.usersToCompanies.length > 0 && (
+                                                                                            <>
+                                                                                                <p>company user emails:</p>
 
-                                                                                                                return (
-                                                                                                                    <div key={eachUserCompany.id}>
-                                                                                                                        <h3>{eachUserCompany.user.name}</h3>
+                                                                                                <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                                                                                                    {eachCompany.usersToCompanies.map(eachUserCompany => {
+                                                                                                        if (eachUserCompany.user === undefined) return null
 
-                                                                                                                        {eachUserCompany.contactEmails.length > 0 && (
-                                                                                                                            <div style={{ display: "grid", alignContent: "flex-start" }}>
-                                                                                                                                {eachUserCompany.contactEmails.map((eachContactEmail, eachContactEmailIndex) => {
-                                                                                                                                    return (
-                                                                                                                                        <button key={eachContactEmailIndex} className='button3'
-                                                                                                                                            onClick={() => {
-                                                                                                                                                //edit new checklist item
-                                                                                                                                                const newChecklistItem = { ...eachChecklistItem }
-                                                                                                                                                newChecklistItem.to = eachContactEmail
+                                                                                                        return (
+                                                                                                            <div key={eachUserCompany.id}>
+                                                                                                                <h3>{eachUserCompany.user.name}</h3>
 
-                                                                                                                                                //edit new checklist at index
-                                                                                                                                                const newChecklist = [...seenChecklist]
-                                                                                                                                                newChecklist[eachChecklistItemIndex] = newChecklistItem
+                                                                                                                {eachUserCompany.contactEmails.length > 0 && (
+                                                                                                                    <div style={{ display: "grid", alignContent: "flex-start" }}>
+                                                                                                                        {eachUserCompany.contactEmails.map((eachContactEmail, eachContactEmailIndex) => {
+                                                                                                                            return (
+                                                                                                                                <button key={eachContactEmailIndex} className='button3'
+                                                                                                                                    onClick={() => {
+                                                                                                                                        if (formObj.checklist === undefined) return
 
-                                                                                                                                                updateChecklist(newChecklist)
-                                                                                                                                            }}
-                                                                                                                                        >{eachContactEmail}</button>
-                                                                                                                                    )
-                                                                                                                                })}
-                                                                                                                            </div>
-                                                                                                                        )}
+                                                                                                                                        //edit new checklist item
+                                                                                                                                        const newChecklistItem = { ...eachChecklistItem }
+                                                                                                                                        newChecklistItem.to = eachContactEmail
+
+                                                                                                                                        //edit new checklist at index
+                                                                                                                                        const newChecklist = [...formObj.checklist]
+                                                                                                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                                                                                                        updateChecklist(newChecklist)
+                                                                                                                                    }}
+                                                                                                                                >{eachContactEmail}</button>
+                                                                                                                            )
+                                                                                                                        })}
                                                                                                                     </div>
-                                                                                                                )
-                                                                                                            })}
-                                                                                                        </div>
-                                                                                                    </>
-                                                                                                )}
-                                                                                            </div>
-                                                                                        )
-                                                                                    })}
-                                                                                </div>
-                                                                            }
-                                                                        />
-                                                                    </>
-                                                                )}
+                                                                                                                )}
+                                                                                                            </div>
+                                                                                                        )
+                                                                                                    })}
+                                                                                                </div>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )
+                                                                            })}
+                                                                        </div>
+                                                                    }
+                                                                />
+                                                            </>
+                                                        )}
 
-                                                                {departments.length > 0 && (
-                                                                    <>
-                                                                        <ShowMore
-                                                                            label='departments'
-                                                                            content={
-                                                                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
-                                                                                    {departments.map(eachDepartment => {
-                                                                                        return (
-                                                                                            <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
-                                                                                                <h3>{eachDepartment.name}</h3>
+                                                        {departments.length > 0 && (
+                                                            <>
+                                                                <ShowMore
+                                                                    label='departments'
+                                                                    content={
+                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                            {departments.map(eachDepartment => {
+                                                                                return (
+                                                                                    <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                                                        <h3>{eachDepartment.name}</h3>
 
-                                                                                                {eachDepartment.emails.length > 0 && (
-                                                                                                    <>
-                                                                                                        <h3>department emails: </h3>
+                                                                                        {eachDepartment.emails.length > 0 && (
+                                                                                            <>
+                                                                                                <h3>department emails: </h3>
 
-                                                                                                        <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-                                                                                                            {eachDepartment.emails.map((eachDepartmentEmail, eachDepartmentEmailIndex) => {
-                                                                                                                return (
-                                                                                                                    <button key={eachDepartmentEmailIndex} className='button3'
-                                                                                                                        onClick={() => {
-                                                                                                                            //edit new checklist item
-                                                                                                                            const newChecklistItem = { ...eachChecklistItem }
-                                                                                                                            newChecklistItem.to = eachDepartmentEmail
+                                                                                                <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", overflow: "auto" }}>
+                                                                                                    {eachDepartment.emails.map((eachDepartmentEmail, eachDepartmentEmailIndex) => {
+                                                                                                        return (
+                                                                                                            <button key={eachDepartmentEmailIndex} className='button3'
+                                                                                                                onClick={() => {
+                                                                                                                    if (formObj.checklist === undefined) return
 
-                                                                                                                            //edit new checklist at index
-                                                                                                                            const newChecklist = [...seenChecklist]
-                                                                                                                            newChecklist[eachChecklistItemIndex] = newChecklistItem
+                                                                                                                    //edit new checklist item
+                                                                                                                    const newChecklistItem = { ...eachChecklistItem }
+                                                                                                                    newChecklistItem.to = eachDepartmentEmail
 
-                                                                                                                            updateChecklist(newChecklist)
-                                                                                                                        }}
-                                                                                                                    >{eachDepartmentEmail}</button>
-                                                                                                                )
-                                                                                                            })}
-                                                                                                        </div>
-                                                                                                    </>
-                                                                                                )}
+                                                                                                                    //edit new checklist at index
+                                                                                                                    const newChecklist = [...formObj.checklist]
+                                                                                                                    newChecklist[eachChecklistItemIndex] = newChecklistItem
 
-                                                                                                {eachDepartment.usersToDepartments !== undefined && eachDepartment.usersToDepartments.length > 0 && (
-                                                                                                    <>
-                                                                                                        <h3>department user emails:</h3>
+                                                                                                                    updateChecklist(newChecklist)
+                                                                                                                }}
+                                                                                                            >{eachDepartmentEmail}</button>
+                                                                                                        )
+                                                                                                    })}
+                                                                                                </div>
+                                                                                            </>
+                                                                                        )}
 
-                                                                                                        <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-                                                                                                            {eachDepartment.usersToDepartments.map(eachUserDepartment => {
-                                                                                                                if (eachUserDepartment.user === undefined) return null
+                                                                                        {eachDepartment.usersToDepartments !== undefined && eachDepartment.usersToDepartments.length > 0 && (
+                                                                                            <>
+                                                                                                <h3>department user emails:</h3>
 
-                                                                                                                return (
-                                                                                                                    <div key={eachUserDepartment.id}>
-                                                                                                                        <p>{eachUserDepartment.user.name}</p>
+                                                                                                <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", overflow: "auto" }}>
+                                                                                                    {eachDepartment.usersToDepartments.map(eachUserDepartment => {
+                                                                                                        if (eachUserDepartment.user === undefined) return null
 
-                                                                                                                        {eachUserDepartment.contactEmails.length > 0 && (
-                                                                                                                            <div style={{ display: "grid", alignContent: "flex-start" }}>
-                                                                                                                                {eachUserDepartment.contactEmails.map((eachContactEmail, eachContactEmailIndex) => {
-                                                                                                                                    return (
-                                                                                                                                        <button key={eachContactEmailIndex} className='button3'
-                                                                                                                                            onClick={() => {
-                                                                                                                                                //edit new checklist item
-                                                                                                                                                const newChecklistItem = { ...eachChecklistItem }
-                                                                                                                                                newChecklistItem.to = eachContactEmail
+                                                                                                        return (
+                                                                                                            <div key={eachUserDepartment.id}>
+                                                                                                                <p>{eachUserDepartment.user.name}</p>
 
-                                                                                                                                                //edit new checklist at index
-                                                                                                                                                const newChecklist = [...seenChecklist]
-                                                                                                                                                newChecklist[eachChecklistItemIndex] = newChecklistItem
+                                                                                                                {eachUserDepartment.contactEmails.length > 0 && (
+                                                                                                                    <div style={{ display: "grid", alignContent: "flex-start" }}>
+                                                                                                                        {eachUserDepartment.contactEmails.map((eachContactEmail, eachContactEmailIndex) => {
+                                                                                                                            return (
+                                                                                                                                <button key={eachContactEmailIndex} className='button3'
+                                                                                                                                    onClick={() => {
+                                                                                                                                        if (formObj.checklist === undefined) return
 
-                                                                                                                                                updateChecklist(newChecklist)
-                                                                                                                                            }}
-                                                                                                                                        >{eachContactEmail}</button>
-                                                                                                                                    )
-                                                                                                                                })}
-                                                                                                                            </div>
-                                                                                                                        )}
+                                                                                                                                        //edit new checklist item
+                                                                                                                                        const newChecklistItem = { ...eachChecklistItem }
+                                                                                                                                        newChecklistItem.to = eachContactEmail
+
+                                                                                                                                        //edit new checklist at index
+                                                                                                                                        const newChecklist = [...formObj.checklist]
+                                                                                                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                                                                                                        updateChecklist(newChecklist)
+                                                                                                                                    }}
+                                                                                                                                >{eachContactEmail}</button>
+                                                                                                                            )
+                                                                                                                        })}
                                                                                                                     </div>
-                                                                                                                )
-                                                                                                            })}
-                                                                                                        </div>
-                                                                                                    </>
-                                                                                                )}
-                                                                                            </div>
-                                                                                        )
-                                                                                    })}
-                                                                                </div>
-                                                                            }
-                                                                        />
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </div>
+                                                                                                                )}
+                                                                                                            </div>
+                                                                                                        )
+                                                                                                    })}
+                                                                                                </div>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )
+                                                                            })}
+                                                                        </div>
+                                                                    }
+                                                                />
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
 
-                                                        <label>to: </label>
+                                                <label>to: </label>
 
-                                                        <input type='text' value={eachChecklistItem.to} placeholder='Enter send to'
-                                                            onChange={(e) => {
-                                                                //edit new checklist item
-                                                                const newChecklistItem = { ...eachChecklistItem }
-                                                                newChecklistItem.to = e.target.value
+                                                <input type='text' value={eachChecklistItem.to} placeholder='Enter send to'
+                                                    onChange={(e) => {
+                                                        if (formObj.checklist === undefined) return
 
-                                                                //edit new checklist at index
-                                                                const newChecklist = [...seenChecklist]
-                                                                newChecklist[eachChecklistItemIndex] = newChecklistItem
+                                                        //edit new checklist item
+                                                        const newChecklistItem = { ...eachChecklistItem }
+                                                        newChecklistItem.to = e.target.value
 
-                                                                updateChecklist(newChecklist)
+                                                        //edit new checklist at index
+                                                        const newChecklist = [...formObj.checklist]
+                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                        updateChecklist(newChecklist)
+                                                    }}
+                                                />
+
+                                                <label>subject: </label>
+
+                                                <input type='text' value={eachChecklistItem.subject} placeholder='Enter email subject'
+                                                    onChange={(e) => {
+                                                        if (formObj.checklist === undefined) return
+
+                                                        //edit new checklist item
+                                                        const newChecklistItem = { ...eachChecklistItem }
+                                                        newChecklistItem.subject = e.target.value
+
+                                                        //edit new checklist at index
+                                                        const newChecklist = [...formObj.checklist]
+                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                        updateChecklist(newChecklist)
+                                                    }}
+                                                />
+
+                                                <label>Email Html: </label>
+
+                                                <textarea rows={5} value={eachChecklistItem.email} placeholder='Enter email to send'
+                                                    onChange={(e) => {
+                                                        if (formObj.checklist === undefined) return
+
+                                                        //edit new checklist item
+                                                        const newChecklistItem = { ...eachChecklistItem }
+                                                        newChecklistItem.email = e.target.value
+
+                                                        //edit new checklist at index
+                                                        const newChecklist = [...formObj.checklist]
+                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                        updateChecklist(newChecklist)
+                                                    }}
+                                                />
+                                            </>
+                                        )}
+
+                                        {eachChecklistItem.type === "manual" && (
+                                            <>
+                                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+
+                                                        <button className='button1'
+                                                            onClick={async () => {
+                                                                toast.success("searching")
+
+                                                                companiesSet(await getCompanies({}))
                                                             }}
-                                                        />
+                                                        >companies</button>
 
-                                                        <label>subject: </label>
+                                                        <button className='button1'
+                                                            onClick={async () => {
+                                                                toast.success("searching")
+                                                                const seenDepartments = await getDepartments()
 
-                                                        <input type='text' value={eachChecklistItem.subject} placeholder='Enter email subject'
-                                                            onChange={(e) => {
-                                                                //edit new checklist item
-                                                                const newChecklistItem = { ...eachChecklistItem }
-                                                                newChecklistItem.subject = e.target.value
-
-                                                                //edit new checklist at index
-                                                                const newChecklist = [...seenChecklist]
-                                                                newChecklist[eachChecklistItemIndex] = newChecklistItem
-
-                                                                updateChecklist(newChecklist)
+                                                                departmentsSet(seenDepartments)
                                                             }}
-                                                        />
+                                                        >departments</button>
+                                                    </div>
 
-                                                        <label>Email Html: </label>
+                                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                                        {companies.length > 0 && (
+                                                            <>
+                                                                <ShowMore
+                                                                    label='companies'
+                                                                    content={
+                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                            {companies.map(eachCompany => {
+                                                                                return (
+                                                                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                                                        <h3>{eachCompany.name}</h3>
 
-                                                        <textarea rows={5} value={eachChecklistItem.email} placeholder='Enter email to send'
-                                                            onChange={(e) => {
-                                                                //edit new checklist item
-                                                                const newChecklistItem = { ...eachChecklistItem }
-                                                                newChecklistItem.email = e.target.value
+                                                                                        <button className='button1'
+                                                                                            onClick={() => {
+                                                                                                if (formObj.checklist === undefined) return
 
-                                                                //edit new checklist at index
-                                                                const newChecklist = [...seenChecklist]
-                                                                newChecklist[eachChecklistItemIndex] = newChecklistItem
+                                                                                                //edit new checklist item
+                                                                                                const newChecklistItem = { ...eachChecklistItem }
+                                                                                                newChecklistItem.for = {
+                                                                                                    type: "company",
+                                                                                                    companyId: eachCompany.id
+                                                                                                }
 
-                                                                updateChecklist(newChecklist)
-                                                            }}
-                                                        />
-                                                    </>
-                                                )}
+                                                                                                //edit new checklist at index
+                                                                                                const newChecklist = [...formObj.checklist]
+                                                                                                newChecklist[eachChecklistItemIndex] = newChecklistItem
 
-                                                {eachChecklistItem.type === "manual" && (
-                                                    <>
-                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+                                                                                                toast.success(`set for ${eachCompany.name}`)
 
-                                                                <button className='button1'
-                                                                    onClick={async () => {
-                                                                        toast.success("searching")
+                                                                                                updateChecklist(newChecklist)
+                                                                                            }}
+                                                                                        >add</button>
+                                                                                    </div>
+                                                                                )
+                                                                            })}
+                                                                        </div>
+                                                                    }
+                                                                />
+                                                            </>
+                                                        )}
 
-                                                                        companiesSet(await getCompanies({}))
-                                                                    }}
-                                                                >companies</button>
+                                                        {departments.length > 0 && (
+                                                            <>
+                                                                <ShowMore
+                                                                    label='departments'
+                                                                    content={
+                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                            {departments.map(eachDepartment => {
+                                                                                return (
+                                                                                    <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                                                        <h3>{eachDepartment.name}</h3>
 
-                                                                <button className='button1'
-                                                                    onClick={async () => {
-                                                                        toast.success("searching")
-                                                                        const seenDepartments = await getDepartments()
+                                                                                        <button className='button1'
+                                                                                            onClick={() => {
+                                                                                                if (formObj.checklist === undefined) return
 
-                                                                        departmentsSet(seenDepartments)
-                                                                    }}
-                                                                >departments</button>
-                                                            </div>
+                                                                                                //edit new checklist item
+                                                                                                const newChecklistItem = { ...eachChecklistItem }
+                                                                                                newChecklistItem.for = {
+                                                                                                    type: "department",
+                                                                                                    departmenId: eachDepartment.id
+                                                                                                }
 
-                                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                                                                {companies.length > 0 && (
-                                                                    <>
-                                                                        <ShowMore
-                                                                            label='companies'
-                                                                            content={
-                                                                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
-                                                                                    {companies.map(eachCompany => {
-                                                                                        return (
-                                                                                            <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
-                                                                                                <h3>{eachCompany.name}</h3>
+                                                                                                //edit new checklist at index
+                                                                                                const newChecklist = [...formObj.checklist]
+                                                                                                newChecklist[eachChecklistItemIndex] = newChecklistItem
 
-                                                                                                <button className='button1'
-                                                                                                    onClick={() => {
-                                                                                                        //edit new checklist item
-                                                                                                        const newChecklistItem = { ...eachChecklistItem }
-                                                                                                        newChecklistItem.for = {
-                                                                                                            type: "company",
-                                                                                                            companyId: eachCompany.id
-                                                                                                        }
+                                                                                                toast.success(`set for ${eachDepartment.name}`)
 
-                                                                                                        //edit new checklist at index
-                                                                                                        const newChecklist = [...seenChecklist]
-                                                                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+                                                                                                updateChecklist(newChecklist)
+                                                                                            }}
+                                                                                        >add</button>
+                                                                                    </div>
+                                                                                )
+                                                                            })}
+                                                                        </div>
+                                                                    }
+                                                                />
+                                                            </>
+                                                        )}
+                                                    </div>
 
-                                                                                                        toast.success(`set for ${eachCompany.name}`)
+                                                    {(eachChecklistItem.for.type === "department" && eachChecklistItem.for.departmenId !== "") && (
+                                                        <h3>manual check set for {eachChecklistItem.for.type}: {foundDepartment !== undefined && foundDepartment.name}</h3>
+                                                    )}
 
-                                                                                                        updateChecklist(newChecklist)
-                                                                                                    }}
-                                                                                                >add</button>
-                                                                                            </div>
-                                                                                        )
-                                                                                    })}
-                                                                                </div>
-                                                                            }
-                                                                        />
-                                                                    </>
-                                                                )}
+                                                    {(eachChecklistItem.for.type === "company" && eachChecklistItem.for.companyId !== "") && (
+                                                        <h3>manual check set for {eachChecklistItem.for.type}: {foundCompany !== undefined && foundCompany.name}</h3>
+                                                    )}
+                                                </div>
 
-                                                                {departments.length > 0 && (
-                                                                    <>
-                                                                        <ShowMore
-                                                                            label='departments'
-                                                                            content={
-                                                                                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
-                                                                                    {departments.map(eachDepartment => {
-                                                                                        return (
-                                                                                            <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
-                                                                                                <h3>{eachDepartment.name}</h3>
+                                                <input type='text' value={eachChecklistItem.prompt} placeholder='Enter prompt to ask user'
+                                                    onChange={(e) => {
+                                                        if (formObj.checklist === undefined) return
 
-                                                                                                <button className='button1'
-                                                                                                    onClick={() => {
-                                                                                                        //edit new checklist item
-                                                                                                        const newChecklistItem = { ...eachChecklistItem }
-                                                                                                        newChecklistItem.for = {
-                                                                                                            type: "department",
-                                                                                                            departmenId: eachDepartment.id
-                                                                                                        }
+                                                        //edit new checklist item
+                                                        const newChecklistItem = { ...eachChecklistItem }
+                                                        newChecklistItem.prompt = e.target.value
 
-                                                                                                        //edit new checklist at index
-                                                                                                        const newChecklist = [...seenChecklist]
-                                                                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+                                                        //edit new checklist at index
+                                                        const newChecklist = [...formObj.checklist]
+                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
 
-                                                                                                        toast.success(`set for ${eachDepartment.name}`)
-
-                                                                                                        updateChecklist(newChecklist)
-                                                                                                    }}
-                                                                                                >add</button>
-                                                                                            </div>
-                                                                                        )
-                                                                                    })}
-                                                                                </div>
-                                                                            }
-                                                                        />
-                                                                    </>
-                                                                )}
-                                                            </div>
-
-                                                            {(eachChecklistItem.for.type === "department" && eachChecklistItem.for.departmenId !== "") && (
-                                                                <h3>manual check set for {eachChecklistItem.for.type}: {foundDepartment !== undefined && foundDepartment.name}</h3>
-                                                            )}
-
-                                                            {(eachChecklistItem.for.type === "company" && eachChecklistItem.for.companyId !== "") && (
-                                                                <h3>manual check set for {eachChecklistItem.for.type}: {foundCompany !== undefined && foundCompany.name}</h3>
-                                                            )}
-                                                        </div>
-
-                                                        <input type='text' value={eachChecklistItem.prompt} placeholder='Enter prompt to ask user'
-                                                            onChange={(e) => {
-                                                                //edit new checklist item
-                                                                const newChecklistItem = { ...eachChecklistItem }
-                                                                newChecklistItem.prompt = e.target.value
-
-                                                                //edit new checklist at index
-                                                                const newChecklist = [...seenChecklist]
-                                                                newChecklist[eachChecklistItemIndex] = newChecklistItem
-
-                                                                updateChecklist(newChecklist)
-                                                            }}
-                                                        />
-                                                    </>
-                                                )}
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            )}
-                        </div >
-                    )
-                }
-
-                return (
-                    <React.Fragment key={eachKey}>
-                        {moreFormInfo[eachKey].inputType === "input" ? (
-                            <TextInput
-                                name={eachKey}
-                                value={`${formObj[eachKey]}`}
-                                type={moreFormInfo[eachKey].type}
-                                label={moreFormInfo[eachKey].label}
-                                placeHolder={moreFormInfo[eachKey].placeHolder}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                    formObjSet(prevFormObj => {
-                                        const newFormObj = { ...prevFormObj }
-
-                                        newFormObj[eachKey] = e.target.value
-
-                                        return newFormObj
-                                    })
-                                }}
-                                onBlur={() => { checkIfValid(formObj, eachKey, checklistStarterSchema) }}
-                                errors={formErrors[eachKey]}
-                            />
-                        ) : moreFormInfo[eachKey].inputType === "textarea" ? (
-                            <TextArea
-                                name={eachKey}
-                                value={`${formObj[eachKey]}`}
-                                label={moreFormInfo[eachKey].label}
-                                placeHolder={moreFormInfo[eachKey].placeHolder}
-                                onInput={(e) => {
-                                    formObjSet(prevFormObj => {
-                                        const newFormObj = { ...prevFormObj }
-
-                                        // @ts-expect-error type
-                                        newFormObj[eachKey] = e.target.value
-
-                                        return newFormObj
-                                    })
-                                }}
-                                onBlur={() => { checkIfValid(formObj, eachKey, checklistStarterSchema) }}
-                                errors={formErrors[eachKey]}
-                            />
-                        ) : null}
-                    </React.Fragment>
-                )
-            })}
+                                                        updateChecklist(newChecklist)
+                                                    }}
+                                                />
+                                            </>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </>
+            )}
 
             <button className='button1' style={{ justifySelf: "center" }}
                 onClick={handleSubmit}

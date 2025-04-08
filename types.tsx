@@ -100,26 +100,7 @@ export type authAccessLevelResponseType = { session: Session, accessLevel: userD
 export type crudOptionType = "c" | "r" | "ra" | "u" | "d"
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export type formInputType = {
+export type dynamicFormInputType = {
     type: "input";
     label: string;
     required: boolean,
@@ -128,31 +109,26 @@ export type formInputType = {
     | { type: "boolean"; value: boolean }
     | { type: "date"; value: string },
 };
-
-export type formInputObjType = {
+export type dynamicFormInputObjType = {
     type: "object";
     label: string;
     required: boolean,
-    data: formType;
+    data: dynamicFormType;
 };
-
-export type formInputArrType = {
+export type dynamicFormInputArrType = {
     type: "array";
     label: string;
     required: boolean,
-    arrayStarter: formType,
+    arrayStarter: dynamicFormType,
     arrayAddLabel: string,
-    data: formType[];
+    data: dynamicFormType[];
 };
+export type dynamicFormType = { [key: string]: dynamicFormInputType | dynamicFormInputObjType | dynamicFormInputArrType; }
 
-export type formType = { [key: string]: formInputType | formInputObjType | formInputArrType; }
-
-
-export const formSchema: z.ZodType<formType> = z.lazy(() =>
-    z.record(z.string(), z.union([formInputSchema, formInputObjSchema, formInputArrSchema]))
+export const dynamicFormSchema: z.ZodType<dynamicFormType> = z.lazy(() =>
+    z.record(z.string(), z.union([dynamicFormInputSchema, dynamicFormInputObjSchema, dynamicFormInputArrSchema]))
 );
-
-export const formInputSchema = z.object({
+export const dynamicFormInputSchema = z.object({
     type: z.literal("input"),
     label: z.string(),
     required: z.boolean(),
@@ -163,58 +139,52 @@ export const formInputSchema = z.object({
         z.object({ type: z.literal("date"), value: z.string() }),
     ]),
 });
-
-export const formInputObjSchema = z.object({
+export const dynamicFormInputObjSchema = z.object({
     type: z.literal("object"),
     label: z.string(),
     required: z.boolean(),
-    data: formSchema,
+    data: dynamicFormSchema,
 });
-
-export const formInputArrSchema = z.object({
+export const dynamicFormInputArrSchema = z.object({
     type: z.literal("array"),
     label: z.string(),
     required: z.boolean(),
-    arrayStarter: formSchema,
+    arrayStarter: dynamicFormSchema,
     arrayAddLabel: z.string(),
-    data: z.array(formSchema),
+    data: z.array(dynamicFormSchema),
 });
 
-export const checklistItemFormSchema = z.object({
-    type: z.literal("form"),
-    data: formSchema,
-    completed: z.boolean(),
-})
-export type checklistItemFormType = z.infer<typeof checklistItemFormSchema>
 
-export const checklistItemEmailSchema = z.object({
-    type: z.literal("email"),
-    to: z.string().min(1),
-    subject: z.string().min(1),
-    email: z.string().min(1),
-    completed: z.boolean(),
-})
-export type checklistItemEmailType = z.infer<typeof checklistItemEmailSchema>
 
-export const checklistItemManualSchema = z.object({
-    type: z.literal("manual"),
-    for: z.union([
-        z.object({
-            type: z.literal("department"),
-            departmenId: z.string().min(1)
-        }),
-        z.object({
-            type: z.literal("company"),
-            companyId: z.string().min(1)
-        }),
-    ]),
-    prompt: z.string().min(1),
-    completed: z.boolean(),
-})
-export type checklistItemManualType = z.infer<typeof checklistItemManualSchema>
 
-export const checklistItemSchema = z.union([checklistItemFormSchema, checklistItemEmailSchema, checklistItemManualSchema])
-export type checklistItemType = z.infer<typeof checklistItemSchema>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -349,9 +319,123 @@ export type updateTape = z.infer<typeof updateTapeSchema>
 
 
 
-//keep synced with db schema
-// export const clientRequestTypeSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"])
-// export type clientRequestType = z.infer<typeof clientRequestTypeSchema>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const formTypesSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther", "dynamic"])
+export type formTypesType = z.infer<typeof formTypesSchema>
+
+export const tapeDepositNewTapeSchema = newTapeSchema.extend({
+    id: tapeSchema.shape.id.optional(),
+});
+export type tapeDepositNewTapeType = z.infer<typeof tapeDepositNewTapeSchema>;
+
+export const tapeDepositFormSchema = z.object({
+    type: z.literal(formTypesSchema.Values.tapeDeposit),
+    data: z.object({
+        newTapes: z.array(tapeDepositNewTapeSchema).min(1, "need at least one tape to deposit"),
+        eta: z.string().min(1).datetime()
+    }).nullable(),
+});
+export type tapeDepositFormType = z.infer<typeof tapeDepositFormSchema>
+export type tapeDepositFormTypeNonNull = NonNullable<tapeDepositFormType["data"]>
+
+export const tapeWithdrawFormSchema = z.object({
+    type: z.literal(formTypesSchema.Values.tapeWithdraw),
+    data: z.object({
+    }).nullable(),
+});
+export type tapeWithdrawFormType = z.infer<typeof tapeWithdrawFormSchema>
+
+export const equipmentDepositFormSchema = z.object({
+    type: z.literal(formTypesSchema.Values.equipmentDeposit),
+    data: z.object({
+    }).nullable(),
+});
+export type equipmentDepositFormType = z.infer<typeof equipmentDepositFormSchema>
+
+export const equipmentWithdrawFormSchema = z.object({
+    type: z.literal(formTypesSchema.Values.equipmentWithdraw),
+    data: z.object({
+    }).nullable(),
+});
+export type equipmentWithdrawFormType = z.infer<typeof equipmentWithdrawFormSchema>
+
+export const equipmentOtherFormSchema = z.object({
+    type: z.literal(formTypesSchema.Values.equipmentOther),
+    data: z.object({
+    }).nullable(),
+});
+export type equipmentOtherFormType = z.infer<typeof equipmentOtherFormSchema>
+
+export const checklistItemDynamicFormSchema = z.object({
+    type: z.literal("dynamic"),
+    data: dynamicFormSchema
+})
+export type checklistItemDynamicFormType = z.infer<typeof checklistItemDynamicFormSchema>
+
+export const checklistItemFormDataSchema = z.union([tapeDepositFormSchema, tapeWithdrawFormSchema, equipmentDepositFormSchema, equipmentWithdrawFormSchema, equipmentOtherFormSchema, checklistItemDynamicFormSchema])
+export type checklistItemFormDataType = z.infer<typeof checklistItemFormDataSchema>
+
+export const checklistItemFormSchema = z.object({
+    type: z.literal("form"),
+    form: checklistItemFormDataSchema,
+    completed: z.boolean(),
+})
+export type checklistItemFormType = z.infer<typeof checklistItemFormSchema>
+//data is custom formSchema
+//or custom tape deposit form
+//or custom tape withdraw form
+//or custom equipment deposit form
+//or custom equipment withdraw form
+
+export const checklistItemEmailSchema = z.object({
+    type: z.literal("email"),
+    to: z.string().min(1),
+    subject: z.string().min(1),
+    email: z.string().min(1),
+    completed: z.boolean(),
+})
+export type checklistItemEmailType = z.infer<typeof checklistItemEmailSchema>
+
+export const checklistItemManualSchema = z.object({
+    type: z.literal("manual"),
+    for: z.union([
+        z.object({
+            type: z.literal("department"),
+            departmenId: z.string().min(1)
+        }),
+        z.object({
+            type: z.literal("company"),
+            companyId: z.string().min(1)
+        }),
+    ]),
+    prompt: z.string().min(1),
+    completed: z.boolean(),
+})
+export type checklistItemManualType = z.infer<typeof checklistItemManualSchema>
+
+export const checklistItemSchema = z.union([checklistItemFormSchema, checklistItemEmailSchema, checklistItemManualSchema])
+export type checklistItemType = z.infer<typeof checklistItemSchema>
 
 export const checklistStarterSchema = z.object({
     id: z.string().min(1),
@@ -384,36 +468,11 @@ export type updateChecklistStarter = z.infer<typeof updateChecklistStarterSchema
 
 
 
-// export const tapeDepositRequestSchema = z.object({
-//     type: z.literal(clientRequestTypeSchema.Values.tapeDeposit),
-//     data: z.object({
-//         newTapes: z.array(newTapeSchema).min(1, "need at least one tape to deposit")
-//     }),
-// });
-// export type tapeDepositRequestType = z.infer<typeof tapeDepositRequestSchema>
 
-// export const tapeWithdrawRequestSchema = z.object({
-//     type: z.literal(clientRequestTypeSchema.Values.tapeWithdraw),
-// });
-// export type tapeWithdrawRequestType = z.infer<typeof tapeWithdrawRequestSchema>
 
-// export const equipmentDepositRequestSchema = z.object({
-//     type: z.literal(clientRequestTypeSchema.Values.equipmentDeposit),
-// });
-// export type equipmentDepositRequestType = z.infer<typeof equipmentDepositRequestSchema>
 
-// export const equipmentWithdrawRequestSchema = z.object({
-//     type: z.literal(clientRequestTypeSchema.Values.equipmentWithdraw),
-// });
-// export type equipmentWithdrawRequestType = z.infer<typeof equipmentWithdrawRequestSchema>
 
-// export const equipmentOtherRequestSchema = z.object({
-//     type: z.literal(clientRequestTypeSchema.Values.equipmentOther),
-// });
-// export type equipmentOtherRequestType = z.infer<typeof equipmentOtherRequestSchema>
 
-// export const clientRequestDataSchema = z.union([tapeDepositRequestSchema, tapeWithdrawRequestSchema, equipmentDepositRequestSchema, equipmentWithdrawRequestSchema, equipmentOtherRequestSchema])
-// export type clientRequestDataType = z.infer<typeof clientRequestDataSchema>
 
 
 

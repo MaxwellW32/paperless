@@ -5,7 +5,7 @@
 *,
 *::before,
 *::after {
-    /* border: 1px solid red !important; */
+    border: 1px solid red !important;
 }
 
 
@@ -73,6 +73,7 @@ textarea:focus {
 ::-moz-placeholder {
     white-space: pre-line;
     position: relative;
+    text-transform: initial;
 }
 
 h1 {

@@ -1,12 +1,12 @@
-import { formInputType, formType } from "@/types";
 import { deepClone } from "@/utility/utility";
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ChecklistShowMore from "./checklistShowMore/ChecklistShowMore";
 import styles from "./style.module.css"
+import { dynamicFormInputType, dynamicFormType } from "@/types";
 
-export function MakeRecursiveChecklistForm({ seenForm, handleFormUpdate }: { seenForm: formType, handleFormUpdate: (updatedForm: formType) => void }) {
-    const [formData, formDataSet] = useState<formType>(deepClone(seenForm));
+export function MakeDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenForm: dynamicFormType, handleFormUpdate: (updatedForm: dynamicFormType) => void }) {
+    const [formData, formDataSet] = useState<dynamicFormType>(deepClone(seenForm));
     const updating = useRef(false)
 
     //react to changes from above
@@ -31,13 +31,13 @@ export function MakeRecursiveChecklistForm({ seenForm, handleFormUpdate }: { see
 
     return (
         <>
-            <RecursiveMakeChecklistForm formData={formData} formDataSet={formDataSet} />
+            <DynamicMakeChecklistForm formData={formData} formDataSet={formDataSet} />
 
             {/* <pre>{JSON.stringify(formData, null, 2)}</pre> */}
         </>
     );
 }
-function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", parentArrayName, ...elProps }: { formData: formType, formDataSet: React.Dispatch<React.SetStateAction<formType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
+function DynamicMakeChecklistForm({ formData, formDataSet, sentKeys = "", parentArrayName, ...elProps }: { formData: dynamicFormType, formDataSet: React.Dispatch<React.SetStateAction<dynamicFormType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
     const handleChange = (path: string, value: unknown) => {
         formDataSet(prev => {
             const newData = deepClone(prev);
@@ -63,7 +63,7 @@ function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", pare
         });
     };
 
-    const addField = (path: string, newKeyName: string, typeToAdd: formType[string]["type"], inputTypeSelection: formInputType["data"]["type"]) => {
+    const addField = (path: string, newKeyName: string, typeToAdd: dynamicFormType[string]["type"], inputTypeSelection: dynamicFormInputType["data"]["type"]) => {
         formDataSet(prev => {
             const newData = deepClone(prev);
 
@@ -281,7 +281,7 @@ function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", pare
                                                 )}
                                             />
 
-                                            <RecursiveMakeChecklistForm formData={eachFormDataValue.data} formDataSet={formDataSet} sentKeys={`${seenKeys}/data`} style={{ marginTop: "2rem" }} />
+                                            <DynamicMakeChecklistForm formData={eachFormDataValue.data} formDataSet={formDataSet} sentKeys={`${seenKeys}/data`} style={{ marginTop: "2rem" }} />
                                         </>
                                     )}
                                 />
@@ -327,7 +327,7 @@ function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", pare
                                                 )}
                                             />
 
-                                            <RecursiveMakeChecklistForm style={{ marginTop: "2rem" }} formData={eachFormDataValue.arrayStarter} formDataSet={formDataSet} sentKeys={`${seenKeys}/arrayStarter`} parentArrayName={eachKey} />
+                                            <DynamicMakeChecklistForm style={{ marginTop: "2rem" }} formData={eachFormDataValue.arrayStarter} formDataSet={formDataSet} sentKeys={`${seenKeys}/arrayStarter`} parentArrayName={eachKey} />
                                         </>
                                     )}
                                 />
@@ -343,12 +343,12 @@ function RecursiveMakeChecklistForm({ formData, formDataSet, sentKeys = "", pare
 }
 
 function ButtonSelectionOptions({ seenKeys, addField }: {
-    seenKeys: string, addField: (path: string, newKeyName: string, typeToAdd: formType[string]["type"], inputTypeSelection: formInputType["data"]["type"]) => void
+    seenKeys: string, addField: (path: string, newKeyName: string, typeToAdd: dynamicFormType[string]["type"], inputTypeSelection: dynamicFormInputType["data"]["type"]) => void
 }) {
-    const fieldTypeOptions: formType[string]["type"][] = ["input", "object", "array"];
-    const [fieldTypeSelection, fieldTypeSelectionSet] = useState<formType[string]["type"]>("input")
-    const inputTypeOptions: formInputType["data"]["type"][] = ["string", "number", "boolean", "date"];
-    const [inputTypeSelection, inputTypeSelectionSet] = useState<formInputType["data"]["type"]>("string")
+    const fieldTypeOptions: dynamicFormType[string]["type"][] = ["input", "object", "array"];
+    const [fieldTypeSelection, fieldTypeSelectionSet] = useState<dynamicFormType[string]["type"]>("input")
+    const inputTypeOptions: dynamicFormInputType["data"]["type"][] = ["string", "number", "boolean", "date"];
+    const [inputTypeSelection, inputTypeSelectionSet] = useState<dynamicFormInputType["data"]["type"]>("string")
     const [newKeyName, newKeyNameSet] = useState("");
 
     return (
@@ -400,8 +400,8 @@ function ButtonSelectionOptions({ seenKeys, addField }: {
 
 
 
-export function ReadRecursiveChecklistForm({ seenForm, handleFormUpdate }: { seenForm: formType, handleFormUpdate?: (updatedForm: formType) => void }) {
-    const [formData, setFormData] = useState<formType>(deepClone(seenForm));
+export function ReadDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenForm: dynamicFormType, handleFormUpdate?: (updatedForm: dynamicFormType) => void }) {
+    const [formData, setFormData] = useState<dynamicFormType>(deepClone(seenForm));
     const updating = useRef(false)
 
     //react to changes from above
@@ -427,13 +427,13 @@ export function ReadRecursiveChecklistForm({ seenForm, handleFormUpdate }: { see
 
     return (
         <>
-            <RecursiveReadChecklistForm formData={formData} setFormData={setFormData} />
+            <DynamicReadChecklistForm formData={formData} setFormData={setFormData} />
 
             {/* <pre>{JSON.stringify(formData, null, 2)}</pre> */}
         </>
     );
 }
-function RecursiveReadChecklistForm({ formData, setFormData, sentKeys = "", parentArrayName, ...elProps }: { formData: formType, setFormData: React.Dispatch<React.SetStateAction<formType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
+function DynamicReadChecklistForm({ formData, setFormData, sentKeys = "", parentArrayName, ...elProps }: { formData: dynamicFormType, setFormData: React.Dispatch<React.SetStateAction<dynamicFormType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
     const handleChange = (path: string, value: unknown) => {
         setFormData(prev => {
             const newData = deepClone(prev);
@@ -553,7 +553,7 @@ function RecursiveReadChecklistForm({ formData, setFormData, sentKeys = "", pare
                                     )}
                                     content={(
                                         <>
-                                            <RecursiveReadChecklistForm key={eachKey} formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} style={{ marginLeft: "2rem" }} />
+                                            <DynamicReadChecklistForm key={eachKey} formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} style={{ marginLeft: "2rem" }} />
                                         </>
                                     )}
                                 />
@@ -571,7 +571,7 @@ function RecursiveReadChecklistForm({ formData, setFormData, sentKeys = "", pare
                                             <div className="snap" style={{ display: "grid", gridAutoColumns: "min(400px, 90%)", gridAutoFlow: "column", gap: "1rem", overflow: "auto", paddingBlock: "1rem" }} >
                                                 {eachFormDataValue.data.map((eachFormData, eachFormDataIndex) => {
                                                     return (
-                                                        <RecursiveReadChecklistForm key={eachFormDataIndex} formData={eachFormData} setFormData={setFormData} sentKeys={`${seenKeys}/data/${eachFormDataIndex}`} parentArrayName={eachKey} />
+                                                        <DynamicReadChecklistForm key={eachFormDataIndex} formData={eachFormData} setFormData={setFormData} sentKeys={`${seenKeys}/data/${eachFormDataIndex}`} parentArrayName={eachKey} />
                                                     )
                                                 })}
                                             </div>

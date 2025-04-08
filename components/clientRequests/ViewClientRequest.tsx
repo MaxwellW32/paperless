@@ -4,9 +4,9 @@ import styles from "./style.module.css"
 import { clientRequest, company, department, user } from '@/types'
 import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import Moment from 'react-moment';
-import { ReadRecursiveChecklistForm } from '../recursiveChecklistForm/RecursiveChecklistForm'
 import { getSpecificUsers } from '@/serverFunctions/handleUser'
 import { formatLocalDateTime } from '@/utility/utility'
+import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
 
 export default function ViewClientRequest({ sentClientRequest, department }: { sentClientRequest: clientRequest, department?: department }) {
     const [seenCompany, seenCompanySet] = useState<company | undefined>()
@@ -75,7 +75,9 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
 
                     return (
                         <div key={eachChecklistItemIndex}>
-                            <ReadRecursiveChecklistForm seenForm={eachChecklistItem.data} />
+                            {eachChecklistItem.form.type === "dynamic" && (
+                                <ReadDynamicChecklistForm seenForm={eachChecklistItem.form.data} />
+                            )}
                         </div>
                     )
                 })}
