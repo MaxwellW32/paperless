@@ -150,7 +150,7 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
                         />
 
                         {users.length > 0 && (
-                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                 {users.map(eachUser => {
                                     return (
                                         <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
@@ -195,7 +195,7 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
                         >search companies</button>
 
                         {companies.length > 0 && (
-                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                 {companies.map(eachCompany => {
                                     return (
                                         <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>

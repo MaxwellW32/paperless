@@ -3,7 +3,6 @@ import { deepClone } from '@/utility/utility'
 import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '@/components/textInput/TextInput'
-import { z } from "zod"
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 
 //on deposit search tapes from db
@@ -17,7 +16,7 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
     }
     const [formObj, formObjSet] = useState<tapeDepositFormType["data"]>(deepClone(seenForm !== null ? seenForm : initialFormObj))
 
-    type tapeDepositFormTypeNonNullKeys = keyof tapeDepositFormNonNullDataType
+    // type tapeDepositFormTypeNonNullKeys = keyof tapeDepositFormNonNullDataType
     const [formErrors, formErrorsSet] = useState<Partial<{ [key: string]: string }>>({})
 
     const userInteracting = useRef(false)
@@ -37,12 +36,12 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
         const formIsValid = Object.entries(formErrors).length < 1
         if (!formIsValid) return
 
+        userInteracting.current = false
+
         //send the update
         handleFormUpdate(formObj)
 
-        userInteracting.current = false
-
-    }, [formObj])
+    }, [formObj, formErrors])
 
     function checkIfValid(seenFormObj: tapeDepositFormNonNullDataType): boolean {
         const testSchema = tapeDepositFormSchema.shape.data.safeParse(seenFormObj);
@@ -96,7 +95,7 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
 
             {formObj.newTapes.length > 0 && (
                 <>
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 400px)", overflow: "auto" }} className='snap'>
                         {formObj.newTapes.map((eachNewTape, eachNewTapeIndex) => {
                             return (
                                 <div key={eachNewTapeIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", position: "relative" }}>
@@ -201,7 +200,6 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
                 onBlur={() => { checkIfValid(formObj) }}
                 errors={formErrors["eta"]}
             />
-
         </div>
     )
 }

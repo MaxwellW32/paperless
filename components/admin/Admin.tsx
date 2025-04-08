@@ -124,7 +124,7 @@ export default function Page() {
                                     >search checklist starters</button>
 
                                     {checklistStarters.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {checklistStarters.map(eachCheckliststarter => {
 
                                                 return (
@@ -258,7 +258,7 @@ export default function Page() {
                                     >search companies</button>
 
                                     {companies.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {companies.map(eachCompany => {
                                                 return (
                                                     <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
@@ -301,7 +301,7 @@ export default function Page() {
                                     >search departments</button>
 
                                     {departments.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {departments.map(eachDepartment => {
                                                 return (
                                                     <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
@@ -352,7 +352,7 @@ export default function Page() {
                                     />
 
                                     {users.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {users.map(eachUser => {
 
                                                 return (
@@ -455,7 +455,7 @@ export default function Page() {
                                     )}
 
                                     {usersToDepartments.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {usersToDepartments.map(eachUserToDepartment => {
                                                 if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
 
@@ -557,7 +557,7 @@ export default function Page() {
                                     )}
 
                                     {usersToCompanies.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "400px", overflow: "auto" }} className='snap'>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {usersToCompanies.map(eachUserToCompany => {
                                                 if (eachUserToCompany.user === undefined || eachUserToCompany.company === undefined) return null
 
