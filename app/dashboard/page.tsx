@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, clientRequestAuthType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType } from '@/types'
+import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, clientRequestAuthType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType, expectedResourceType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
@@ -14,9 +14,14 @@ import { interpretAuthResponseAndBool, updateRefreshObj } from '@/utility/utilit
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
 import { ensureCanAccessClientRequest } from '@/serverFunctions/handleAuth'
 import DashboardClientRequest from '@/components/clientRequests/DashboardClientRequest'
+import useResourceAuth from '@/components/resourceAuth/UseLoad'
 
 export default function Page() {
     const { data: session } = useSession()
+
+    //check if i can create a request
+    const [clientRequestsExpectedResource, clientRequestsExpectedResourceSet] = useState<expectedResourceType>({ type: "clientRequests", clientRequestId: "" })
+    const clientRequestsAuthResponse = useResourceAuth(clientRequestsExpectedResource)
 
     const [showingSideBar, showingSideBarSet] = useState(true)
     const [makingNewRequest, makingNewRequestSet] = useState(false)
@@ -42,8 +47,6 @@ export default function Page() {
         return foundClientRequest
 
     }, [activeScreen, activeClientRequests, clientRequestsHistory])
-
-    const [canAddNewRequest, canAddNewRequestSet] = useState(false)
 
     //get checklist starters
     useEffect(() => {
@@ -121,31 +124,6 @@ export default function Page() {
             if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
 
             seenDepartmentSet(await getSpecificDepartment(userDepartmentCompanySelection.seenUserToDepartment.departmentId))
-        }
-        search()
-
-    }, [userDepartmentCompanySelection])
-
-    //check if can add client request
-    useEffect(() => {
-        const search = async () => {
-            let newClientRequestAuth: clientRequestAuthType = {}
-
-            if (userDepartmentCompanySelection === null) {
-                newClientRequestAuth = {}
-
-            } else if (userDepartmentCompanySelection !== null) {
-                if (userDepartmentCompanySelection.type === "userCompany") {
-                    newClientRequestAuth = { companyIdForAuth: userDepartmentCompanySelection.seenUserToCompany.companyId }
-
-                } else {
-                    //for department
-                    newClientRequestAuth = { departmentIdForAuth: userDepartmentCompanySelection.seenUserToDepartment.departmentId }
-                }
-            }
-
-            const authResponse = await ensureCanAccessClientRequest(newClientRequestAuth, "c")
-            canAddNewRequestSet(interpretAuthResponseAndBool(authResponse))
         }
         search()
 
@@ -242,57 +220,55 @@ export default function Page() {
                     }}
                 >close</button>
 
-                {canAddNewRequest && (
-                    <>
-                        <div className={styles.newRequest}>
-                            <button className='button1'
-                                onClick={() => {
-                                    makingNewRequestSet(prev => {
-                                        const newBool = !prev
+                {clientRequestsAuthResponse["c"] && (
+                    <div className={styles.newRequest}>
+                        <button className='button1'
+                            onClick={() => {
+                                makingNewRequestSet(prev => {
+                                    const newBool = !prev
 
-                                        if (newBool) {
-                                            //making a new request
-                                            activeScreenSet({
-                                                type: "newRequest",
-                                                activeChecklistStarterType: undefined
-                                            })
-                                        } else {
-                                            activeScreenSet(undefined)
-                                        }
-
-                                        return newBool
-                                    })
-                                }}
-                            >{makingNewRequest ? "cancel" : "new request"}</button>
-
-                            {makingNewRequest && activeScreen !== undefined && activeScreen.type === "newRequest" && (
-                                <select value={activeScreen.activeChecklistStarterType}
-                                    onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
-                                        if (event.target.value === "") return
-
-                                        const eachStarterType = event.target.value
-
+                                    if (newBool) {
+                                        //making a new request
                                         activeScreenSet({
                                             type: "newRequest",
-                                            activeChecklistStarterType: eachStarterType
+                                            activeChecklistStarterType: undefined
                                         })
-                                    }}
-                                >
-                                    <option value={''}
-                                    >select a request</option>
+                                    } else {
+                                        activeScreenSet(undefined)
+                                    }
 
-                                    {checklistStarterTypes !== undefined && checklistStarterTypes.map(eachStarterType => {
+                                    return newBool
+                                })
+                            }}
+                        >{makingNewRequest ? "cancel" : "new request"}</button>
 
-                                        return (
-                                            <option key={eachStarterType} value={eachStarterType}
+                        {makingNewRequest && activeScreen !== undefined && activeScreen.type === "newRequest" && (
+                            <select value={activeScreen.activeChecklistStarterType}
+                                onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                                    if (event.target.value === "") return
 
-                                            >{eachStarterType}</option>
-                                        )
-                                    })}
-                                </select>
-                            )}
-                        </div>
-                    </>
+                                    const eachStarterType = event.target.value
+
+                                    activeScreenSet({
+                                        type: "newRequest",
+                                        activeChecklistStarterType: eachStarterType
+                                    })
+                                }}
+                            >
+                                <option value={''}
+                                >select a request</option>
+
+                                {checklistStarterTypes !== undefined && checklistStarterTypes.map(eachStarterType => {
+
+                                    return (
+                                        <option key={eachStarterType} value={eachStarterType}
+
+                                        >{eachStarterType}</option>
+                                    )
+                                })}
+                            </select>
+                        )}
+                    </div>
                 )}
 
                 {activeClientRequests.length > 0 && (

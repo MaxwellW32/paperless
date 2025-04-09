@@ -5,6 +5,7 @@ import Nav from "@/components/nav/Nav";
 import { Toaster } from "react-hot-toast";
 import { auth } from "@/auth/auth";
 import SessionProviderComponent from "@/components/SessionProviderComponent";
+import LoadResourceAuth from "@/components/resourceAuth/Load";
 
 const geist = localFont({
   src: "./fonts/Geist.ttf",
@@ -41,6 +42,7 @@ export default async function RootLayout({
         <SessionProviderComponent seenSession={seenSession}>
           <Toaster position="top-center" reverseOrder={false} />
           <Nav />
+          <LoadResourceAuth />
 
           {children}
         </SessionProviderComponent>

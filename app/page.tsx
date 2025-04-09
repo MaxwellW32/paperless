@@ -18,14 +18,20 @@ import styles from "./page.module.css"
 //ws use refresh/update modes for client requests - get all, or run specific update
 //way to refresh admin - search properly
 //remove manual company id check - just keep it at manual check
+//updatr auth to trturn - app admin, dep admin, comp admin, ...etc - for proper updates
+//fix tape auth - get specific tape
 
-//possible auth
-//table with resources - tapes, departments, companies
-//certain groups have - crud access to resources
-//check if user session is in group - if so what can they do
-//check the action trying to be performed
-//boolean response 
-//save the response in the client for permission view access
+//department
+
+//goal auth
+//one place on server that checks auth for shared resources...
+
+//at each component we want to clear up we use a hook to load in the auth creds - undefined or ready -  responds to the session, companyDepartmentSelection obj
+
+//on client run all crud checks for that resource and store user access - crud - boolean on each  - one object at resource name - then can access rights - useHook
+
+//its gonna check if department has edit access - this
+//
 
 export default async function Home() {
 

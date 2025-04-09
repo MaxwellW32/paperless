@@ -73,6 +73,21 @@ export type clientRequestAuthType = { clientRequestIdBeingAccessed?: clientReque
 export type companyAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"] }
 export type departmentAuthType = { departmentIdBeingAccessed: department["id"] }
 export type tapeAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"] }
+export type resourceAuthType = { compantyIdForAuth?: company["id"], departmentIdForAuth?: department["id"] }
+export type resourceAuthResponseType = { [key in crudOptionType]: boolean | undefined }
+export type expectedResourceType = {
+    type: "company",
+    companyId: company["id"]
+} | {
+    type: "department",
+    departmentId: department["id"]
+} | {
+    type: "clientRequests",
+    clientRequestId: clientRequest["id"]
+} | {
+    type: "tape",
+    tapeId: tape["id"]
+} | undefined
 
 export type userDepartmentCompanySelection = {
     type: "userDepartment",

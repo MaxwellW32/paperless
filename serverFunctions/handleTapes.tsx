@@ -39,11 +39,14 @@ export async function updateTapes(tapeId: tape["id"], tapeObj: Partial<updateTap
     return result
 }
 
-export async function getSpecificTapes(tapeId: tape["id"], companyAuth: companyAuthType): Promise<tape | undefined> {
-    //security check  
-    const authResponse = await ensureCanAccessTape(companyAuth, "r")
-    interpretAuthResponseAndError(authResponse)
+export async function getSpecificTapes(tapeId: tape["id"], companyAuth: companyAuthType, runAuth = true): Promise<tape | undefined> {
     tapeSchema.shape.id.parse(tapeId)
+
+    if (runAuth) {
+        //security check  
+        const authResponse = await ensureCanAccessTape(companyAuth, "r")
+        interpretAuthResponseAndError(authResponse)
+    }
 
     const result = await db.query.tapes.findFirst({
         where: eq(tapes.id, tapeId),
