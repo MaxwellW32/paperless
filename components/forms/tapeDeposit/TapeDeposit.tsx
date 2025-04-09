@@ -1,5 +1,5 @@
 import { tapeDepositFormSchema, tapeDepositFormType, tapeDepositFormNonNullDataType, company, tape, companyAuthType } from '@/types'
-import { deepClone, formatLocalDateTime } from '@/utility/utility'
+import { deepClone } from '@/utility/utility'
 import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '@/components/textInput/TextInput'
@@ -116,7 +116,7 @@ export function EditTapeDeposit({ seenFormData, handleFormUpdate, seenCompanyId,
                                                     const newFormObj = { ...prevFormObj }
 
                                                     //if id check if in array already - update that record
-                                                    const foundInNewTapes = newFormObj.newTapes.find(eachTapeFind => eachTape.id === eachTape.id) !== undefined
+                                                    const foundInNewTapes = newFormObj.newTapes.find(eachTapeFind => eachTapeFind.id === eachTape.id) !== undefined
 
                                                     if (foundInNewTapes) {
                                                         newFormObj.newTapes = newFormObj.newTapes.map(eachNewTapeMap => {

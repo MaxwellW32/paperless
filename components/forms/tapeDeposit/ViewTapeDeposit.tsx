@@ -1,5 +1,4 @@
 import { tapeDepositFormType } from '@/types'
-import { formatLocalDateTime } from '@/utility/utility'
 import React from 'react'
 import styles from "./style.module.css"
 import ViewTape from '@/components/tapes/ViewTape'

@@ -491,12 +491,12 @@ export const clientRequestSchema = z.object({
     id: z.string().min(1),
     userId: userSchema.shape.id, //who sent the request
     companyId: companySchema.shape.id, //what company is it on behalf of
-    dateSubmitted: z.date(),
+    dateSubmitted: z.string().datetime({ offset: true }),
     status: clientRequestStatusSchema,
     checklist: z.array(checklistItemSchema).min(1),
     checklistStarterId: checklistStarterSchema.shape.id,
     clientsAccessingSite: z.array(userSchema.shape.id),
-    eta: z.date(),
+    eta: z.string().datetime({ offset: true })
 })
 export type clientRequest = z.infer<typeof clientRequestSchema> & {
     user?: user,

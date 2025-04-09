@@ -111,12 +111,12 @@ export const clientRequests = pgTable("clientRequests", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     userId: varchar("userId", { length: 255 }).notNull().references(() => users.id),
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
-    dateSubmitted: timestamp("dateSubmitted", { mode: "date" }).notNull(),
+    dateSubmitted: varchar("dateSubmitted", { length: 255 }).notNull(),
     status: clientRequestStatusEnum().notNull(),
     checklist: json("checklist").$type<checklistItemType[]>().notNull(),
     checklistStarterId: varchar("checklistStarterId", { length: 255 }).notNull().references(() => checklistStarters.id),
     clientsAccessingSite: json("clientsAccessingSite").$type<user["id"][]>().notNull(),
-    eta: timestamp("eta", { mode: "date" }).notNull(),
+    eta: varchar("eta", { length: 255 }).notNull(),
 },
     (t) => {
         return {

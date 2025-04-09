@@ -5,7 +5,6 @@ import { clientRequest, company, department, user } from '@/types'
 import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import Moment from 'react-moment';
 import { getSpecificUsers } from '@/serverFunctions/handleUser'
-import { formatLocalDateTime } from '@/utility/utility'
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
 import { ViewTapeDeposit } from '../forms/tapeDeposit/ViewTapeDeposit'
 
@@ -48,7 +47,11 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                 </>
             )}
 
-            <h3>{formatLocalDateTime(sentClientRequest.dateSubmitted)}</h3>
+            <h3>
+                <Moment utc format="MMM D, YYYY, h:mm A">
+                    {sentClientRequest.dateSubmitted}
+                </Moment>
+            </h3>
 
             <p><Moment fromNow>{sentClientRequest.dateSubmitted}</Moment></p>
 
@@ -72,7 +75,9 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
 
             <h3>ETA</h3>
 
-            <p>{formatLocalDateTime(sentClientRequest.eta)}</p>
+            <Moment utc format="MMM D, YYYY, h:mm A">
+                {sentClientRequest.eta}
+            </Moment>
 
             <div style={{ display: "grid", alignContent: "flex-start", gap: "2rem" }}>
                 {sentClientRequest.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {

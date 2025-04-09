@@ -1,6 +1,6 @@
 import { tape } from '@/types'
-import { formatLocalDateTime } from '@/utility/utility'
 import React from 'react'
+import Moment from 'react-moment'
 
 export default function ViewTape({ seenTape, addFunction }: { seenTape: Partial<tape>, addFunction?: () => void }) {
     return (
@@ -38,7 +38,11 @@ export default function ViewTape({ seenTape, addFunction }: { seenTape: Partial<
 
             {seenTape.dateAdded !== undefined && (
                 <>
-                    <p>{formatLocalDateTime(seenTape.dateAdded)}</p>
+                    <>
+                        <Moment utc format="MMM D, YYYY, h:mm A">
+                            {seenTape.dateAdded}
+                        </Moment>
+                    </>
                 </>
             )}
         </div>

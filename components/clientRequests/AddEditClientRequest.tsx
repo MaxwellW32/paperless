@@ -1,10 +1,10 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { deepClone, updateRefreshObj } from '@/utility/utility'
+import { deepClone, offsetToJamaicanTime, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType, companyAuthType, clientRequestSchema } from '@/types'
+import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType, clientRequestSchema } from '@/types'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
@@ -16,8 +16,6 @@ import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/Dynami
 import { EditTapeDeposit } from '../forms/tapeDeposit/TapeDeposit'
 import TextInput from '../textInput/TextInput'
 
-//what does this do
-//adds edit clients request
 export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department }) {
     const { data: session } = useSession()
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
@@ -30,7 +28,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         checklist: undefined,
         checklistStarterId: undefined,
         clientsAccessingSite: [],
-        eta: new Date(),
+        eta: `${offsetToJamaicanTime(new Date().toISOString())}`,
     })
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest === undefined ? initialFormObj : updateClientRequestSchema.parse(sentClientRequest)))
@@ -48,12 +46,20 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     type clientRequestKeys = keyof Partial<clientRequest>
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
 
-
     //handle changes from above
     useEffect(() => {
         if (sentClientRequest === undefined) return
 
         formObjSet(deepClone(updateClientRequestSchema.parse(sentClientRequest)))
+
+        //set the company id
+        formObjSet(prevFormObj => {
+            const newFormObj = { ...prevFormObj }
+
+            newFormObj.companyId = sentClientRequest.id
+
+            return newFormObj
+        })
 
     }, [sentClientRequest])
 
@@ -260,21 +266,6 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         }
     }
 
-    function dateToDateTimeString(date: Date) {
-        // Convert input to Date object if it's a string
-        const seenDate = new Date(date)
-
-        // Set seconds and milliseconds to zero
-        seenDate.setSeconds(0, 0);
-
-        // set the ISO string
-        const seenStr = seenDate.toISOString();
-
-        //return date time format
-        return seenStr.split(":00.000Z")[0]
-    }
-
-
     return (
         <form className={styles.form} action={() => { }}>
             {seenChecklistStarterType === undefined && sentClientRequest === undefined && (
@@ -453,7 +444,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
             {formObj.eta !== undefined && (
                 <TextInput
                     name={`eta`}
-                    value={dateToDateTimeString(formObj.eta)}
+                    value={formObj.eta.slice(0, 16)}
                     type={"datetime-local"}
                     label={"expected arrival"}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,7 +453,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                             const newFormObj = { ...prevFormObj }
                             if (newFormObj.eta === undefined) return prevFormObj
 
-                            newFormObj.eta = new Date(`${e.target.value}:00.000Z`)
+                            //convert to iso
+                            newFormObj.eta = `${e.target.value}:00.000Z`
                             return newFormObj
                         })
                     }}

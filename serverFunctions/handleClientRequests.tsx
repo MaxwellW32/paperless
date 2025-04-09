@@ -5,7 +5,7 @@ import { authAccessLevelResponseType, checklistItemType, clientRequest, clientRe
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
 import { ensureCanAccessClientRequest, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
-import { interpretAuthResponseAndError } from "@/utility/utility"
+import { interpretAuthResponseAndError, offsetToJamaicanTime } from "@/utility/utility"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest, clientRequestAuth: clientRequestAuthType, runAutomation = true): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
@@ -18,7 +18,7 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, c
     const [addedClientRequest] = await db.insert(clientRequests).values({
         userId: session.user.id,
         status: "in-progress",
-        dateSubmitted: new Date,
+        dateSubmitted: `${offsetToJamaicanTime(new Date().toISOString())}`,
         ...newClientRequestObj,
     }).returning()
 

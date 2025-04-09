@@ -45,6 +45,8 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
         }
     }
 
+    const dateSubmittedTime = new Date(eachClientRequest.dateSubmitted)
+
     return (
         <div {...elProps} className={`${styles.eachClientRequest} ${elProps.className !== undefined ? elProps.className : ""}`}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'center' }}>
@@ -53,9 +55,9 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                 )}
 
                 <div className={styles.dateHolder}>
-                    <p>{eachClientRequest.dateSubmitted.toLocaleDateString()}</p>
+                    <p>{dateSubmittedTime.toLocaleDateString()}</p>
 
-                    <p>{eachClientRequest.dateSubmitted.toLocaleTimeString()}</p>
+                    <p>{dateSubmittedTime.toLocaleTimeString()}</p>
                 </div>
             </div>
 

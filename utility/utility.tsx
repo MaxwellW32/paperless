@@ -17,14 +17,6 @@ export function updateRefreshObj(prevObj: refreshObjType, key: string) {
     return newRefreshObj
 }
 
-export function formatLocalDateTime(dateInput: Date) {
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-
-    //@ts-expect-error type
-    const customDateTime = dateInput.toLocaleString('en-US', options);
-    return customDateTime
-}
-
 export async function resolveFuncToBool(seenFunc: () => Promise<void>): Promise<boolean> {
     try {
         await seenFunc()
@@ -47,4 +39,14 @@ export function interpretAuthResponseAndBool(authResponse: string | authAccessLe
     if (typeof authResponse === "string") return false
 
     return true
+}
+
+export function offsetToJamaicanTime(isoString: string): string {
+    const date = new Date(isoString);
+
+    // Offset by -5 hours (Jamaica is UTC-5)
+    date.setHours(date.getHours() - 5);
+
+    // Return the adjusted ISO string
+    return date.toISOString()
 }
