@@ -1,8 +1,8 @@
 "use server"
 import { db } from "@/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, ne, sql } from "drizzle-orm";
 import { ensureCanAccessTape, } from "./handleAuth";
-import { companyAuthType, newTape, newTapeSchema, tape, tapeSchema, updateTape } from "@/types";
+import { companyAuthType, newTape, newTapeSchema, tape, tapeSchema, tapeLocation, updateTape } from "@/types";
 import { tapes } from "@/db/schema";
 import { interpretAuthResponseAndError } from "@/utility/utility";
 
@@ -52,7 +52,7 @@ export async function getSpecificTapes(tapeId: tape["id"], companyAuth: companyA
     return result
 }
 
-export async function getTapes(option: { type: "mediaLabel", mediaLabel: string } | { type: "all" }, companyAuth: companyAuthType, limit = 50, offset = 0): Promise<tape[]> {
+export async function getTapes(option: { type: "mediaLabel", mediaLabel: string } | { type: "status", status: tapeLocation, getOppositeOfStatus: boolean } | { type: "all" }, companyAuth: companyAuthType, limit = 50, offset = 0): Promise<tape[]> {
     //security check  
     const authResponse = await ensureCanAccessTape(companyAuth, "ra")
     interpretAuthResponseAndError(authResponse)
@@ -72,6 +72,15 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string 
         const results = await db.query.tapes.findMany({
             limit: limit,
             offset: offset,
+        });
+
+        return results
+
+    } else if (option.type === "status") {
+        const results = await db.query.tapes.findMany({
+            limit: limit,
+            offset: offset,
+            where: option.getOppositeOfStatus ? ne(tapes.tapeLocation, option.status) : eq(tapes.tapeLocation, option.status),
         });
 
         return results

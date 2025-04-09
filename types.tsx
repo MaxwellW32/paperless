@@ -301,6 +301,9 @@ export type updateEquipment = z.infer<typeof updateEquipmentSchema>
 
 
 
+//keep synced with db schema
+export const tapeLocationSchema = z.enum(["in-vault", "with-client"])
+export type tapeLocation = z.infer<typeof tapeLocationSchema>
 
 export const tapeSchema = z.object({
     id: z.string().min(1),
@@ -308,6 +311,7 @@ export const tapeSchema = z.object({
     initial: z.string().min(1),
     companyId: companySchema.shape.id,
     dateAdded: z.date(),
+    tapeLocation: tapeLocationSchema,
 })
 export type tape = z.infer<typeof tapeSchema> & {
 }
@@ -355,7 +359,6 @@ export const tapeDepositFormSchema = z.object({
     type: z.literal(formTypesSchema.Values.tapeDeposit),
     data: z.object({
         newTapes: z.array(tapeDepositNewTapeSchema).min(1, "need at least one tape to deposit"),
-        eta: z.string().min(1).datetime()
     }).nullable(),
 });
 export type tapeDepositFormType = z.infer<typeof tapeDepositFormSchema>
@@ -493,6 +496,7 @@ export const clientRequestSchema = z.object({
     checklist: z.array(checklistItemSchema).min(1),
     checklistStarterId: checklistStarterSchema.shape.id,
     clientsAccessingSite: z.array(userSchema.shape.id),
+    eta: z.date(),
 })
 export type clientRequest = z.infer<typeof clientRequestSchema> & {
     user?: user,

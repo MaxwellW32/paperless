@@ -7,6 +7,7 @@ import Moment from 'react-moment';
 import { getSpecificUsers } from '@/serverFunctions/handleUser'
 import { formatLocalDateTime } from '@/utility/utility'
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
+import { ViewTapeDeposit } from '../forms/tapeDeposit/ViewTapeDeposit'
 
 export default function ViewClientRequest({ sentClientRequest, department }: { sentClientRequest: clientRequest, department?: department }) {
     const [seenCompany, seenCompanySet] = useState<company | undefined>()
@@ -69,14 +70,34 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                 </>
             )}
 
+            <h3>ETA</h3>
+
+            <p>{formatLocalDateTime(sentClientRequest.eta)}</p>
+
             <div style={{ display: "grid", alignContent: "flex-start", gap: "2rem" }}>
                 {sentClientRequest.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
                     if (eachChecklistItem.type !== "form") return null
+
+                    let canShow = false
+
+
+                    if (eachChecklistItem.form.type === "dynamic") {
+                        canShow = true
+
+                    } else if (department !== undefined && department.canManageRequests) {
+                        canShow = true
+                    }
+
+                    if (!canShow) return null
 
                     return (
                         <div key={eachChecklistItemIndex}>
                             {eachChecklistItem.form.type === "dynamic" && (
                                 <ReadDynamicChecklistForm seenForm={eachChecklistItem.form.data} />
+                            )}
+
+                            {eachChecklistItem.form.type === "tapeDeposit" && (
+                                <ViewTapeDeposit seenFormData={eachChecklistItem.form.data} />
                             )}
                         </div>
                     )

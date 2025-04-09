@@ -4,7 +4,7 @@ import styles from "./style.module.css"
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType, companyAuthType } from '@/types'
+import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType, companyAuthType, clientRequestSchema } from '@/types'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
@@ -14,6 +14,7 @@ import { getUsersToCompaniesWithVisitAccess } from '@/serverFunctions/handleUser
 import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
 import { EditTapeDeposit } from '../forms/tapeDeposit/TapeDeposit'
+import TextInput from '../textInput/TextInput'
 
 //what does this do
 //adds edit clients request
@@ -28,7 +29,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         companyId: undefined,
         checklist: undefined,
         checklistStarterId: undefined,
-        clientsAccessingSite: []
+        clientsAccessingSite: [],
+        eta: new Date(),
     })
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest === undefined ? initialFormObj : updateClientRequestSchema.parse(sentClientRequest)))
@@ -43,12 +45,9 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
     const clientRequestStatusOptions: clientRequestStatusType[] = ["in-progress", "completed", "cancelled", "on-hold"]
 
-    const companyAuth = useMemo<companyAuthType | undefined>(() => {
-        if (formObj.companyId === undefined) return undefined
+    type clientRequestKeys = keyof Partial<clientRequest>
+    const [formErrors, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
 
-        return { companyIdBeingAccessed: formObj.companyId, departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }
-
-    }, [formObj?.companyId, department])
 
     //handle changes from above
     useEffect(() => {
@@ -144,6 +143,36 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         }
     }, [formObj?.companyId])
 
+
+    function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
+        // @ts-expect-error type
+        const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
+
+        if (testSchema.success) {//worked
+            formErrorsSet(prevObj => {
+                const newObj = { ...prevObj }
+                delete newObj[seenName]
+
+                return newObj
+            })
+
+        } else {
+            formErrorsSet(prevObj => {
+                const newObj = { ...prevObj }
+
+                let errorMessage = ""
+
+                JSON.parse(testSchema.error.message).forEach((eachErrorObj: Error) => {
+                    errorMessage += ` ${eachErrorObj.message}`
+                })
+
+                newObj[seenName] = errorMessage
+
+                return newObj
+            })
+        }
+    }
+
     function markLatestFormAsComplete(checklist: checklistItemType[]) {
         const latestChecklistItemIndex = checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
         if (latestChecklistItemIndex === -1) return checklist
@@ -231,6 +260,21 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         }
     }
 
+    function dateToDateTimeString(date: Date) {
+        // Convert input to Date object if it's a string
+        const seenDate = new Date(date)
+
+        // Set seconds and milliseconds to zero
+        seenDate.setSeconds(0, 0);
+
+        // set the ISO string
+        const seenStr = seenDate.toISOString();
+
+        //return date time format
+        return seenStr.split(":00.000Z")[0]
+    }
+
+
     return (
         <form className={styles.form} action={() => { }}>
             {seenChecklistStarterType === undefined && sentClientRequest === undefined && (
@@ -274,10 +318,9 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         <button className='button1'
                             onClick={async () => {
                                 try {
-                                    if (companyAuth == undefined) return
                                     toast.success("searching")
 
-                                    companiesSet(await getCompanies(companyAuth))
+                                    companiesSet(await getCompanies({ departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }))
 
                                 } catch (error) {
                                     consoleAndToastError(error)
@@ -407,6 +450,27 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 </>
             )}
 
+            {formObj.eta !== undefined && (
+                <TextInput
+                    name={`eta`}
+                    value={dateToDateTimeString(formObj.eta)}
+                    type={"datetime-local"}
+                    label={"expected arrival"}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        //set the checklist and checklist id
+                        formObjSet(prevFormObj => {
+                            const newFormObj = { ...prevFormObj }
+                            if (newFormObj.eta === undefined) return prevFormObj
+
+                            newFormObj.eta = new Date(`${e.target.value}:00.000Z`)
+                            return newFormObj
+                        })
+                    }}
+                    onBlur={() => { checkIfValid(formObj, "eta", clientRequestSchema) }}
+                    errors={formErrors["eta"]}
+                />
+            )}
+
             {formObj.checklist !== undefined && (
                 <>
                     {session !== null && session.user.accessLevel === "admin" && (
@@ -457,8 +521,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                                 />
                                             )}
 
-                                            {eachChecklistItem.form.type === "tapeDeposit" && formObj.companyId !== undefined && companyAuth !== undefined && (
-                                                <EditTapeDeposit seenForm={eachChecklistItem.form.data} seenCompanyId={formObj.companyId} companyAuth={companyAuth}
+                                            {eachChecklistItem.form.type === "tapeDeposit" && formObj.companyId !== undefined && (
+                                                <EditTapeDeposit seenFormData={eachChecklistItem.form.data} seenCompanyId={formObj.companyId} companyAuth={{ companyIdBeingAccessed: formObj.companyId, departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }}
                                                     handleFormUpdate={(seenLatestForm) => {
                                                         formObjSet(prevFormObj => {
                                                             const newFormObj = { ...prevFormObj }
@@ -467,8 +531,6 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                                             //edit new checklist item
                                                             const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
                                                             if (newChecklistItem.type !== "form" || newChecklistItem.form.type !== "tapeDeposit") return prevFormObj
-
-                                                            console.log(`$seenLatestForm`, seenLatestForm);
 
                                                             //set the new form data
                                                             newChecklistItem.form.data = seenLatestForm
@@ -541,40 +603,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
 
 
-// type clientRequestKeys = keyof Partial<clientRequest>
-// const [formErrors, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
 
 // const [activeChecklistFormIndex, activeChecklistFormIndexSet] = useState<number | undefined>()
-
-// function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
-//     // @ts-expect-error type
-//     const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
-
-//     if (testSchema.success) {//worked
-//         formErrorsSet(prevObj => {
-//             const newObj = { ...prevObj }
-//             delete newObj[seenName]
-
-//             return newObj
-//         })
-
-//     } else {
-//         formErrorsSet(prevObj => {
-//             const newObj = { ...prevObj }
-
-//             let errorMessage = ""
-
-//             JSON.parse(testSchema.error.message).forEach((eachErrorObj: Error) => {
-//                 errorMessage += ` ${eachErrorObj.message}`
-//             })
-
-//             newObj[seenName] = errorMessage
-
-//             return newObj
-//         })
-//     }
-// }
-
 
 // {editableChecklistFormIndexes.length > 1 && (
 //     <>

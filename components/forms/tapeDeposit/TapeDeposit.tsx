@@ -6,17 +6,19 @@ import TextInput from '@/components/textInput/TextInput'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { getTapes } from '@/serverFunctions/handleTapes'
+import toast from 'react-hot-toast'
+import ShowMore from '@/components/showMore/ShowMore'
+import ViewTape from '@/components/tapes/ViewTape'
 
 //on deposit search tapes from db
 //if client chooses a tape set it - id will be there
 //when wrapping up request add tapes in list to db - update tapes with id
 
-export function EditTapeDeposit({ seenForm, handleFormUpdate, seenCompanyId, companyAuth }: { seenForm: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormNonNullDataType) => void, seenCompanyId: company["id"], companyAuth: companyAuthType }) {
+export function EditTapeDeposit({ seenFormData, handleFormUpdate, seenCompanyId, companyAuth }: { seenFormData: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormNonNullDataType) => void, seenCompanyId: company["id"], companyAuth: companyAuthType }) {
     const initialFormObj: tapeDepositFormNonNullDataType = {
         newTapes: [],
-        eta: ""
     }
-    const [formObj, formObjSet] = useState<tapeDepositFormType["data"]>(deepClone(seenForm !== null ? seenForm : initialFormObj))
+    const [formObj, formObjSet] = useState<tapeDepositFormType["data"]>(deepClone(seenFormData !== null ? seenFormData : initialFormObj))
 
     // type tapeDepositFormTypeNonNullKeys = keyof tapeDepositFormNonNullDataType
     const [formErrors, formErrorsSet] = useState<Partial<{ [key: string]: string }>>({})
@@ -26,11 +28,11 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate, seenCompanyId, com
 
     //handle changes from above
     useEffect(() => {
-        if (seenForm === null) return
+        if (seenFormData === null) return
 
-        formObjSet(deepClone(seenForm))
+        formObjSet(deepClone(seenFormData))
 
-    }, [seenForm])
+    }, [seenFormData])
 
     //send changes up
     useEffect(() => {
@@ -49,13 +51,7 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate, seenCompanyId, com
     //search tapes
     useEffect(() => {
         const search = async () => {
-            try {
-                const seenTapes = await getTapes({ type: "all" }, companyAuth)
-                tapesSet(seenTapes)
-
-            } catch (error) {
-                consoleAndToastError(error)
-            }
+            handleSearchTapes()
         }
         search()
 
@@ -85,33 +81,69 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate, seenCompanyId, com
         userInteracting.current = true
     }
 
+    async function handleSearchTapes() {
+        try {
+            const seenTapes = await getTapes({ type: "status", status: "with-client", getOppositeOfStatus: false }, companyAuth)
+            tapesSet(seenTapes)
+
+        } catch (error) {
+            consoleAndToastError(error)
+        }
+    }
+
     if (formObj === null) return null
 
     return (
         <div className={styles.form}>
             <label>tapes</label>
 
-            {tapes.length > 0 && (
-                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 250px)", overflow: "auto" }} className='snap'>
-                    {tapes.map((eachTape, eachTapeIndex) => {
-                        return (
-                            <div key={eachTapeIndex}>
-                                <label>media label:</label>
+            <ShowMore
+                label='tapes in database'
+                content={(
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                        <button className='button3'>search tapes</button>
 
-                                <p>{eachTape.mediaLabel}</p>
+                        {tapes.length > 0 && (
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 250px)", overflow: "auto" }} className='snap'>
+                                {tapes.map((eachTape, eachTapeIndex) => {
+                                    return (
+                                        <ViewTape key={eachTapeIndex} seenTape={eachTape}
+                                            addFunction={() => {
+                                                runSameOnAll()
 
-                                <label>initial</label>
+                                                formObjSet(prevFormObj => {
+                                                    if (prevFormObj === null) return prevFormObj
+                                                    const newFormObj = { ...prevFormObj }
 
-                                <p>{eachTape.initial}</p>
+                                                    //if id check if in array already - update that record
+                                                    const foundInNewTapes = newFormObj.newTapes.find(eachTapeFind => eachTape.id === eachTape.id) !== undefined
 
-                                <p>{formatLocalDateTime(eachTape.dateAdded)}</p>
+                                                    if (foundInNewTapes) {
+                                                        newFormObj.newTapes = newFormObj.newTapes.map(eachNewTapeMap => {
+                                                            if (eachNewTapeMap.id === eachTape.id) {
+                                                                return eachTape
+                                                            }
 
-                                <button>add</button>
+                                                            return eachNewTapeMap
+                                                        })
+
+                                                    } else {
+                                                        newFormObj.newTapes = [...newFormObj.newTapes, eachTape]
+                                                    }
+
+                                                    return newFormObj
+                                                })
+
+                                                toast.success(`added ${eachTape.mediaLabel}`)
+                                            }}
+                                        />
+                                    )
+                                })}
                             </div>
-                        )
-                    })}
-                </div>
-            )}
+                        )}
+                    </div>
+                )}
+            />
 
             <button className='button1' role='button'
                 onClick={() => {
@@ -124,7 +156,8 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate, seenCompanyId, com
                         const newTape: tapeDepositFormNonNullDataType["newTapes"][number] = {
                             companyId: seenCompanyId,
                             initial: "",
-                            mediaLabel: ""
+                            mediaLabel: "",
+                            tapeLocation: "with-client"
                         }
 
                         newFormObj.newTapes = [...newFormObj.newTapes, newTape]
@@ -220,27 +253,6 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate, seenCompanyId, com
                     </div>
                 </>
             )}
-
-            <TextInput
-                name={`eta`}
-                value={formObj.eta.split(":00.000Z")[0]}
-                type={"datetime-local"}
-                label={"expected arrival"}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    runSameOnAll()
-
-                    formObjSet(prevFormObj => {
-                        if (prevFormObj === null) return prevFormObj
-                        const newFormObj = { ...prevFormObj }
-
-                        newFormObj.eta = `${e.target.value}:00.000Z`
-
-                        return newFormObj
-                    })
-                }}
-                onBlur={() => { checkIfValid(formObj) }}
-                errors={formErrors["eta"]}
-            />
         </div>
     )
 }

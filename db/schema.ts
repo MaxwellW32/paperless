@@ -72,7 +72,7 @@ export const equipmentRelations = relations(equipment, ({ many }) => ({
 
 
 
-export const tapeStatusEnum = pgEnum("status", ["in-progress", "completed", "cancelled", "on-hold"]);
+export const tapeLocationEnum = pgEnum("tapeStatus", ["in-vault", "with-client"]);
 
 export const tapes = pgTable("tapes", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -80,12 +80,12 @@ export const tapes = pgTable("tapes", {
     initial: varchar("initial", { length: 255 }).notNull(),
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
     dateAdded: timestamp("dateAdded", { mode: "date" }).notNull(),
-    status: tapeStatusEnum().notNull(),
+    tapeLocation: tapeLocationEnum().notNull(),
 })
 export const tapesRelations = relations(tapes, ({ one }) => ({
-    company: one(tapes, {
+    company: one(companies, {
         fields: [tapes.companyId],
-        references: [tapes.id],
+        references: [companies.id],
     }),
 }));
 
@@ -116,6 +116,7 @@ export const clientRequests = pgTable("clientRequests", {
     checklist: json("checklist").$type<checklistItemType[]>().notNull(),
     checklistStarterId: varchar("checklistStarterId", { length: 255 }).notNull().references(() => checklistStarters.id),
     clientsAccessingSite: json("clientsAccessingSite").$type<user["id"][]>().notNull(),
+    eta: timestamp("eta", { mode: "date" }).notNull(),
 },
     (t) => {
         return {
