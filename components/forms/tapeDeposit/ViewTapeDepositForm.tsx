@@ -3,7 +3,7 @@ import React from 'react'
 import styles from "./style.module.css"
 import ViewTape from '@/components/tapes/ViewTape'
 
-export function ViewTapeDeposit({ seenFormData }: { seenFormData: tapeDepositFormType["data"] }) {
+export function ViewTapeDepositForm({ seenFormData }: { seenFormData: tapeDepositFormType["data"] }) {
     if (seenFormData === null) return null
 
     return (

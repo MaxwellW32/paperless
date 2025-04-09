@@ -66,7 +66,7 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                 </div>
             </div>
 
-            <label>{eachClientRequest.status}</label>
+            <label className='tag'>{eachClientRequest.status}</label>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", justifyContent: "flex-end" }}>
                 {viewButtonFunction !== undefined && (
@@ -113,7 +113,7 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                 </div>
             )}
 
-            {activeChecklistItem === undefined && ((session !== null && session.user.accessLevel === "admin") || (seenDepartment !== undefined && seenDepartment.canManageRequests)) && (
+            {activeChecklistItem === undefined && ((session !== null && session.user.accessLevel === "admin") || (seenDepartment !== undefined && seenDepartment.canManageRequests)) && (eachClientRequest.status !== "completed") && (
                 <>
                     <h3>finish client request?</h3>
 
@@ -132,6 +132,9 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
 
                                     eachClientForm.form.data.newTapes.map(async eachNewTape => {
                                         const companyAuth: companyAuthType = { companyIdBeingAccessed: eachNewTape.companyId, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }
+
+                                        //update tape location
+                                        eachNewTape.tapeLocation === "in-vault"
 
                                         if (eachNewTape.id !== undefined) {
                                             //update tape

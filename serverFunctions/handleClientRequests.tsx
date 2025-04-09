@@ -181,36 +181,42 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
         },
     });
 
-    //get all active requests that have some signoff needed
-    const requestsForDepartmentSignoff = results.filter(async eachClientRequest => {
-        let canReturnClientRequest = false
+    // get all active requests that have some signoff needed
+    const requestsForDepartmentSignoffMap: (clientRequest | null)[] = await Promise.all(
+        results.map(async eachClientRequest => {
+            let canReturnClientRequest = false
 
-        //check if signoff is needed from department
-        const seenIncompleteChecklistItem = eachClientRequest.checklist.find(eachChecklistItem => !eachChecklistItem.completed)
-        if (seenIncompleteChecklistItem === undefined) {
-            //checklist finished - so who can close the client request
-            if (departmentHasManageAccess === undefined) {
-                //fix
-                //ensure department has edit permissions
-                const seenDepartment = await getSpecificDepartment(departmentId, false)
-                if (seenDepartment === undefined) throw new Error("not seeing department")
+            //check if signoff is needed from department
+            const seenIncompleteChecklistItem = eachClientRequest.checklist.find(eachChecklistItem => !eachChecklistItem.completed)
+            if (seenIncompleteChecklistItem === undefined) {
+                //checklist finished - so who can close the client request
+                if (departmentHasManageAccess === undefined) {
+                    //fix
+                    //ensure department has edit permissions
+                    const seenDepartment = await getSpecificDepartment(departmentId, false)
+                    if (seenDepartment === undefined) throw new Error("not seeing department")
 
-                //set whether true/false
-                departmentHasManageAccess = seenDepartment.canManageRequests
+                    //set whether true/false
+                    departmentHasManageAccess = seenDepartment.canManageRequests
+                }
+
+                //if they can manage client requests - return client request so they can close the form
+                canReturnClientRequest = departmentHasManageAccess
+
+            } else {
+                console.log(`$normal`);
+
+                //checklist item needs to be completed
+                if (seenIncompleteChecklistItem.type === "manual" && seenIncompleteChecklistItem.for.type === "department" && seenIncompleteChecklistItem.for.departmenId === departmentId) {
+                    canReturnClientRequest = true
+                }
             }
 
-            //if they can manage client requests - return client request so they can close the form
-            return departmentHasManageAccess
+            return canReturnClientRequest ? eachClientRequest : null
+        })
+    )
 
-        } else {
-            //checklist item needs to be completed
-            if (seenIncompleteChecklistItem.type === "manual" && seenIncompleteChecklistItem.for.type === "department" && seenIncompleteChecklistItem.for.departmenId === departmentId) {
-                canReturnClientRequest = true
-            }
-        }
-
-        return canReturnClientRequest
-    })
+    const requestsForDepartmentSignoff = requestsForDepartmentSignoffMap.filter(eachRequest => eachRequest !== null)
 
     return requestsForDepartmentSignoff
 }

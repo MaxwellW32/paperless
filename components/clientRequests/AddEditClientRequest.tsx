@@ -13,7 +13,7 @@ import { useSession } from 'next-auth/react'
 import { getUsersToCompaniesWithVisitAccess } from '@/serverFunctions/handleUsersToCompanies'
 import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
-import { EditTapeDeposit } from '../forms/tapeDeposit/TapeDeposit'
+import { EditTapeDepositForm } from '../forms/tapeDeposit/EditTapeDepositForm'
 import TextInput from '../textInput/TextInput'
 
 export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department }) {
@@ -516,7 +516,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                             )}
 
                                             {eachChecklistItem.form.type === "tapeDeposit" && formObj.companyId !== undefined && (
-                                                <EditTapeDeposit seenFormData={eachChecklistItem.form.data} seenCompanyId={formObj.companyId} companyAuth={{ companyIdBeingAccessed: formObj.companyId, departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }}
+                                                <EditTapeDepositForm seenFormData={eachChecklistItem.form.data} seenCompanyId={formObj.companyId} companyAuth={{ companyIdBeingAccessed: formObj.companyId, departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }}
                                                     handleFormUpdate={(seenLatestForm) => {
                                                         formObjSet(prevFormObj => {
                                                             const newFormObj = { ...prevFormObj }

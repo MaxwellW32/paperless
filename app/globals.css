@@ -165,11 +165,14 @@ section {
 }
 
 .tag {
-    background-color: rgb(var(--color1));
+    background-color: rgb(var(--shade1));
     color: rgb(var(--shade2));
-    padding: .5rem 1rem;
+    padding: .5rem;
+    font-size: var(--fontSizeS);
     text-transform: uppercase;
+    border-radius: .5rem;
     font-weight: bold;
+    justify-self: flex-start;
 }
 
 .snap {

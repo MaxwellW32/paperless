@@ -14,7 +14,7 @@ import ViewTape from '@/components/tapes/ViewTape'
 //if client chooses a tape set it - id will be there
 //when wrapping up request add tapes in list to db - update tapes with id
 
-export function EditTapeDeposit({ seenFormData, handleFormUpdate, seenCompanyId, companyAuth }: { seenFormData: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormNonNullDataType) => void, seenCompanyId: company["id"], companyAuth: companyAuthType }) {
+export function EditTapeDepositForm({ seenFormData, handleFormUpdate, seenCompanyId, companyAuth }: { seenFormData: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormNonNullDataType) => void, seenCompanyId: company["id"], companyAuth: companyAuthType }) {
     const initialFormObj: tapeDepositFormNonNullDataType = {
         newTapes: [],
     }
@@ -110,7 +110,7 @@ export function EditTapeDeposit({ seenFormData, handleFormUpdate, seenCompanyId,
                         >search tapes</button>
 
                         {tapes.length > 0 && (
-                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 250px)", overflow: "auto" }} className='snap'>
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 300px)", overflow: "auto" }} className='snap'>
                                 {tapes.map((eachTape, eachTapeIndex) => {
                                     return (
                                         <ViewTape key={eachTapeIndex} seenTape={eachTape}

@@ -14,12 +14,18 @@ import styles from "./page.module.css"
 //form validation
 //one recursive form - view mode, add/edit
 //on array map - add required label
-//admin dashboard edit all database models - CRUD
 //checklist form re ordering
 //ws use refresh/update modes for client requests - get all, or run specific update
 //way to refresh admin - search properly
 //remove manual company id check - just keep it at manual check
-//rename tape deposit - tapedeposit form
+
+//possible auth
+//table with resources - tapes, departments, companies
+//certain groups have - crud access to resources
+//check if user session is in group - if so what can they do
+//check the action trying to be performed
+//boolean response 
+//save the response in the client for permission view access
 
 export default async function Home() {
 
