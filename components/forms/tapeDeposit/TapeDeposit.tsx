@@ -1,15 +1,17 @@
-import { tapeDepositFormSchema, tapeDepositFormType, tapeDepositFormNonNullDataType } from '@/types'
-import { deepClone } from '@/utility/utility'
+import { tapeDepositFormSchema, tapeDepositFormType, tapeDepositFormNonNullDataType, company, tape, companyAuthType } from '@/types'
+import { deepClone, formatLocalDateTime } from '@/utility/utility'
 import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '@/components/textInput/TextInput'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
+import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
+import { getTapes } from '@/serverFunctions/handleTapes'
 
 //on deposit search tapes from db
 //if client chooses a tape set it - id will be there
 //when wrapping up request add tapes in list to db - update tapes with id
 
-export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormNonNullDataType) => void }) {
+export function EditTapeDeposit({ seenForm, handleFormUpdate, seenCompanyId, companyAuth }: { seenForm: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormNonNullDataType) => void, seenCompanyId: company["id"], companyAuth: companyAuthType }) {
     const initialFormObj: tapeDepositFormNonNullDataType = {
         newTapes: [],
         eta: ""
@@ -20,6 +22,7 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
     const [formErrors, formErrorsSet] = useState<Partial<{ [key: string]: string }>>({})
 
     const userInteracting = useRef(false)
+    const [tapes, tapesSet] = useState<tape[]>([])
 
     //handle changes from above
     useEffect(() => {
@@ -42,6 +45,21 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
         handleFormUpdate(formObj)
 
     }, [formObj, formErrors])
+
+    //search tapes
+    useEffect(() => {
+        const search = async () => {
+            try {
+                const seenTapes = await getTapes({ type: "all" }, companyAuth)
+                tapesSet(seenTapes)
+
+            } catch (error) {
+                consoleAndToastError(error)
+            }
+        }
+        search()
+
+    }, [seenCompanyId])
 
     function checkIfValid(seenFormObj: tapeDepositFormNonNullDataType): boolean {
         const testSchema = tapeDepositFormSchema.shape.data.safeParse(seenFormObj);
@@ -73,6 +91,28 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
         <div className={styles.form}>
             <label>tapes</label>
 
+            {tapes.length > 0 && (
+                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 250px)", overflow: "auto" }} className='snap'>
+                    {tapes.map((eachTape, eachTapeIndex) => {
+                        return (
+                            <div key={eachTapeIndex}>
+                                <label>media label:</label>
+
+                                <p>{eachTape.mediaLabel}</p>
+
+                                <label>initial</label>
+
+                                <p>{eachTape.initial}</p>
+
+                                <p>{formatLocalDateTime(eachTape.dateAdded)}</p>
+
+                                <button>add</button>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+
             <button className='button1' role='button'
                 onClick={() => {
                     runSameOnAll()
@@ -82,6 +122,7 @@ export function EditTapeDeposit({ seenForm, handleFormUpdate }: { seenForm: tape
                         const newFormObj = { ...prevFormObj }
 
                         const newTape: tapeDepositFormNonNullDataType["newTapes"][number] = {
+                            companyId: seenCompanyId,
                             initial: "",
                             mediaLabel: ""
                         }

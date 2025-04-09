@@ -317,7 +317,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                 <ShowMore
                                                                     label='companies'
                                                                     content={
-                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 250px)", overflow: "auto" }} className='snap'>
                                                                             {companies.map(eachCompany => {
                                                                                 return (
                                                                                     <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
@@ -406,7 +406,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                 <ShowMore
                                                                     label='departments'
                                                                     content={
-                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 250px)", overflow: "auto" }} className='snap'>
                                                                             {departments.map(eachDepartment => {
                                                                                 return (
                                                                                     <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
@@ -577,7 +577,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                 <ShowMore
                                                                     label='companies'
                                                                     content={
-                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 250px)", overflow: "auto" }} className='snap'>
                                                                             {companies.map(eachCompany => {
                                                                                 return (
                                                                                     <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
@@ -617,7 +617,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                 <ShowMore
                                                                     label='departments'
                                                                     content={
-                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                                                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 250px)", overflow: "auto" }} className='snap'>
                                                                             {departments.map(eachDepartment => {
                                                                                 return (
                                                                                     <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>

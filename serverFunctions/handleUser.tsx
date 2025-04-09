@@ -2,7 +2,7 @@
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { newUser, newUserSchema, updateUser, updateUserSchema, user, userSchema } from "@/types";
-import { eq, like, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth";
 
 export async function addUsers(newUserObj: newUser): Promise<user> {

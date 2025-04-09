@@ -5,6 +5,7 @@ import { getSpecificDepartment } from "@/serverFunctions/handleDepartments"
 import { getSpecificUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies"
 import { getSpecificUsersToDepartments } from "@/serverFunctions/handleUsersToDepartments"
 import { authAccessLevelResponseType, clientRequestAuthType, companyAuthType, departmentAuthType, departmentSchema, crudOptionType } from "@/types"
+import { Session } from "next-auth"
 
 //reject on no auth
 //return roles 
@@ -378,6 +379,96 @@ export async function ensureCanAccessClientRequest(clientReqAuth: clientRequestA
         //department user - no
 
         if (session.user.accessLevel !== "admin") return "need to be admin to delete client request"
+
+        return { session, accessLevel: session.user.accessLevel }
+
+    } else {
+        return "invalid selection"
+    }
+}
+
+export async function ensureCanAccessTape(companyAuth: companyAuthType, crudOption: crudOptionType): Promise<string | authAccessLevelResponseType> {
+    //security check - ensures only admin or elevated roles can make change
+    const session = await sessionCheckWithError()
+
+    //admin pass
+    if (session.user.accessLevel === "admin") return { session, accessLevel: session.user.accessLevel }
+
+    async function ensureClientFromCompanyAndDepartmentHasAccess(localSession: Session, localCompanyAuth: companyAuthType,) {
+        if (!localSession.user.fromDepartment) {
+            //client
+
+            //validation
+            if (localCompanyAuth.companyIdBeingAccessed === undefined) return "provide companyId for auth"
+
+            //ensure client is from company
+            const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: localSession.user.id, companyId: localCompanyAuth.companyIdBeingAccessed, runAuth: false })
+            if (seenUserToCompany === undefined) return "not seeing seenUserToCompany info"
+
+            return { session: localSession, accessLevel: seenUserToCompany.companyAccessLevel }
+
+        } else {
+            //from department
+            if (localCompanyAuth.departmentIdForAuth === undefined) return "provide department id for auth"
+
+            //validation
+            departmentSchema.shape.id.parse(localCompanyAuth.departmentIdForAuth)
+
+            //ensure user exists in department
+            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: localSession.user.id, departmentId: localCompanyAuth.departmentIdForAuth, runSecurityCheck: false })
+            if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
+
+            //ensure department has edit permissions
+            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, false)
+            if (seenDepartment === undefined) return "not seeing department"
+
+            //ensure department can make changes
+            if (!seenDepartment.canManageRequests) return "department doesn't have manage client request access"
+
+            return { session: localSession, accessLevel: seenUserToDepartment.departmentAccessLevel }
+        }
+    }
+
+    if (crudOption === "c") {
+        //who can create tape
+        //admin 
+        //company user - yes if from same company
+        //department user - yes if manage access
+
+        return ensureClientFromCompanyAndDepartmentHasAccess(session, companyAuth)
+
+    } else if (crudOption === "r") {
+        //who can read tape record
+        //admin 
+        //company user - has to be from same company that owns tape
+        //department user - yes if has manage access rights
+
+        return ensureClientFromCompanyAndDepartmentHasAccess(session, companyAuth)
+
+    } else if (crudOption === "ra") {//same as above
+        //who can read multiple tape record
+        //admin 
+        //company user - yes if from same company
+        //department user - yes, if can manage requests
+
+        return ensureClientFromCompanyAndDepartmentHasAccess(session, companyAuth)
+
+    } else if (crudOption === "u") {
+        //who can update tape
+        //admin 
+        //company user - yes if from same company
+        //department user - yes if can manage requests
+
+        return ensureClientFromCompanyAndDepartmentHasAccess(session, companyAuth)
+
+    } else if (crudOption === "d") {
+        //who can delete tape
+        //admin 
+        //company user - no
+        //department user - no
+
+        //if not admin - can't delete company
+        if (session.user.accessLevel !== "admin") return "need to be admin to delete company"
 
         return { session, accessLevel: session.user.accessLevel }
 

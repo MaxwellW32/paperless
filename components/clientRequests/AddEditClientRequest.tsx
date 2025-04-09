@@ -1,10 +1,10 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./style.module.css"
 import { deepClone, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType } from '@/types'
+import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType, companyAuthType } from '@/types'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
@@ -15,6 +15,8 @@ import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunc
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
 import { EditTapeDeposit } from '../forms/tapeDeposit/TapeDeposit'
 
+//what does this do
+//adds edit clients request
 export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department }) {
     const { data: session } = useSession()
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
@@ -23,7 +25,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     const [, refreshWSObjSet] = useAtom<refreshObjType>(refreshWSObjGlobal)
 
     const [initialFormObj, initialFormObjSet] = useState<Partial<newClientRequest>>({
-        companyId: "",
+        companyId: undefined,
         checklist: undefined,
         checklistStarterId: undefined,
         clientsAccessingSite: []
@@ -33,7 +35,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
     const [chosenChecklistStarterType, chosenChecklistStarterTypeSet] = useState<checklistStarter["type"] | undefined>(seenChecklistStarterType)
 
-    const [activeCompanyId, activeCompanyIdSet] = useState<company["id"] | undefined>()
+    // const [activeCompanyId, activeCompanyIdSet] = useState<company["id"] | undefined>()
     const [companies, companiesSet] = useState<company[]>([])
 
     const [usersToCompaniesWithAccess, usersToCompaniesWithAccessSet] = useState<userToCompany[] | undefined>(undefined)
@@ -41,14 +43,18 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
     const clientRequestStatusOptions: clientRequestStatusType[] = ["in-progress", "completed", "cancelled", "on-hold"]
 
+    const companyAuth = useMemo<companyAuthType | undefined>(() => {
+        if (formObj.companyId === undefined) return undefined
+
+        return { companyIdBeingAccessed: formObj.companyId, departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }
+
+    }, [formObj?.companyId, department])
+
     //handle changes from above
     useEffect(() => {
         if (sentClientRequest === undefined) return
 
         formObjSet(deepClone(updateClientRequestSchema.parse(sentClientRequest)))
-
-        //set company id
-        activeCompanyIdSet(sentClientRequest.companyId)
 
     }, [sentClientRequest])
 
@@ -108,33 +114,35 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     //for clients only set active companyId
     useEffect(() => {
         const search = async () => {
-            if (userDepartmentCompanySelection === null) return
-
             //only run for clients accounts
-            if (userDepartmentCompanySelection.type !== "userCompany") return
+            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userCompany") return
 
             //set the active company id
-            activeCompanyIdSet(userDepartmentCompanySelection.seenUserToCompany.companyId)
+            formObjSet((prevFormObj) => {
+                const newFormObj = { ...prevFormObj }
+                newFormObj.companyId = userDepartmentCompanySelection.seenUserToCompany.companyId
+                return newFormObj
+            })
         }
         search()
 
     }, [userDepartmentCompanySelection])
 
-    //everytime active company id changes get users in company that can access the site
+    //get company users with site access
     useEffect(() => {
         try {
             const search = async () => {
-                if (activeCompanyId === undefined) return
+                if (formObj.companyId === undefined) return
 
                 //search for users in this company with access to site
-                handleSearchUsersToCompaniesWithAccess(activeCompanyId)
+                handleSearchUsersToCompaniesWithAccess(formObj.companyId)
             }
             search()
 
         } catch (error) {
             consoleAndToastError(error)
         }
-    }, [activeCompanyId])
+    }, [formObj?.companyId])
 
     function markLatestFormAsComplete(checklist: checklistItemType[]) {
         const latestChecklistItemIndex = checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
@@ -158,17 +166,12 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     async function handleSubmit() {
         try {
             //send off new client request
-            if (activeCompanyId === undefined) throw new Error("not seeing company id")
+            if (formObj.companyId === undefined) throw new Error("not seeing company id")
 
             toast.success("submittting")
 
             if (sentClientRequest === undefined) {
                 //make new client request
-
-                //add on company id
-                formObj.companyId = activeCompanyId
-
-                console.log(`formObj`, formObj)
 
                 //validate
                 const validatedNewClientRequest: newClientRequest = newClientRequestSchema.parse(formObj)
@@ -177,14 +180,12 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 validatedNewClientRequest.checklist = markLatestFormAsComplete(validatedNewClientRequest.checklist)
 
                 //send up to server
-                await addClientRequests(validatedNewClientRequest, { companyIdForAuth: activeCompanyId, departmentIdForAuth: department !== undefined ? department.id : undefined })
+                await addClientRequests(validatedNewClientRequest, { companyIdForAuth: formObj.companyId, departmentIdForAuth: department !== undefined ? department.id : undefined })
 
                 toast.success("submitted")
 
                 //reset
                 formObjSet(deepClone(initialFormObj))
-
-                activeCompanyIdSet(undefined)
 
             } else {
                 //validate
@@ -273,9 +274,10 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         <button className='button1'
                             onClick={async () => {
                                 try {
+                                    if (companyAuth == undefined) return
                                     toast.success("searching")
 
-                                    companiesSet(await getCompanies({ departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }))
+                                    companiesSet(await getCompanies(companyAuth))
 
                                 } catch (error) {
                                     consoleAndToastError(error)
@@ -286,14 +288,20 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
                             {companies.map(eachCompany => {
                                 return (
-                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: eachCompany.id === activeCompanyId ? "rgb(var(--color3))" : "rgb(var(--color2))", padding: "1rem" }}>
+                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: eachCompany.id === formObj.companyId ? "rgb(var(--color3))" : "rgb(var(--color2))", padding: "1rem" }}>
                                         <h3>{eachCompany.name}</h3>
 
                                         <button className='button3'
                                             onClick={() => {
                                                 toast.success(`selected`)
 
-                                                activeCompanyIdSet(eachCompany.id)
+                                                formObjSet((prevFormObj) => {
+                                                    const newFormObj = { ...prevFormObj }
+
+                                                    newFormObj.companyId = eachCompany.id
+
+                                                    return newFormObj
+                                                })
                                             }}
                                         >select</button>
                                     </div>
@@ -449,8 +457,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                                 />
                                             )}
 
-                                            {eachChecklistItem.form.type === "tapeDeposit" && (
-                                                <EditTapeDeposit seenForm={eachChecklistItem.form.data}
+                                            {eachChecklistItem.form.type === "tapeDeposit" && formObj.companyId !== undefined && companyAuth !== undefined && (
+                                                <EditTapeDeposit seenForm={eachChecklistItem.form.data} seenCompanyId={formObj.companyId} companyAuth={companyAuth}
                                                     handleFormUpdate={(seenLatestForm) => {
                                                         formObjSet(prevFormObj => {
                                                             const newFormObj = { ...prevFormObj }
@@ -460,10 +468,10 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                                             const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
                                                             if (newChecklistItem.type !== "form" || newChecklistItem.form.type !== "tapeDeposit") return prevFormObj
 
+                                                            console.log(`$seenLatestForm`, seenLatestForm);
+
                                                             //set the new form data
                                                             newChecklistItem.form.data = seenLatestForm
-
-                                                            console.log(`seenLatestForm`, seenLatestForm)
 
                                                             newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
 

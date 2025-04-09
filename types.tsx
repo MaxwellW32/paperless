@@ -72,6 +72,7 @@ export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 export type clientRequestAuthType = { clientRequestIdBeingAccessed?: clientRequest["id"], companyIdForAuth?: company["id"], departmentIdForAuth?: department["id"] }
 export type companyAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"] }
 export type departmentAuthType = { departmentIdBeingAccessed: department["id"] }
+export type tapeAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"] }
 
 export type userDepartmentCompanySelection = {
     type: "userDepartment",
@@ -306,14 +307,15 @@ export const tapeSchema = z.object({
     mediaLabel: z.string().min(1),
     initial: z.string().min(1),
     companyId: companySchema.shape.id,
+    dateAdded: z.date(),
 })
 export type tape = z.infer<typeof tapeSchema> & {
 }
 
-export const newTapeSchema = tapeSchema.omit({ id: true, companyId: true })
+export const newTapeSchema = tapeSchema.omit({ id: true, dateAdded: true })
 export type newTape = z.infer<typeof newTapeSchema>
 
-export const updateTapeSchema = tapeSchema.omit({ id: true })
+export const updateTapeSchema = tapeSchema.omit({ id: true, dateAdded: true })
 export type updateTape = z.infer<typeof updateTapeSchema>
 
 

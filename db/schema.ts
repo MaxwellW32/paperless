@@ -48,6 +48,7 @@ export const companies = pgTable("companies", {
 })
 export const companiesRelations = relations(companies, ({ many }) => ({
     usersToCompanies: many(usersToCompanies),
+    tapes: many(tapes),
 }));
 
 
@@ -71,14 +72,21 @@ export const equipmentRelations = relations(equipment, ({ many }) => ({
 
 
 
+export const tapeStatusEnum = pgEnum("status", ["in-progress", "completed", "cancelled", "on-hold"]);
 
 export const tapes = pgTable("tapes", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     mediaLabel: varchar("mediaLabel", { length: 255 }).notNull(),
     initial: varchar("initial", { length: 255 }).notNull(),
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
+    dateAdded: timestamp("dateAdded", { mode: "date" }).notNull(),
+    status: tapeStatusEnum().notNull(),
 })
-export const tapesRelations = relations(tapes, ({ many }) => ({
+export const tapesRelations = relations(tapes, ({ one }) => ({
+    company: one(tapes, {
+        fields: [tapes.companyId],
+        references: [tapes.id],
+    }),
 }));
 
 
