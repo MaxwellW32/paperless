@@ -1,11 +1,11 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { authAccessLevelResponseType, checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
 import { ensureCanAccessClientRequest, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
-import { interpretAuthResponseAndError, offsetToJamaicanTime } from "@/utility/utility"
+import { interpretAuthResponseAndError } from "@/utility/utility"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest, clientRequestAuth: clientRequestAuthType, runAutomation = true): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
@@ -18,7 +18,7 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, c
     const [addedClientRequest] = await db.insert(clientRequests).values({
         userId: session.user.id,
         status: "in-progress",
-        dateSubmitted: `${offsetToJamaicanTime(new Date().toISOString())}`,
+        dateSubmitted: `${new Date().toISOString()}`,
         ...newClientRequestObj,
     }).returning()
 

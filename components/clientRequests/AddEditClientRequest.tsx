@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { deepClone, offsetToJamaicanTime, updateRefreshObj } from '@/utility/utility'
+import { deepClone, offsetTime, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType, clientRequestSchema } from '@/types'
@@ -28,7 +28,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         checklist: undefined,
         checklistStarterId: undefined,
         clientsAccessingSite: [],
-        eta: `${offsetToJamaicanTime(new Date().toISOString())}`,
+        eta: `${new Date().toISOString()}`,
     })
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest === undefined ? initialFormObj : updateClientRequestSchema.parse(sentClientRequest)))
@@ -444,7 +444,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
             {formObj.eta !== undefined && (
                 <TextInput
                     name={`eta`}
-                    value={formObj.eta.slice(0, 16)}
+                    value={offsetTime(formObj.eta, -5).slice(0, 16)}
                     type={"datetime-local"}
                     label={"expected arrival"}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -454,7 +454,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                             if (newFormObj.eta === undefined) return prevFormObj
 
                             //convert to iso
-                            newFormObj.eta = `${e.target.value}:00.000Z`
+                            newFormObj.eta = offsetTime(`${e.target.value}:00.000Z`, 5)
                             return newFormObj
                         })
                     }}

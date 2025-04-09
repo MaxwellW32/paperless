@@ -7,6 +7,7 @@ import Moment from 'react-moment';
 import { getSpecificUsers } from '@/serverFunctions/handleUser'
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
 import { ViewTapeDeposit } from '../forms/tapeDeposit/ViewTapeDeposit'
+import { formatLocalDateTime } from '@/utility/utility'
 
 export default function ViewClientRequest({ sentClientRequest, department }: { sentClientRequest: clientRequest, department?: department }) {
     const [seenCompany, seenCompanySet] = useState<company | undefined>()
@@ -47,11 +48,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                 </>
             )}
 
-            <h3>
-                <Moment utc format="MMM D, YYYY, h:mm A">
-                    {sentClientRequest.dateSubmitted}
-                </Moment>
-            </h3>
+            <h3>{formatLocalDateTime(sentClientRequest.dateSubmitted)}</h3>
 
             <p><Moment fromNow>{sentClientRequest.dateSubmitted}</Moment></p>
 
@@ -75,7 +72,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
 
             <h3>ETA</h3>
 
-            <Moment utc format="MMM D, YYYY, h:mm A">
+            <Moment utc-5 format="MMM D, YYYY, h:mm A">
                 {sentClientRequest.eta}
             </Moment>
 
