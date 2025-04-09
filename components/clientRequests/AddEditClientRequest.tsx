@@ -56,7 +56,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         formObjSet(prevFormObj => {
             const newFormObj = { ...prevFormObj }
 
-            newFormObj.companyId = sentClientRequest.id
+            newFormObj.companyId = sentClientRequest.companyId
 
             return newFormObj
         })
@@ -187,6 +187,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         checklist = checklist.map((eachChecklist, eachChecklistIndex) => {
             if (eachChecklistIndex === latestChecklistItemIndex) {
                 //complete the forms sent
+                if (eachChecklist.type !== "form") return eachChecklist
+
                 eachChecklist.completed = true
 
                 return eachChecklist

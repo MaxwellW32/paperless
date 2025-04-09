@@ -1,16 +1,21 @@
 "use client"
-import { checklistItemType, clientRequest, clientRequestAuthType, refreshObjType, refreshWSObjType, userDepartmentCompanySelection } from '@/types'
+import { checklistItemFormType, checklistItemType, clientRequest, clientRequestAuthType, companyAuthType, department, refreshObjType, refreshWSObjType, userDepartmentCompanySelection } from '@/types'
 import React from 'react'
 import styles from "./style.module.css"
 import ConfirmationBox from '../confirmationBox/ConfirmationBox'
 import { useAtom } from 'jotai'
 import { refreshObjGlobal, refreshWSObjGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
 import { useSession } from 'next-auth/react'
-import { updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
+import { updateClientRequests, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { updateRefreshObj } from '@/utility/utility'
+import { addTapes, updateTapes } from '@/serverFunctions/handleTapes'
 
-export default function DashboardClientRequest({ eachClientRequest, viewButtonFunction, editButtonFunction, ...elProps }: { eachClientRequest: clientRequest, viewButtonFunction?: () => void, editButtonFunction?: () => void, } & React.HTMLAttributes<HTMLDivElement>) {
+//seen by admins
+//company users
+//department users
+
+export default function DashboardClientRequest({ eachClientRequest, viewButtonFunction, editButtonFunction, seenDepartment, ...elProps }: { eachClientRequest: clientRequest, viewButtonFunction?: () => void, editButtonFunction?: () => void, seenDepartment?: department } & React.HTMLAttributes<HTMLDivElement>) {
     const { data: session } = useSession()
 
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
@@ -106,6 +111,53 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                         }}
                     />
                 </div>
+            )}
+
+            {activeChecklistItem === undefined && ((session !== null && session.user.accessLevel === "admin") || (seenDepartment !== undefined && seenDepartment.canManageRequests)) && (
+                <>
+                    <h3>finish client request?</h3>
+
+                    <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='request completed!'
+                        runAction={async () => {
+                            await updateClientRequests(eachClientRequest.id, {
+                                status: "completed"
+                            }, { clientRequestIdBeingAccessed: eachClientRequest.id, closingRequest: true, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }, true, true)
+
+                            //upload tapes to db
+                            const clientForms: checklistItemFormType[] = eachClientRequest.checklist.filter(eachChecklistFilter => eachChecklistFilter.type === "form")
+
+                            clientForms.map(async eachClientForm => {
+                                if (eachClientForm.form.type === "tapeDeposit") {
+                                    if (eachClientForm.form.data === null) return
+
+                                    eachClientForm.form.data.newTapes.map(async eachNewTape => {
+                                        const companyAuth: companyAuthType = { companyIdBeingAccessed: eachNewTape.companyId, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }
+
+                                        if (eachNewTape.id !== undefined) {
+                                            //update tape
+                                            await updateTapes(eachNewTape.id, eachNewTape, companyAuth)
+
+
+                                        } else {
+                                            //new tape to db
+                                            await addTapes(eachNewTape, companyAuth)
+                                        }
+
+                                        //update locally
+                                        refreshObjSet(prevRefreshObj => {
+                                            return updateRefreshObj(prevRefreshObj, "clientRequests")
+                                        })
+
+                                        //send off ws
+                                        refreshWSObjSet(prevWSRefreshObj => {
+                                            return updateRefreshObj(prevWSRefreshObj, "clientRequests")
+                                        })
+                                    })
+                                }
+                            })
+                        }}
+                    />
+                </>
             )}
 
             {progressBar !== undefined && (

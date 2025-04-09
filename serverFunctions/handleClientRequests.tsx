@@ -1,11 +1,12 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, departmentAuthType, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
 import { ensureCanAccessClientRequest, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
 import { interpretAuthResponseAndError } from "@/utility/utility"
+import { getSpecificDepartment } from "./handleDepartments"
 
 export async function addClientRequests(newClientRequestObj: newClientRequest, clientRequestAuth: clientRequestAuthType, runAutomation = true): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
@@ -161,9 +162,14 @@ export async function getClientRequests(option: { type: "user", userId: user["id
     }
 }
 
-export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], departmentAuth: departmentAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
-    //security check
-    await sessionCheckWithError()
+export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], limit = 50, offset = 0): Promise<clientRequest[]> {
+    //security check - ensure admin / department user only
+    const session = await sessionCheckWithError()
+    if (session.user.accessLevel !== "admin" && !session.user.fromDepartment) {
+        throw new Error("no auth as company user")
+    }
+
+    let departmentHasManageAccess: boolean | undefined = undefined
 
     //get client requests in progress
     const results = await db.query.clientRequests.findMany({
@@ -176,16 +182,34 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
     });
 
     //get all active requests that have some signoff needed
-    const requestsForDepartmentSignoff = results.filter(eachClientRequest => {
+    const requestsForDepartmentSignoff = results.filter(async eachClientRequest => {
+        let canReturnClientRequest = false
+
         //check if signoff is needed from department
         const seenIncompleteChecklistItem = eachClientRequest.checklist.find(eachChecklistItem => !eachChecklistItem.completed)
-        if (seenIncompleteChecklistItem === undefined) return false
+        if (seenIncompleteChecklistItem === undefined) {
+            //checklist finished - so who can close the client request
+            if (departmentHasManageAccess === undefined) {
+                //fix
+                //ensure department has edit permissions
+                const seenDepartment = await getSpecificDepartment(departmentId, false)
+                if (seenDepartment === undefined) throw new Error("not seeing department")
 
-        if (seenIncompleteChecklistItem.type !== "manual" || seenIncompleteChecklistItem.for.type !== "department" || seenIncompleteChecklistItem.for.departmenId !== departmentId) {
-            return false
+                //set whether true/false
+                departmentHasManageAccess = seenDepartment.canManageRequests
+            }
+
+            //if they can manage client requests - return client request so they can close the form
+            return departmentHasManageAccess
+
+        } else {
+            //checklist item needs to be completed
+            if (seenIncompleteChecklistItem.type === "manual" && seenIncompleteChecklistItem.for.type === "department" && seenIncompleteChecklistItem.for.departmenId === departmentId) {
+                canReturnClientRequest = true
+            }
         }
 
-        return true
+        return canReturnClientRequest
     })
 
     return requestsForDepartmentSignoff
@@ -198,15 +222,7 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
     //check the latest incomplete task
     const latestChecklistItemIndex = checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
     const latestChecklistItem: checklistItemType | undefined = latestChecklistItemIndex !== -1 ? checklist[latestChecklistItemIndex] : undefined
-
-    //if nothing is incomplete then mark client request as finished
-    if (latestChecklistItem === undefined) {
-        await updateClientRequests(clientRequestId, {
-            status: "completed"
-        }, { clientRequestIdBeingAccessed: "" }, false, false)
-
-        return
-    }
+    if (latestChecklistItem === undefined) return
 
     console.log(`$running automation for`, latestChecklistItem.type);
 

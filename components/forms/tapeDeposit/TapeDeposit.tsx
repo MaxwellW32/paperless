@@ -101,7 +101,13 @@ export function EditTapeDeposit({ seenFormData, handleFormUpdate, seenCompanyId,
                 label='tapes in database'
                 content={(
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                        <button className='button3'>search tapes</button>
+                        <button className='button3'
+                            onClick={() => {
+                                toast.success("searching")
+
+                                handleSearchTapes()
+                            }}
+                        >search tapes</button>
 
                         {tapes.length > 0 && (
                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 250px)", overflow: "auto" }} className='snap'>

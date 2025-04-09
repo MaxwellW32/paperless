@@ -72,7 +72,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
 
             <h3>ETA</h3>
 
-            <Moment utc-5 format="MMM D, YYYY, h:mm A">
+            <Moment utc-5="true" format="MMM D, YYYY, h:mm A">
                 {sentClientRequest.eta}
             </Moment>
 

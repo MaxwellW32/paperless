@@ -4,7 +4,7 @@ import { getSpecificClientRequest } from "@/serverFunctions/handleClientRequests
 import { getSpecificDepartment } from "@/serverFunctions/handleDepartments"
 import { getSpecificUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies"
 import { getSpecificUsersToDepartments } from "@/serverFunctions/handleUsersToDepartments"
-import { authAccessLevelResponseType, clientRequestAuthType, companyAuthType, departmentAuthType, departmentSchema, crudOptionType } from "@/types"
+import { authAccessLevelResponseType, clientRequestAuthType, companyAuthType, departmentAuthType, departmentSchema, crudOptionType, department } from "@/types"
 import { Session } from "next-auth"
 
 //reject on no auth
@@ -187,20 +187,7 @@ export async function ensureCanAccessCompany(companyAuth: companyAuthType, crudO
         //validation
         if (companyAuth.departmentIdForAuth === undefined) return "not seeing departmentIdForAuth"
 
-        departmentSchema.shape.id.parse(companyAuth.departmentIdForAuth)
-
-        //ensure user exists in department
-        const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: companyAuth.departmentIdForAuth, runSecurityCheck: false })
-        if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
-
-        //ensure department has edit permissions
-        const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, false)
-        if (seenDepartment === undefined) return "not seeing department"
-
-        //ensure department can make changes
-        if (!seenDepartment.canManageRequests) return "department doesn't have manage client request access"
-
-        return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+        return checkIfDepartmentHasManageAccess(session, companyAuth.departmentIdForAuth)
 
     } else if (crudOption === "u") {
         //who can update company
@@ -273,20 +260,7 @@ export async function ensureCanAccessClientRequest(clientReqAuth: clientRequestA
             //validation
             if (clientReqAuth.departmentIdForAuth === undefined) return "not seeing departmentIdForAuth"
 
-            departmentSchema.shape.id.parse(clientReqAuth.departmentIdForAuth)
-
-            //ensure user exists in department
-            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: clientReqAuth.departmentIdForAuth, runSecurityCheck: false })
-            if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
-
-            //ensure department has edit permissions
-            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, false)
-            if (seenDepartment === undefined) return "not seeing department"
-
-            //ensure department can make changes
-            if (!seenDepartment.canManageRequests) return "department doesn't have manage client request access"
-
-            return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+            return checkIfDepartmentHasManageAccess(session, clientReqAuth.departmentIdForAuth)
         }
 
     } else if (crudOption === "r") {
@@ -364,10 +338,21 @@ export async function ensureCanAccessClientRequest(clientReqAuth: clientRequestA
             const latestChecklistItem = seenClientRequest.checklist.find(eachChecklistItem => !eachChecklistItem.completed)
 
             //enusre checklist is waiting for client change
-            if (latestChecklistItem === undefined) return "not seeing checklist needs to be updated"
+            if (latestChecklistItem === undefined) {
+                //if checklist items finished - check if they are sending a closing request
+                if (clientReqAuth.closingRequest) {
+                    return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
 
-            if (latestChecklistItem.type !== "manual") return "checklist type is not manual"
-            if (latestChecklistItem.for.type !== "department") return "not meant for department signoff"
+                } else {
+                    return "not seeing checklist needs to be updated"
+                }
+
+            } else {
+                //if there are checklist items remaining - check if they can be updated by department
+
+                if (latestChecklistItem.type !== "manual") return "checklist type is not manual"
+                if (latestChecklistItem.for.type !== "department") return "not meant for department signoff"
+            }
 
             return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
         }
@@ -411,21 +396,7 @@ export async function ensureCanAccessTape(companyAuth: companyAuthType, crudOpti
             //from department
             if (localCompanyAuth.departmentIdForAuth === undefined) return "provide department id for auth"
 
-            //validation
-            departmentSchema.shape.id.parse(localCompanyAuth.departmentIdForAuth)
-
-            //ensure user exists in department
-            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: localSession.user.id, departmentId: localCompanyAuth.departmentIdForAuth, runSecurityCheck: false })
-            if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
-
-            //ensure department has edit permissions
-            const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, false)
-            if (seenDepartment === undefined) return "not seeing department"
-
-            //ensure department can make changes
-            if (!seenDepartment.canManageRequests) return "department doesn't have manage client request access"
-
-            return { session: localSession, accessLevel: seenUserToDepartment.departmentAccessLevel }
+            return checkIfDepartmentHasManageAccess(session, localCompanyAuth.departmentIdForAuth)
         }
     }
 
@@ -475,4 +446,34 @@ export async function ensureCanAccessTape(companyAuth: companyAuthType, crudOpti
     } else {
         return "invalid selection"
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export async function checkIfDepartmentHasManageAccess(session: Session, departmentAuthId: department["id"]): Promise<string | authAccessLevelResponseType> {
+    departmentSchema.shape.id.parse(departmentAuthId)
+
+    //ensure user exists in department
+    const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: departmentAuthId, runSecurityCheck: false })
+    if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
+
+    //ensure department has edit permissions
+    const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, false)
+    if (seenDepartment === undefined) return "not seeing department"
+
+    //ensure department can make changes
+    if (!seenDepartment.canManageRequests) return "department doesn't have manage client request access"
+
+    return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
 }

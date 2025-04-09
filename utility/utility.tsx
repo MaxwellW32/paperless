@@ -54,7 +54,7 @@ export function interpretAuthResponseAndBool(authResponse: string | authAccessLe
 export function offsetTime(isoString: string, timeInteger: number): string {
     const date = new Date(isoString);
 
-    // Offset by -5 hours (Jamaica is UTC-5)
+    // Offset
     date.setHours(date.getHours() + timeInteger);
 
     // Return the adjusted ISO string

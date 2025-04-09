@@ -76,7 +76,7 @@ export default function Page() {
                     //if user is from department
                     if (userDepartmentCompanySelection.type === "userDepartment") {
                         //regular department user
-                        localNewClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, { departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId })
+                        localNewClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId)
 
                     } else if (userDepartmentCompanySelection.type === "userCompany") {
                         //set active requests from client
@@ -302,7 +302,7 @@ export default function Page() {
                         {activeClientRequests.map(eachActiveClientRequest => {
                             return (
                                 <DashboardClientRequest key={eachActiveClientRequest.id}
-                                    eachClientRequest={eachActiveClientRequest}
+                                    eachClientRequest={eachActiveClientRequest} seenDepartment={seenDepartment}
                                     viewButtonFunction={() => {
                                         activeScreenSet({
                                             type: "viewRequest",
@@ -328,7 +328,7 @@ export default function Page() {
                         {clientRequestsHistory.map(eachHistoryCientRequest => {
                             return (
                                 <DashboardClientRequest key={eachHistoryCientRequest.id}
-                                    eachClientRequest={eachHistoryCientRequest}
+                                    eachClientRequest={eachHistoryCientRequest} seenDepartment={seenDepartment}
                                     viewButtonFunction={() => {
                                         activeScreenSet({
                                             type: "viewRequest",
