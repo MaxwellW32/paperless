@@ -1,5 +1,5 @@
 "use client"
-import { checklistItemFormType, checklistItemType, clientRequest, clientRequestAuthType, companyAuthType, department, refreshObjType, refreshWSObjType, resourceAuthType, userDepartmentCompanySelection } from '@/types'
+import { checklistItemFormType, checklistItemType, clientRequest, clientRequestAuthType, department, refreshObjType, refreshWSObjType, resourceAuthType, userDepartmentCompanySelection } from '@/types'
 import React from 'react'
 import styles from "./style.module.css"
 import ConfirmationBox from '../confirmationBox/ConfirmationBox'

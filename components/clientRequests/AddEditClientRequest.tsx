@@ -521,7 +521,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                             )}
 
                                             {eachChecklistItem.form.type === "tapeDeposit" && formObj.companyId !== undefined && (
-                                                <EditTapeDepositForm seenFormData={eachChecklistItem.form.data} seenCompanyId={formObj.companyId} companyAuth={{ companyIdBeingAccessed: formObj.companyId, departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }}
+                                                <EditTapeDepositForm seenFormData={eachChecklistItem.form.data} seenCompanyId={formObj.companyId}
                                                     handleFormUpdate={(seenLatestForm) => {
                                                         formObjSet(prevFormObj => {
                                                             const newFormObj = { ...prevFormObj }

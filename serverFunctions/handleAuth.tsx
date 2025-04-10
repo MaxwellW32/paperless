@@ -42,9 +42,10 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
         //admin pass
         if (session.user.accessLevel === "admin") return { session, accessLevel: session.user.accessLevel }
 
-        if (resource.type === "admin" && session.user.accessLevel !== "admin") return "need to be admin for this resource selection"
+        if (resource.type === "admin" && session.user.accessLevel !== "admin") {
+            return "need to be admin for this resource selection"
 
-        if (resource.type === "department") {
+        } else if (resource.type === "department") {
             if (crudOption === "c") {
                 //who can read create a department
                 //admin 
