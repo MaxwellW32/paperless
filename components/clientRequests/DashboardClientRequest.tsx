@@ -1,5 +1,5 @@
 "use client"
-import { checklistItemFormType, checklistItemType, clientRequest, department, refreshObjType, refreshWSObjType, resourceAuthType, tapeDepositNewTapeType, userDepartmentCompanySelection } from '@/types'
+import { checklistItemFormType, checklistItemType, clientRequest, department, refreshObjType, refreshWSObjType, resourceAuthType, tapeFormNewTapeType, userDepartmentCompanySelection } from '@/types'
 import React from 'react'
 import styles from "./style.module.css"
 import ConfirmationBox from '../confirmationBox/ConfirmationBox'
@@ -52,6 +52,8 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
 
     const dateSubmittedTime = new Date(eachClientRequest.dateSubmitted)
 
+    if (session === null) return null
+
     return (
         <div {...elProps} className={`${styles.eachClientRequest} ${elProps.className !== undefined ? elProps.className : ""}`}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'center' }}>
@@ -82,92 +84,96 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                 )}
             </div>
 
-            {activeChecklistItem !== undefined && activeChecklistItem.type === "manual" && canAccessManualCheck && (
-                <div>
-                    <label>{activeChecklistItem.prompt}</label>
-
-                    <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
-                        runAction={async () => {
-                            try {
-                                if (resourceAuth === undefined) throw new Error("not seeing auth")
-
-                                const newCompletedManualChecklistItem = { ...activeChecklistItem }
-                                newCompletedManualChecklistItem.completed = true
-
-                                //update server
-                                await updateClientRequestsChecklist(eachClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, resourceAuth)
-
-                                //update locally
-                                refreshObjSet(prevRefreshObj => {
-                                    return updateRefreshObj(prevRefreshObj, "clientRequests")
-                                })
-
-                                //send off ws
-                                refreshWSObjSet(prevWSRefreshObj => {
-                                    return updateRefreshObj(prevWSRefreshObj, "clientRequests")
-                                })
-
-                            } catch (error) {
-                                consoleAndToastError(error)
-                            }
-                        }}
-                    />
-                </div>
-            )}
-
-            {activeChecklistItem === undefined && ((session !== null && session.user.accessLevel === "admin") || (seenDepartment !== undefined && seenDepartment.canManageRequests)) && (eachClientRequest.status !== "completed") && (
+            {activeChecklistItem !== undefined ? (
                 <>
-                    <h3>finish client request?</h3>
+                    {activeChecklistItem.type === "manual" && canAccessManualCheck && (//allow sign off on prompt popups
+                        <div>
+                            <label>{activeChecklistItem.prompt}</label>
 
-                    <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='request completed!'
-                        runAction={async () => {
-                            try {
-                                if (resourceAuth === undefined) throw new Error("not seeing auth")
+                            <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
+                                runAction={async () => {
+                                    try {
+                                        if (resourceAuth === undefined) throw new Error("not seeing auth")
 
-                                await updateClientRequests(eachClientRequest.id, {
-                                    status: "completed"
-                                }, resourceAuth, true, false)
+                                        const newCompletedManualChecklistItem = { ...activeChecklistItem }
+                                        newCompletedManualChecklistItem.completed = true
 
-                                //upload tapes to db
-                                const clientForms: checklistItemFormType[] = eachClientRequest.checklist.filter(eachChecklistFilter => eachChecklistFilter.type === "form")
+                                        //update server
+                                        await updateClientRequestsChecklist(eachClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, resourceAuth)
 
-                                clientForms.map(async eachClientForm => {
-                                    if (eachClientForm.form.type === "tapeDeposit" || eachClientForm.form.type === "tapeWithdraw") {
-                                        if (eachClientForm.form.data === null) return
-
-                                        const seenTapes: tapeDepositNewTapeType[] = eachClientForm.form.type === "tapeDeposit" ? eachClientForm.form.data.tapesInRequest : eachClientForm.form.data.tapesToWithdraw
-
-                                        seenTapes.map(async eachSeenTape => {
-                                            //update tape location
-                                            eachSeenTape.tapeLocation = eachClientForm.form.type === "tapeDeposit" ? "in-vault" : "with-client"
-
-                                            if (eachSeenTape.id !== undefined) {
-                                                //update tape
-                                                await updateTapes(eachSeenTape.id, eachSeenTape, resourceAuth)
-
-                                            } else {
-                                                //new tape to db
-                                                await addTapes(eachSeenTape, resourceAuth)
-                                            }
-
-                                            //update locally
-                                            refreshObjSet(prevRefreshObj => {
-                                                return updateRefreshObj(prevRefreshObj, "clientRequests")
-                                            })
-
-                                            //send off ws
-                                            refreshWSObjSet(prevWSRefreshObj => {
-                                                return updateRefreshObj(prevWSRefreshObj, "clientRequests")
-                                            })
+                                        //update locally
+                                        refreshObjSet(prevRefreshObj => {
+                                            return updateRefreshObj(prevRefreshObj, "clientRequests")
                                         })
-                                    }
-                                })
 
-                            } catch (error) {
-                                consoleAndToastError(error)
-                            }
-                        }}
-                    />
+                                        //send off ws
+                                        refreshWSObjSet(prevWSRefreshObj => {
+                                            return updateRefreshObj(prevWSRefreshObj, "clientRequests")
+                                        })
+
+                                    } catch (error) {
+                                        consoleAndToastError(error)
+                                    }
+                                }}
+                            />
+                        </div>
+                    )}
+                </>
+            ) : (
+                <>
+                    {((session.user.accessLevel === "admin") || (seenDepartment !== undefined && seenDepartment.canManageRequests)) && (eachClientRequest.status !== "completed") && (
+                        <>
+                            <h3>finish client request?</h3>
+
+                            <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='request completed!'
+                                runAction={async () => {
+                                    try {
+                                        if (resourceAuth === undefined) throw new Error("not seeing auth")
+
+                                        await updateClientRequests(eachClientRequest.id, {
+                                            status: "completed"
+                                        }, resourceAuth, true, false)
+
+                                        //upload tapes to db
+                                        const clientForms: checklistItemFormType[] = eachClientRequest.checklist.filter(eachChecklistFilter => eachChecklistFilter.type === "form")
+
+                                        clientForms.map(async eachClientForm => {
+                                            if (eachClientForm.form.type === "tapeDeposit" || eachClientForm.form.type === "tapeWithdraw") {
+                                                if (eachClientForm.form.data === null) return
+
+                                                eachClientForm.form.data.tapesInRequest.map(async eachTapeInRequest => {
+                                                    //update tape location
+                                                    eachTapeInRequest.tapeLocation = eachClientForm.form.type === "tapeDeposit" ? "in-vault" : "with-client"
+
+                                                    if (eachTapeInRequest.id !== undefined) {
+                                                        //update tape
+                                                        await updateTapes(eachTapeInRequest.id, eachTapeInRequest, resourceAuth)
+
+                                                    } else {
+                                                        //new tape to db
+                                                        await addTapes(eachTapeInRequest, resourceAuth)
+                                                    }
+
+                                                    //update locally
+                                                    refreshObjSet(prevRefreshObj => {
+                                                        return updateRefreshObj(prevRefreshObj, "clientRequests")
+                                                    })
+
+                                                    //send off ws
+                                                    refreshWSObjSet(prevWSRefreshObj => {
+                                                        return updateRefreshObj(prevWSRefreshObj, "clientRequests")
+                                                    })
+                                                })
+                                            }
+                                        })
+
+                                    } catch (error) {
+                                        consoleAndToastError(error)
+                                    }
+                                }}
+                            />
+                        </>
+                    )}
                 </>
             )}
 

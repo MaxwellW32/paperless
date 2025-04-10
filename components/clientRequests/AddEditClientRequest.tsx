@@ -13,9 +13,8 @@ import { useSession } from 'next-auth/react'
 import { getUsersToCompaniesWithVisitAccess } from '@/serverFunctions/handleUsersToCompanies'
 import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
-import { EditTapeDepositForm } from '../forms/tapeDeposit/ViewEditTapeDepositForm'
+import { EditTapeForm } from '../forms/tapeForm/ViewEditTapeForm'
 import TextInput from '../textInput/TextInput'
-import { EditTapeWithdrawForm } from '../forms/tapeWithdraw/ViewEditTapeWithdrawForm'
 
 export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -521,8 +520,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                                 />
                                             )}
 
-                                            {eachChecklistItem.form.type === "tapeDeposit" && formObj.companyId !== undefined && (
-                                                <EditTapeDepositForm seenFormData={eachChecklistItem.form.data} seenCompanyId={formObj.companyId}
+                                            {((eachChecklistItem.form.type === "tapeDeposit") || (eachChecklistItem.form.type === "tapeWithdraw")) && formObj.companyId !== undefined && (
+                                                <EditTapeForm seenForm={eachChecklistItem.form} seenCompanyId={formObj.companyId}
                                                     handleFormUpdate={(seenLatestForm) => {
                                                         formObjSet(prevFormObj => {
                                                             const newFormObj = { ...prevFormObj }
@@ -530,32 +529,11 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
                                                             //edit new checklist item
                                                             const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
-                                                            if (newChecklistItem.type !== "form" || newChecklistItem.form.type !== "tapeDeposit") return prevFormObj
+                                                            if (newChecklistItem.type !== "form") return prevFormObj
+                                                            if (newChecklistItem.form.type !== "tapeDeposit" && newChecklistItem.form.type !== "tapeWithdraw") return prevFormObj
 
                                                             //set the new form data
-                                                            newChecklistItem.form.data = seenLatestForm
-
-                                                            newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
-
-                                                            return newFormObj
-                                                        })
-                                                    }}
-                                                />
-                                            )}
-
-                                            {eachChecklistItem.form.type === "tapeWithdraw" && formObj.companyId !== undefined && (
-                                                <EditTapeWithdrawForm seenFormData={eachChecklistItem.form.data} seenCompanyId={formObj.companyId}
-                                                    handleFormUpdate={(seenLatestForm) => {
-                                                        formObjSet(prevFormObj => {
-                                                            const newFormObj = { ...prevFormObj }
-                                                            if (newFormObj.checklist === undefined) return prevFormObj
-
-                                                            //edit new checklist item
-                                                            const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
-                                                            if (newChecklistItem.type !== "form" || newChecklistItem.form.type !== "tapeWithdraw") return prevFormObj
-
-                                                            //set the new form data
-                                                            newChecklistItem.form.data = seenLatestForm
+                                                            newChecklistItem.form = seenLatestForm
 
                                                             newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
 

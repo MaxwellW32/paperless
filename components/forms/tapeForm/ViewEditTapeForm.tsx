@@ -10,15 +10,21 @@ import toast from 'react-hot-toast'
 import ViewTape from '@/components/tapes/ViewTape'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
-import { company, resourceAuthType, tape, tapeWithdrawFormNonNullDataType, tapeWithdrawFormSchema, tapeWithdrawFormType } from '@/types'
+import { company, resourceAuthType, tape, tapeFormNewTapeType, tapeFormSchema, tapeFormType } from '@/types'
 
-export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompanyId }: { seenFormData: tapeWithdrawFormType["data"], handleFormUpdate: (updatedFormData: tapeWithdrawFormNonNullDataType) => void, seenCompanyId: company["id"] }) {
+export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { seenForm: tapeFormType, handleFormUpdate: (updatedFormData: tapeFormType) => void, seenCompanyId: company["id"] }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
-    const initialFormObj: tapeWithdrawFormNonNullDataType = {
-        tapesToWithdraw: [],
+    const initialFormObj: tapeFormType = {
+        type: seenForm.type,
+        data: {
+            tapesInRequest: [],
+        }
     }
-    const [formObj, formObjSet] = useState<tapeWithdrawFormType["data"]>(deepClone(seenFormData !== null ? seenFormData : initialFormObj))
+    const [formObj, formObjSet] = useState<tapeFormType>(deepClone(seenForm.data !== null ? seenForm : initialFormObj))
+
+    console.log(`$seenForm`, seenForm);
+    console.log(`$formObj`, formObj);
 
     // type tapeDepositFormTypeNonNullKeys = keyof tapeDepositFormNonNullDataType
     const [formErrors, formErrorsSet] = useState<Partial<{ [key: string]: string }>>({})
@@ -28,11 +34,11 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
 
     //handle changes from above
     useEffect(() => {
-        if (seenFormData === null) return
+        if (seenForm.data === null) return
 
-        formObjSet(deepClone(seenFormData))
+        formObjSet(deepClone(seenForm))
 
-    }, [seenFormData])
+    }, [seenForm])
 
     //send changes up
     useEffect(() => {
@@ -57,8 +63,8 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
 
     }, [seenCompanyId, resourceAuth])
 
-    function checkIfValid(seenFormObj: tapeWithdrawFormNonNullDataType): boolean {
-        const testSchema = tapeWithdrawFormSchema.shape.data.safeParse(seenFormObj);
+    function checkIfValid(seenFormObj: tapeFormType): boolean {
+        const testSchema = tapeFormSchema.safeParse(seenFormObj);
         formErrorsSet({})
 
         if (testSchema.error === undefined) return true
@@ -85,7 +91,7 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
         try {
             if (resourceAuth === undefined) return
 
-            const seenTapes = await getTapes({ type: "status", tapeLocation: "in-vault", getOppositeOfStatus: false }, seenCompanyId, resourceAuth)
+            const seenTapes = await getTapes({ type: "status", tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", getOppositeOfStatus: false }, seenCompanyId, resourceAuth)
             tapesSet(seenTapes)
 
         } catch (error) {
@@ -93,7 +99,7 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
         }
     }
 
-    if (formObj === null) return null
+    if (formObj.data === null) return null
 
     return (
         <div className={styles.form}>
@@ -117,23 +123,26 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
                                         runSameOnAllFormObjUpdates()
 
                                         formObjSet(prevFormObj => {
-                                            if (prevFormObj === null) return prevFormObj
                                             const newFormObj = { ...prevFormObj }
+                                            if (newFormObj.data === null) return prevFormObj
+
+                                            //refresh
+                                            newFormObj.data = { ...newFormObj.data }
 
                                             //if id check if in array already - update that record
-                                            const foundInNewTapes = newFormObj.tapesToWithdraw.find(eachTapeFind => eachTapeFind.id === eachTape.id) !== undefined
+                                            const foundInNewTapes = newFormObj.data.tapesInRequest.find(eachTapeFind => eachTapeFind.id === eachTape.id) !== undefined
 
                                             if (foundInNewTapes) {
-                                                newFormObj.tapesToWithdraw = newFormObj.tapesToWithdraw.map(eachTapeMap => {
-                                                    if (eachTapeMap.id === eachTape.id) {
+                                                newFormObj.data.tapesInRequest = newFormObj.data.tapesInRequest.map(eachTapeInRequestMap => {
+                                                    if (eachTapeInRequestMap.id === eachTape.id) {
                                                         return eachTape
                                                     }
 
-                                                    return eachTapeMap
+                                                    return eachTapeInRequestMap
                                                 })
 
                                             } else {
-                                                newFormObj.tapesToWithdraw = [...newFormObj.tapesToWithdraw, eachTape]
+                                                newFormObj.data.tapesInRequest = [...newFormObj.data.tapesInRequest, eachTape]
                                             }
 
                                             return newFormObj
@@ -148,10 +157,10 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
                 )}
             </div>
 
-            {formObj.tapesToWithdraw.length > 0 && (
+            {formObj.data.tapesInRequest.length > 0 && (
                 <>
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 400px)", overflow: "auto" }} className='snap'>
-                        {formObj.tapesToWithdraw.map((eachTape, eachTapeIndex) => {
+                        {formObj.data.tapesInRequest.map((eachTape, eachTapeIndex) => {
                             return (
                                 <div key={eachTapeIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", position: "relative" }}>
                                     <ConfirmationBox
@@ -177,10 +186,13 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
                                             runSameOnAllFormObjUpdates()
 
                                             formObjSet(prevFormObj => {
-                                                if (prevFormObj === null) return prevFormObj
                                                 const newFormObj = { ...prevFormObj }
+                                                if (newFormObj.data === null) return prevFormObj
 
-                                                newFormObj.tapesToWithdraw = newFormObj.tapesToWithdraw.filter((eachTapeFilter, eachNewTapeFilterIndex) => eachNewTapeFilterIndex !== eachTapeIndex)
+                                                //refresh
+                                                newFormObj.data = { ...newFormObj.data }
+
+                                                newFormObj.data.tapesInRequest = newFormObj.data.tapesInRequest.filter((eachTapeFilter, eachNewTapeFilterIndex) => eachNewTapeFilterIndex !== eachTapeIndex)
 
                                                 return newFormObj
                                             })
@@ -197,16 +209,19 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
                                             runSameOnAllFormObjUpdates()
 
                                             formObjSet(prevFormObj => {
-                                                if (prevFormObj === null) return prevFormObj
                                                 const newFormObj = { ...prevFormObj }
+                                                if (newFormObj.data === null) return prevFormObj
 
-                                                newFormObj.tapesToWithdraw[eachTapeIndex].mediaLabel = e.target.value
+                                                //refresh
+                                                newFormObj.data = { ...newFormObj.data }
+
+                                                newFormObj.data.tapesInRequest[eachTapeIndex].mediaLabel = e.target.value
 
                                                 return newFormObj
                                             })
                                         }}
                                         onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`tapesToWithdraw/${eachTapeIndex}/mediaLabel`]}
+                                        errors={formErrors[`data/tapesInRequest/${eachTapeIndex}/mediaLabel`]}
                                     />
 
                                     <TextInput
@@ -219,16 +234,19 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
                                             runSameOnAllFormObjUpdates()
 
                                             formObjSet(prevFormObj => {
-                                                if (prevFormObj === null) return prevFormObj
                                                 const newFormObj = { ...prevFormObj }
+                                                if (newFormObj.data === null) return prevFormObj
 
-                                                newFormObj.tapesToWithdraw[eachTapeIndex].initial = e.target.value
+                                                //refresh
+                                                newFormObj.data = { ...newFormObj.data }
+
+                                                newFormObj.data.tapesInRequest[eachTapeIndex].initial = e.target.value
 
                                                 return newFormObj
                                             })
                                         }}
                                         onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`tapesToWithdraw/${eachTapeIndex}/initial`]}
+                                        errors={formErrors[`data/tapesInRequest/${eachTapeIndex}/initial`]}
                                     />
                                 </div>
                             )
@@ -242,18 +260,20 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
                     runSameOnAllFormObjUpdates()
 
                     formObjSet(prevFormObj => {
-                        if (prevFormObj === null) return prevFormObj
                         const newFormObj = { ...prevFormObj }
+                        if (newFormObj.data === null) return prevFormObj
 
-                        const newTape: tapeWithdrawFormNonNullDataType["tapesToWithdraw"][number] = {
+                        //refresh
+                        newFormObj.data = { ...newFormObj.data }
+
+                        const newTape: tapeFormNewTapeType = {
                             companyId: seenCompanyId,
                             initial: "",
                             mediaLabel: "",
-                            tapeLocation: "in-vault"
+                            tapeLocation: newFormObj.type === "tapeDeposit" ? "with-client" : "in-vault"
                         }
 
-                        newFormObj.tapesToWithdraw = [...newFormObj.tapesToWithdraw, newTape]
-
+                        newFormObj.data.tapesInRequest = [...newFormObj.data.tapesInRequest, newTape]
                         return newFormObj
                     })
                 }}
@@ -262,19 +282,21 @@ export function EditTapeWithdrawForm({ seenFormData, handleFormUpdate, seenCompa
     )
 }
 
-export function ViewTapeWithdrawForm({ seenFormData }: { seenFormData: tapeWithdrawFormType["data"] }) {
-    if (seenFormData === null) return null
+export function ViewTapeForm({ seenForm }: { seenForm: tapeFormType }) {
+    if (seenForm.data === null) return null
+
+    console.log(`$seenForm`, seenForm);
 
     return (
         <div className={styles.form}>
             <label>tapes</label>
 
-            {seenFormData.tapesToWithdraw.length > 0 && (
+            {seenForm.data.tapesInRequest.length > 0 && (
                 <>
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 300px)", overflow: "auto" }} className='snap'>
-                        {seenFormData.tapesToWithdraw.map((eachTapeToWithdraw, eachTapeToWithdrawIndex) => {
+                        {seenForm.data.tapesInRequest.map((eachTapeInRequest, eachTapeInRequestIndex) => {
                             return (
-                                <ViewTape key={eachTapeToWithdrawIndex} seenTape={eachTapeToWithdraw} />
+                                <ViewTape key={eachTapeInRequestIndex} seenTape={eachTapeInRequest} />
                             )
                         })}
                     </div>

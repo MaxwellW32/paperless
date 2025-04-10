@@ -363,28 +363,18 @@ export type updateTape = z.infer<typeof updateTapeSchema>
 export const formTypesSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther", "dynamic"])
 export type formTypesType = z.infer<typeof formTypesSchema>
 
-export const tapeDepositNewTapeSchema = newTapeSchema.extend({
+export const tapeFormNewTapeSchema = newTapeSchema.extend({
     id: tapeSchema.shape.id.optional(),
 });
-export type tapeDepositNewTapeType = z.infer<typeof tapeDepositNewTapeSchema>;
+export type tapeFormNewTapeType = z.infer<typeof tapeFormNewTapeSchema>;
 
-export const tapeDepositFormSchema = z.object({
-    type: z.literal(formTypesSchema.Values.tapeDeposit),
+export const tapeFormSchema = z.object({
+    type: z.union([z.literal(formTypesSchema.Values.tapeDeposit), z.literal(formTypesSchema.Values.tapeWithdraw)]),
     data: z.object({
-        tapesInRequest: z.array(tapeDepositNewTapeSchema).min(1, "need at least one tape to deposit"),
+        tapesInRequest: z.array(tapeFormNewTapeSchema).min(1, "need at least one tape for request"),
     }).nullable(),
 });
-export type tapeDepositFormType = z.infer<typeof tapeDepositFormSchema>
-export type tapeDepositFormNonNullDataType = NonNullable<tapeDepositFormType["data"]>
-
-export const tapeWithdrawFormSchema = z.object({
-    type: z.literal(formTypesSchema.Values.tapeWithdraw),
-    data: z.object({
-        tapesToWithdraw: z.array(tapeDepositNewTapeSchema).min(1, "need at least one tape to withdraw"),
-    }).nullable(),
-});
-export type tapeWithdrawFormType = z.infer<typeof tapeWithdrawFormSchema>
-export type tapeWithdrawFormNonNullDataType = NonNullable<tapeWithdrawFormType["data"]>
+export type tapeFormType = z.infer<typeof tapeFormSchema>
 
 export const equipmentDepositFormSchema = z.object({
     type: z.literal(formTypesSchema.Values.equipmentDeposit),
@@ -413,7 +403,7 @@ export const checklistItemDynamicFormSchema = z.object({
 })
 export type checklistItemDynamicFormType = z.infer<typeof checklistItemDynamicFormSchema>
 
-export const checklistItemFormDataSchema = z.union([tapeDepositFormSchema, tapeWithdrawFormSchema, equipmentDepositFormSchema, equipmentWithdrawFormSchema, equipmentOtherFormSchema, checklistItemDynamicFormSchema])
+export const checklistItemFormDataSchema = z.union([tapeFormSchema, equipmentDepositFormSchema, equipmentWithdrawFormSchema, equipmentOtherFormSchema, checklistItemDynamicFormSchema])
 export type checklistItemFormDataType = z.infer<typeof checklistItemFormDataSchema>
 
 export const checklistItemFormSchema = z.object({

@@ -10,8 +10,7 @@ import { formatLocalDateTime } from '@/utility/utility'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
 import { useSession } from 'next-auth/react'
-import { ViewTapeDepositForm } from '../forms/tapeDeposit/ViewEditTapeDepositForm'
-import { ViewTapeWithdrawForm } from '../forms/tapeWithdraw/ViewEditTapeWithdrawForm'
+import { ViewTapeForm } from '../forms/tapeForm/ViewEditTapeForm'
 
 export default function ViewClientRequest({ sentClientRequest, department }: { sentClientRequest: clientRequest, department?: department }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -24,7 +23,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
     //search company
     useEffect(() => {
         const search = async () => {
-            if (sentClientRequest === undefined || resourceAuth === undefined) return
+            if (resourceAuth === undefined) return
 
             seenCompanySet(await getSpecificCompany(sentClientRequest.companyId, resourceAuth))
         }
@@ -101,7 +100,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
 
                         if (userDepartmentCompanySelection !== null) {
                             //company user can view / department user with proper access
-                            if ((department !== undefined && department.canManageRequests) || (userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany")) {
+                            if ((department !== undefined && department.canManageRequests) || (userDepartmentCompanySelection.type === "userCompany")) {
                                 canShowForm = true
                             }
                         }
@@ -115,12 +114,8 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                                 <ReadDynamicChecklistForm seenForm={eachChecklistItem.form.data} />
                             )}
 
-                            {eachChecklistItem.form.type === "tapeDeposit" && (
-                                <ViewTapeDepositForm seenFormData={eachChecklistItem.form.data} />
-                            )}
-
-                            {eachChecklistItem.form.type === "tapeWithdraw" && (
-                                <ViewTapeWithdrawForm seenFormData={eachChecklistItem.form.data} />
+                            {((eachChecklistItem.form.type === "tapeDeposit") || (eachChecklistItem.form.type === "tapeWithdraw")) && (
+                                <ViewTapeForm seenForm={eachChecklistItem.form} />
                             )}
                         </div>
                     )
