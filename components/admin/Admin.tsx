@@ -188,9 +188,11 @@ export default function Page() {
                                     <button className='button3'
                                         onClick={async () => {
                                             try {
+                                                if (resourceAuth === undefined) throw new Error("not seeing auth")
+
                                                 toast.success("searching")
 
-                                                clientRequestsSet(await getClientRequests({ type: "all" }, { type: "date" }))
+                                                clientRequestsSet(await getClientRequests({ type: "all" }, { type: "date" }, resourceAuth))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)
@@ -251,9 +253,11 @@ export default function Page() {
                                     <button className='button3'
                                         onClick={async () => {
                                             try {
+                                                if (resourceAuth === undefined) throw new Error("not seeing auth")
+
                                                 toast.success("searching")
 
-                                                companiesSet(await getCompanies({}))
+                                                companiesSet(await getCompanies(resourceAuth))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)
@@ -520,9 +524,11 @@ export default function Page() {
                                     <button className='button3'
                                         onClick={async () => {
                                             try {
+                                                if (resourceAuth === undefined) throw new Error("not seeing auth")
+
                                                 toast.success("searching")
 
-                                                companiesSet(await getCompanies({}))
+                                                companiesSet(await getCompanies(resourceAuth))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)

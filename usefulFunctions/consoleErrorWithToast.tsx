@@ -2,6 +2,13 @@ import { toast } from "react-hot-toast";
 import { ZodError } from 'zod';
 
 export function consoleAndToastError(error: unknown, userErrorText?: string): void {
+    const combinedErrorText = errorZodErrorAsString(error)
+
+    toast.error(userErrorText === undefined ? combinedErrorText : userErrorText)
+    console.log("$Error", userErrorText === undefined ? combinedErrorText : userErrorText)
+}
+
+export function errorZodErrorAsString(error: unknown): string {
     let seenAsZod = false
 
     //check if zod error
@@ -21,13 +28,12 @@ export function consoleAndToastError(error: unknown, userErrorText?: string): vo
             combinedErrorStr += `${err.message}\n`
         });
 
-        console.log(`$Error"`, error);
-        toast.error(userErrorText === undefined ? combinedErrorStr : userErrorText)
+        return combinedErrorStr
+
     } else {
         // Handle standard JavaScript Error
         const seenErr = error as Error
 
-        console.error("$Error", error);
-        toast.error(userErrorText === undefined ? seenErr.message : userErrorText)
+        return seenErr.message
     }
 }

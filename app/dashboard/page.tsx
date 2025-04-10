@@ -61,7 +61,7 @@ export default function Page() {
     useEffect(() => {
         const search = async () => {
             try {
-                if (session === null) return
+                if (session === null || resourceAuth === undefined) return
 
                 let localNewClientRequests: clientRequest[] | undefined = undefined
                 let localHistoryClientRequests: clientRequest[] | undefined = undefined
@@ -69,10 +69,10 @@ export default function Page() {
                 //if admin
                 if (session.user.accessLevel === "admin") {
                     //if app admin get all active requests
-                    localNewClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: false })
+                    localNewClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: false }, resourceAuth)
 
                     //get history
-                    localHistoryClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: true })
+                    localHistoryClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: true }, resourceAuth)
 
                 } else {
                     if (userDepartmentCompanySelection === null) return
@@ -80,14 +80,14 @@ export default function Page() {
                     //if user is from department
                     if (userDepartmentCompanySelection.type === "userDepartment") {
                         //regular department user
-                        localNewClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId)
+                        localNewClientRequests = await getClientRequestsForDepartments('in-progress', false, userDepartmentCompanySelection.seenUserToDepartment.departmentId, resourceAuth)
 
                     } else if (userDepartmentCompanySelection.type === "userCompany") {
                         //set active requests from client
-                        localNewClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, { type: "status", status: 'in-progress', getOppositeOfStatus: false })
+                        localNewClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, }, { type: "status", status: 'in-progress', getOppositeOfStatus: false }, resourceAuth)
 
                         //set client requests history
-                        localHistoryClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, companyAuth: { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId } }, { type: "status", status: 'in-progress', getOppositeOfStatus: true })
+                        localHistoryClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, }, { type: "status", status: 'in-progress', getOppositeOfStatus: true }, resourceAuth)
                     }
                 }
 
@@ -105,7 +105,7 @@ export default function Page() {
         }
         search()
 
-    }, [session, userDepartmentCompanySelection, refreshObj["clientRequests"]])
+    }, [session, userDepartmentCompanySelection, refreshObj["clientRequests"], resourceAuth])
 
     //send ws update
     useEffect(() => {

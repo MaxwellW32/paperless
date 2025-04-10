@@ -1,10 +1,10 @@
 "use client"
-import { checklistItemFormType, checklistItemType, clientRequest, clientRequestAuthType, companyAuthType, department, refreshObjType, refreshWSObjType, userDepartmentCompanySelection } from '@/types'
+import { checklistItemFormType, checklistItemType, clientRequest, clientRequestAuthType, companyAuthType, department, refreshObjType, refreshWSObjType, resourceAuthType, userDepartmentCompanySelection } from '@/types'
 import React from 'react'
 import styles from "./style.module.css"
 import ConfirmationBox from '../confirmationBox/ConfirmationBox'
 import { useAtom } from 'jotai'
-import { refreshObjGlobal, refreshWSObjGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
+import { refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
 import { useSession } from 'next-auth/react'
 import { updateClientRequests, updateClientRequestsChecklist } from '@/serverFunctions/handleClientRequests'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
@@ -17,6 +17,8 @@ import { addTapes, updateTapes } from '@/serverFunctions/handleTapes'
 
 export default function DashboardClientRequest({ eachClientRequest, viewButtonFunction, editButtonFunction, seenDepartment, ...elProps }: { eachClientRequest: clientRequest, viewButtonFunction?: () => void, editButtonFunction?: () => void, seenDepartment?: department } & React.HTMLAttributes<HTMLDivElement>) {
     const { data: session } = useSession()
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
 
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
@@ -119,45 +121,50 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
 
                     <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='request completed!'
                         runAction={async () => {
-                            await updateClientRequests(eachClientRequest.id, {
-                                status: "completed"
-                            }, { clientRequestIdBeingAccessed: eachClientRequest.id, closingRequest: true, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }, true, true)
+                            try {
+                                if (resourceAuth === undefined) throw new Error("not seeing auth")
 
-                            //upload tapes to db
-                            const clientForms: checklistItemFormType[] = eachClientRequest.checklist.filter(eachChecklistFilter => eachChecklistFilter.type === "form")
+                                await updateClientRequests(eachClientRequest.id, {
+                                    status: "completed"
+                                }, resourceAuth, true, false)
 
-                            clientForms.map(async eachClientForm => {
-                                if (eachClientForm.form.type === "tapeDeposit") {
-                                    if (eachClientForm.form.data === null) return
+                                //upload tapes to db
+                                const clientForms: checklistItemFormType[] = eachClientRequest.checklist.filter(eachChecklistFilter => eachChecklistFilter.type === "form")
 
-                                    eachClientForm.form.data.newTapes.map(async eachNewTape => {
-                                        const companyAuth: companyAuthType = { companyIdBeingAccessed: eachNewTape.companyId, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }
+                                clientForms.map(async eachClientForm => {
+                                    if (eachClientForm.form.type === "tapeDeposit") {
+                                        if (eachClientForm.form.data === null) return
 
-                                        //update tape location
-                                        eachNewTape.tapeLocation = "in-vault"
+                                        eachClientForm.form.data.newTapes.map(async eachNewTape => {
+                                            //update tape location
+                                            eachNewTape.tapeLocation = "in-vault"
 
-                                        if (eachNewTape.id !== undefined) {
-                                            //update tape
-                                            await updateTapes(eachNewTape.id, eachNewTape, companyAuth)
+                                            if (eachNewTape.id !== undefined) {
+                                                //update tape
+                                                await updateTapes(eachNewTape.id, eachNewTape, resourceAuth)
 
 
-                                        } else {
-                                            //new tape to db
-                                            await addTapes(eachNewTape, companyAuth)
-                                        }
+                                            } else {
+                                                //new tape to db
+                                                await addTapes(eachNewTape, resourceAuth)
+                                            }
 
-                                        //update locally
-                                        refreshObjSet(prevRefreshObj => {
-                                            return updateRefreshObj(prevRefreshObj, "clientRequests")
+                                            //update locally
+                                            refreshObjSet(prevRefreshObj => {
+                                                return updateRefreshObj(prevRefreshObj, "clientRequests")
+                                            })
+
+                                            //send off ws
+                                            refreshWSObjSet(prevWSRefreshObj => {
+                                                return updateRefreshObj(prevWSRefreshObj, "clientRequests")
+                                            })
                                         })
+                                    }
+                                })
 
-                                        //send off ws
-                                        refreshWSObjSet(prevWSRefreshObj => {
-                                            return updateRefreshObj(prevWSRefreshObj, "clientRequests")
-                                        })
-                                    })
-                                }
-                            })
+                            } catch (error) {
+                                consoleAndToastError(error)
+                            }
                         }}
                     />
                 </>

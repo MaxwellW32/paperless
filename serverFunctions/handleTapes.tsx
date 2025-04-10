@@ -1,14 +1,14 @@
 "use server"
 import { db } from "@/db";
 import { eq, ne, sql } from "drizzle-orm";
-import { ensureCanAccessTape, } from "./handleAuth";
-import { companyAuthType, newTape, newTapeSchema, tape, tapeSchema, tapeLocation, updateTape } from "@/types";
+import { ensureCanAccessResource } from "./handleAuth";
+import { newTape, newTapeSchema, tape, tapeSchema, tapeLocation, updateTape, resourceAuthType } from "@/types";
 import { tapes } from "@/db/schema";
 import { interpretAuthResponseAndError } from "@/utility/utility";
 
-export async function addTapes(newTapeObj: newTape, companyAuth: companyAuthType): Promise<tape> {
+export async function addTapes(newTapeObj: newTape, resourceAuth: resourceAuthType): Promise<tape> {
     //security check  
-    const authResponse = await ensureCanAccessTape(companyAuth, "c")
+    const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: "" }, resourceAuth, "c")
     interpretAuthResponseAndError(authResponse)
 
     newTapeSchema.parse(newTapeObj)
@@ -22,9 +22,9 @@ export async function addTapes(newTapeObj: newTape, companyAuth: companyAuthType
     return addedTape
 }
 
-export async function updateTapes(tapeId: tape["id"], tapeObj: Partial<updateTape>, companyAuth: companyAuthType): Promise<tape> {
+export async function updateTapes(tapeId: tape["id"], tapeObj: Partial<updateTape>, resourceAuth: resourceAuthType): Promise<tape> {
     //security check  
-    const authResponse = await ensureCanAccessTape(companyAuth, "u")
+    const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: tapeId }, resourceAuth, "u")
     interpretAuthResponseAndError(authResponse)
 
     //validation
@@ -39,12 +39,12 @@ export async function updateTapes(tapeId: tape["id"], tapeObj: Partial<updateTap
     return result
 }
 
-export async function getSpecificTapes(tapeId: tape["id"], companyAuth: companyAuthType, runAuth = true): Promise<tape | undefined> {
+export async function getSpecificTapes(tapeId: tape["id"], resourceAuth: resourceAuthType, runAuth = true): Promise<tape | undefined> {
     tapeSchema.shape.id.parse(tapeId)
 
     if (runAuth) {
         //security check  
-        const authResponse = await ensureCanAccessTape(companyAuth, "r")
+        const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: tapeId }, resourceAuth, "r")
         interpretAuthResponseAndError(authResponse)
     }
 
@@ -55,9 +55,9 @@ export async function getSpecificTapes(tapeId: tape["id"], companyAuth: companyA
     return result
 }
 
-export async function getTapes(option: { type: "mediaLabel", mediaLabel: string } | { type: "status", status: tapeLocation, getOppositeOfStatus: boolean } | { type: "all" }, companyAuth: companyAuthType, limit = 50, offset = 0): Promise<tape[]> {
+export async function getTapes(option: { type: "mediaLabel", mediaLabel: string } | { type: "status", status: tapeLocation, getOppositeOfStatus: boolean } | { type: "all" }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<tape[]> {
     //security check  
-    const authResponse = await ensureCanAccessTape(companyAuth, "ra")
+    const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: "" }, resourceAuth, "ra")
     interpretAuthResponseAndError(authResponse)
 
     if (option.type === "mediaLabel") {
@@ -93,9 +93,9 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string 
     }
 }
 
-export async function deleteTapes(tapeId: tape["id"]) {
+export async function deleteTapes(tapeId: tape["id"], resourceAuth: resourceAuthType) {
     //security check  
-    const authResponse = await ensureCanAccessTape({}, "d")
+    const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: tapeId }, resourceAuth, "d")
     interpretAuthResponseAndError(authResponse)
 
     //validation

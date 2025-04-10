@@ -1,0 +1,10 @@
+
+const [companyExpectedResource,] = useState<expectedResourceType>({ type: "company", companyId: params.id })
+const companiesAuthResponse = useResourceAuth(companyExpectedResource)
+const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
+const authResponse = await ensureCanAccessResource({type: "clientRequests", clientRequestId:clientRequestId},resourceAuth, "u")
+
+
+
+if (resourceAuth === undefined) throw new Error("not seeing auth")

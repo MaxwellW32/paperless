@@ -1,16 +1,16 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { checklistItemType, clientRequest, clientRequestAuthType, clientRequestSchema, clientRequestStatusType, company, companyAuthType, companySchema, department, newClientRequest, newClientRequestSchema, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { checklistItemType, clientRequest, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, resourceAuthType, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
 import { eq, and, ne } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
-import { ensureCanAccessClientRequest, ensureUserIsAdmin, sessionCheckWithError } from "./handleAuth"
+import { ensureCanAccessResource } from "./handleAuth"
 import { interpretAuthResponseAndError } from "@/utility/utility"
 import { getSpecificDepartment } from "./handleDepartments"
 
-export async function addClientRequests(newClientRequestObj: newClientRequest, clientRequestAuth: clientRequestAuthType, runAutomation = true): Promise<clientRequest> {
+export async function addClientRequests(newClientRequestObj: newClientRequest, resourceAuth: resourceAuthType, runAutomation = true): Promise<clientRequest> {
     //security check - ensures only admin or elevated roles can make change
-    const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "c")
+    const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: "" }, resourceAuth, "c")
     const { session } = interpretAuthResponseAndError(authResponse)
 
     newClientRequestSchema.parse(newClientRequestObj)
@@ -30,11 +30,10 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, c
     return addedClientRequest
 }
 
-export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, clientRequestAuth: clientRequestAuthType, runAutomation = true, runAuth = true): Promise<clientRequest> {
+export async function updateClientRequests(clientRequestId: clientRequest["id"], updatedClientRequestObj: Partial<updateClientRequest>, resourceAuth: resourceAuthType, runAutomation = true, runAuth = true): Promise<clientRequest> {
     if (runAuth) {
         //security check
-        const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "u")
-        //ensure its proper auth and not string error
+        const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: clientRequestId }, resourceAuth, "u")
         interpretAuthResponseAndError(authResponse)
     }
 
@@ -53,17 +52,17 @@ export async function updateClientRequests(clientRequestId: clientRequest["id"],
     return updatedClientRequest
 }
 
-export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, clientRequestAuth: clientRequestAuthType, runAutomation = true, runAuth = true): Promise<clientRequest> {
+export async function updateClientRequestsChecklist(clientRequestId: clientRequest["id"], updatedChecklistItem: checklistItemType, indexToUpdate: number, resourceAuth: resourceAuthType, runAutomation = true, runAuth = true): Promise<clientRequest> {
     if (runAuth) {
         //security check
-        const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "u")
+        const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: clientRequestId }, resourceAuth, "u")
         interpretAuthResponseAndError(authResponse)
     }
 
     clientRequestSchema.shape.id.parse(clientRequestId)
 
     //get client request
-    const seenClientRequest = await getSpecificClientRequest(clientRequestId, clientRequestAuth, runAuth)
+    const seenClientRequest = await getSpecificClientRequest(clientRequestId, resourceAuth, runAuth)
     if (seenClientRequest === undefined) throw new Error("not seeing client request")
 
     //validation
@@ -72,12 +71,12 @@ export async function updateClientRequestsChecklist(clientRequestId: clientReque
     }
 
     //send update
-    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, clientRequestAuth, runAutomation, runAuth)
+    const updatedClientRequest = await updateClientRequests(clientRequestId, { checklist: seenClientRequest.checklist }, resourceAuth, runAutomation, runAuth)
     return updatedClientRequest
 }
 
-export async function deleteClientRequests(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType) {
-    const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "d")
+export async function deleteClientRequests(clientRequestId: clientRequest["id"], resourceAuth: resourceAuthType,) {
+    const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: clientRequestId }, resourceAuth, "d")
     interpretAuthResponseAndError(authResponse)
 
     //validation
@@ -86,12 +85,12 @@ export async function deleteClientRequests(clientRequestId: clientRequest["id"],
     await db.delete(clientRequests).where(eq(clientRequests.id, clientRequestId));
 }
 
-export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], clientRequestAuth: clientRequestAuthType, runAuth = true): Promise<clientRequest | undefined> {
+export async function getSpecificClientRequest(clientRequestId: clientRequest["id"], resourceAuth: resourceAuthType, runAuth = true): Promise<clientRequest | undefined> {
     clientRequestSchema.shape.id.parse(clientRequestId)
 
     if (runAuth) {
         //security check
-        const authResponse = await ensureCanAccessClientRequest(clientRequestAuth, "r")
+        const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: clientRequestId }, resourceAuth, "r")
         interpretAuthResponseAndError(authResponse)
     }
 
@@ -105,10 +104,13 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
     return result
 }
 
-export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"], companyAuth: companyAuthType, } | { type: "all" }, filter: { type: "status", status: clientRequestStatusType, getOppositeOfStatus: boolean } | { type: "date" }, limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] } | { type: "all" }, filter: { type: "status", status: clientRequestStatusType, getOppositeOfStatus: boolean } | { type: "date" }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
+    const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: "" }, resourceAuth, "ra")
+    const { session } = interpretAuthResponseAndError(authResponse)
+
     if (option.type === "user") {
         //security check
-        await ensureUserIsAdmin()
+        if (session.user.accessLevel !== "admin") throw new Error("need to be admin")
 
         //make sure you are that user
         userSchema.shape.id.parse(option.userId)
@@ -125,9 +127,6 @@ export async function getClientRequests(option: { type: "user", userId: user["id
         return results
 
     } else if (option.type === "company") {
-        //security check
-        await sessionCheckWithError()
-
         companySchema.shape.id.parse(option.companyId)
 
         const results = await db.query.clientRequests.findMany({
@@ -143,7 +142,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
 
     } else if (option.type === "all") {
         //security check
-        await ensureUserIsAdmin()
+        if (session.user.accessLevel !== "admin") throw new Error("need to be admin")
 
         const results = await db.query.clientRequests.findMany({
             limit: limit,
@@ -162,9 +161,12 @@ export async function getClientRequests(option: { type: "user", userId: user["id
     }
 }
 
-export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
+    //security check
+    const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: "" }, resourceAuth, "ra")
+    const { session } = interpretAuthResponseAndError(authResponse)
+
     //security check - ensure admin / department user only
-    const session = await sessionCheckWithError()
     if (session.user.accessLevel !== "admin" && !session.user.fromDepartment) {
         throw new Error("no auth as company user")
     }
@@ -248,7 +250,7 @@ export async function runChecklistAutomation(clientRequestId: clientRequest["id"
         latestChecklistItem.completed = true
 
         //update
-        const newUpdatedClientRequest = await updateClientRequestsChecklist(clientRequestId, latestChecklistItem, latestChecklistItemIndex, { clientRequestIdBeingAccessed: "" }, false, false)
+        const newUpdatedClientRequest = await updateClientRequestsChecklist(clientRequestId, latestChecklistItem, latestChecklistItemIndex, {}, false, false)
 
         //update checklist 
         checklist = newUpdatedClientRequest.checklist

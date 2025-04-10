@@ -6,12 +6,16 @@ import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import TextInput from '../textInput/TextInput'
 import { z } from "zod"
-import { company, companySchema, newCompany, newCompanySchema, smallAdminUpdateCompanySchema, updateCompanySchema } from '@/types'
-import { ensureCanAccessCompany } from '@/serverFunctions/handleAuth'
+import { company, companySchema, newCompany, newCompanySchema, resourceAuthType, smallAdminUpdateCompanySchema, updateCompanySchema } from '@/types'
+import { ensureCanAccessResource } from '@/serverFunctions/handleAuth'
 import { addCompanies, updateCompanies } from '@/serverFunctions/handleCompanies'
 import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray/SimpleDisplayStringArray'
+import { useAtom } from 'jotai'
+import { resourceAuthGlobal } from '@/utility/globalState'
 
 export default function AddEditCompany({ sentCompany }: { sentCompany?: company }) {
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
     const [localUpdateSchema, localUpdateSchemaSet] = useState<z.ZodSchema | undefined>()
 
     const initialFormObj: newCompany = {
@@ -32,9 +36,9 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
     useEffect(() => {
         const search = async () => {
             try {
-                if (sentCompany === undefined) return
+                if (sentCompany === undefined || resourceAuth === undefined) return
 
-                const authResponse = await ensureCanAccessCompany({ companyIdBeingAccessed: sentCompany.id }, "u")
+                const authResponse = await ensureCanAccessResource({ type: "company", companyId: sentCompany.id }, resourceAuth, "u")
                 const { session, accessLevel } = interpretAuthResponseAndError(authResponse)
 
                 if (session.user.accessLevel === "admin") {
@@ -52,7 +56,7 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
         }
         search()
 
-    }, [sentCompany?.id])
+    }, [sentCompany?.id, resourceAuth])
 
     //handle changes from above
     useEffect(() => {
@@ -93,6 +97,7 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
 
     async function handleSubmit() {
         try {
+            if (resourceAuth === undefined) throw new Error("not seeing auth")
             toast.success("submittting")
 
             //new department
@@ -100,7 +105,7 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
                 const validatedNewDepartment = newCompanySchema.parse(formObj)
 
                 //send up to server
-                await addCompanies(validatedNewDepartment)
+                await addCompanies(validatedNewDepartment, resourceAuth)
 
                 toast.success("submitted")
                 formObjSet(deepClone(initialFormObj))
@@ -112,7 +117,7 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
                 const validatedUpdatedDepartment = localUpdateSchema.parse(formObj)
 
                 //update
-                await updateCompanies(sentCompany.id, validatedUpdatedDepartment)
+                await updateCompanies(sentCompany.id, validatedUpdatedDepartment, resourceAuth)
 
                 toast.success("company updated")
             }

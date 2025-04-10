@@ -6,12 +6,16 @@ import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray/SimpleDisplayStringArray'
 import { getUsers } from '@/serverFunctions/handleUser'
-import { company, companyAccessLevel, newUserToCompany, newUserToCompanySchema, updateUserToCompanySchema, user, userToCompany, userToCompanySchema } from '@/types'
+import { company, companyAccessLevel, newUserToCompany, newUserToCompanySchema, resourceAuthType, updateUserToCompanySchema, user, userToCompany, userToCompanySchema } from '@/types'
 import { addUsersToCompanies, updateUsersToCompanies } from '@/serverFunctions/handleUsersToCompanies'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 import { ensureUserCanBeAddedToCompany } from '@/utility/validation'
+import { useAtom } from 'jotai'
+import { resourceAuthGlobal } from '@/utility/globalState'
 
 export default function AddEditUserCompany({ sentUserCompany, companiesStarter, submissionFunction }: { sentUserCompany?: userToCompany, companiesStarter: company[], submissionFunction?: () => void }) {
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
     const initialFormObj: newUserToCompany = {
         userId: "",
         companyId: "",
@@ -184,9 +188,11 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
                         <button className='button3'
                             onClick={async () => {
                                 try {
+                                    if (resourceAuth === undefined) throw new Error("not seeing auth")
+
                                     toast.success("searching")
 
-                                    companiesSet(await getCompanies({}))
+                                    companiesSet(await getCompanies(resourceAuth))
 
                                 } catch (error) {
                                     consoleAndToastError(error)

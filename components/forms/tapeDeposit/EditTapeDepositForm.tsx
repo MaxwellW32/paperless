@@ -1,4 +1,5 @@
-import { tapeDepositFormSchema, tapeDepositFormType, tapeDepositFormNonNullDataType, company, tape, companyAuthType } from '@/types'
+"use client"
+import { tapeDepositFormSchema, tapeDepositFormType, tapeDepositFormNonNullDataType, company, tape, companyAuthType, resourceAuthType } from '@/types'
 import { deepClone } from '@/utility/utility'
 import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
@@ -9,12 +10,16 @@ import { getTapes } from '@/serverFunctions/handleTapes'
 import toast from 'react-hot-toast'
 import ShowMore from '@/components/showMore/ShowMore'
 import ViewTape from '@/components/tapes/ViewTape'
+import { useAtom } from 'jotai'
+import { resourceAuthGlobal } from '@/utility/globalState'
 
 //on deposit search tapes from db
 //if client chooses a tape set it - id will be there
 //when wrapping up request add tapes in list to db - update tapes with id
 
-export function EditTapeDepositForm({ seenFormData, handleFormUpdate, seenCompanyId, companyAuth }: { seenFormData: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormNonNullDataType) => void, seenCompanyId: company["id"], companyAuth: companyAuthType }) {
+export function EditTapeDepositForm({ seenFormData, handleFormUpdate, seenCompanyId }: { seenFormData: tapeDepositFormType["data"], handleFormUpdate: (updatedFormData: tapeDepositFormNonNullDataType) => void, seenCompanyId: company["id"] }) {
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
     const initialFormObj: tapeDepositFormNonNullDataType = {
         newTapes: [],
     }
@@ -83,7 +88,9 @@ export function EditTapeDepositForm({ seenFormData, handleFormUpdate, seenCompan
 
     async function handleSearchTapes() {
         try {
-            const seenTapes = await getTapes({ type: "status", status: "with-client", getOppositeOfStatus: false }, companyAuth)
+            if (resourceAuth === undefined) throw new Error("not seeing auth")
+
+            const seenTapes = await getTapes({ type: "status", status: "with-client", getOppositeOfStatus: false }, resourceAuth)
             tapesSet(seenTapes)
 
         } catch (error) {

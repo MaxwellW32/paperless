@@ -4,10 +4,10 @@ import styles from "./style.module.css"
 import { deepClone, offsetTime, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType, clientRequestSchema } from '@/types'
+import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType, clientRequestSchema, resourceAuthType } from '@/types'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { useAtom } from 'jotai'
-import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
+import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal } from '@/utility/globalState'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 import { useSession } from 'next-auth/react'
 import { getUsersToCompaniesWithVisitAccess } from '@/serverFunctions/handleUsersToCompanies'
@@ -17,6 +17,8 @@ import { EditTapeDepositForm } from '../forms/tapeDeposit/EditTapeDepositForm'
 import TextInput from '../textInput/TextInput'
 
 export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department }) {
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
     const { data: session } = useSession()
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
 
@@ -204,6 +206,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         try {
             //send off new client request
             if (formObj.companyId === undefined) throw new Error("not seeing company id")
+            if (resourceAuth === undefined) throw new Error("not seeing auth")
 
             toast.success("submittting")
 
@@ -217,7 +220,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 validatedNewClientRequest.checklist = markLatestFormAsComplete(validatedNewClientRequest.checklist)
 
                 //send up to server
-                await addClientRequests(validatedNewClientRequest, { companyIdForAuth: formObj.companyId, departmentIdForAuth: department !== undefined ? department.id : undefined })
+                await addClientRequests(validatedNewClientRequest, resourceAuth)
 
                 toast.success("submitted")
 
@@ -311,9 +314,11 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         <button className='button1'
                             onClick={async () => {
                                 try {
+                                    if (resourceAuth === undefined) throw new Error("not seeing auth")
+
                                     toast.success("searching")
 
-                                    companiesSet(await getCompanies({ departmentIdForAuth: department !== undefined && department.canManageRequests ? department.id : undefined }))
+                                    companiesSet(await getCompanies(resourceAuth))
 
                                 } catch (error) {
                                     consoleAndToastError(error)

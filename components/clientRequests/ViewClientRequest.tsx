@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { clientRequest, company, department, user, userDepartmentCompanySelection } from '@/types'
+import { clientRequest, company, department, resourceAuthType, user, userDepartmentCompanySelection } from '@/types'
 import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import Moment from 'react-moment';
 import { getSpecificUsers } from '@/serverFunctions/handleUser'
@@ -9,10 +9,12 @@ import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/Dynami
 import { ViewTapeDepositForm } from '../forms/tapeDeposit/ViewTapeDepositForm'
 import { formatLocalDateTime } from '@/utility/utility'
 import { useAtom } from 'jotai'
-import { userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
+import { resourceAuthGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
 import { useSession } from 'next-auth/react'
 
 export default function ViewClientRequest({ sentClientRequest, department }: { sentClientRequest: clientRequest, department?: department }) {
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
     const [seenCompany, seenCompanySet] = useState<company | undefined>()
     const [seenCompanyUsers, seenCompanyUsersSet] = useState<user[]>([])
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
@@ -21,13 +23,13 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
     //search company
     useEffect(() => {
         const search = async () => {
-            if (sentClientRequest === undefined) return
+            if (sentClientRequest === undefined || resourceAuth === undefined) return
 
-            seenCompanySet(await getSpecificCompany(sentClientRequest.companyId, { companyIdBeingAccessed: sentClientRequest.companyId, departmentIdForAuth: department !== undefined ? department.id : undefined }))
+            seenCompanySet(await getSpecificCompany(sentClientRequest.companyId, resourceAuth))
         }
         search()
 
-    }, [sentClientRequest.companyId])
+    }, [resourceAuth, sentClientRequest.companyId])
 
     //search company users
     useEffect(() => {

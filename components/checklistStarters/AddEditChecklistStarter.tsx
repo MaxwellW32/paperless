@@ -115,6 +115,19 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
         })
     }
 
+    async function handleGetCompanies() {
+        try {
+            if (resourceAuth === undefined) throw new Error("not seeing auth")
+
+            toast.success("searching")
+
+            companiesSet(await getCompanies(resourceAuth))
+
+        } catch (error) {
+            consoleAndToastError(error)
+        }
+    }
+
     return (
         <form {...elProps} className={styles.form} action={() => { }}>
             {formObj.type !== undefined && (
@@ -298,11 +311,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                     <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
 
                                                         <button className='button1'
-                                                            onClick={async () => {
-                                                                toast.success("searching")
-
-                                                                companiesSet(await getCompanies({}))
-                                                            }}
+                                                            onClick={handleGetCompanies}
                                                         >companies</button>
 
                                                         <button className='button1'
@@ -560,11 +569,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                     <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
 
                                                         <button className='button1'
-                                                            onClick={async () => {
-                                                                toast.success("searching")
-
-                                                                companiesSet(await getCompanies({}))
-                                                            }}
+                                                            onClick={handleGetCompanies}
                                                         >companies</button>
 
                                                         <button className='button1'
