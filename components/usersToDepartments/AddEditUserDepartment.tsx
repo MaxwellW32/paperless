@@ -5,13 +5,17 @@ import { deepClone } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray/SimpleDisplayStringArray'
-import { department, newUserToDepartment, newUserToDepartmentSchema, updateUserToDepartmentSchema, user, userDepartmentAccessLevel, userToDepartment, userToDepartmentSchema } from '@/types'
+import { department, newUserToDepartment, newUserToDepartmentSchema, resourceAuthType, updateUserToDepartmentSchema, user, userDepartmentAccessLevel, userToDepartment, userToDepartmentSchema } from '@/types'
 import { addUsersToDepartments, updateUsersToDepartments } from '@/serverFunctions/handleUsersToDepartments'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { getUsers } from '@/serverFunctions/handleUser'
 import { ensureUserCanBeAddedToDepartment } from '@/utility/validation'
+import { useAtom } from 'jotai'
+import { resourceAuthGlobal } from '@/utility/globalState'
 
 export default function AddEditUserDepartment({ sentUserDepartment, departmentsStarter, submissionFunction }: { sentUserDepartment?: userToDepartment, departmentsStarter: department[], submissionFunction?: () => void }) {
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
     const initialFormObj: newUserToDepartment = {
         userId: "",
         departmentId: "",
@@ -35,6 +39,7 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
 
     const [activeDepartmentId, activeDepartmentIdSet] = useState<department["id"] | undefined>(undefined)
     const [departments, departmentsSet] = useState<department[]>([...departmentsStarter])
+
 
     //handle changes from above
     useEffect(() => {
@@ -183,9 +188,11 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
                         <button className='button3'
                             onClick={async () => {
                                 try {
+                                    if (resourceAuth === undefined) return
+
                                     toast.success("searching")
 
-                                    departmentsSet(await getDepartments())
+                                    departmentsSet(await getDepartments(resourceAuth))
 
                                 } catch (error) {
                                     consoleAndToastError(error)

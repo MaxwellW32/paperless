@@ -33,99 +33,6 @@ export async function ensureUserIsAdmin() {
     return session
 }
 
-export async function ensureCanAccessDepartment(departmentAuth: departmentAuthType, crudOption: crudOptionType): Promise<string | authAccessLevelResponseType> {
-    //security check - ensures only admin or elevated roles can make change
-    const session = await sessionCheckWithError()
-
-    //admin pass
-    if (session.user.accessLevel === "admin") return { session, accessLevel: session.user.accessLevel }
-
-    if (crudOption === "c") {
-        //who can read create a department
-        //admin 
-        //company user - no
-        //department user - no
-
-        //if not admin - can't make company
-        if (session.user.accessLevel !== "admin") return "need to be admin to create department"
-
-        return { session, accessLevel: session.user.accessLevel }
-
-    } else if (crudOption === "r") {
-        //who can read a department
-        //admin 
-        //company user - no
-        //department user - once verified in the department they're requesting
-
-        if (!session.user.fromDepartment) {
-            //client
-            return "client cant access department record"
-
-        } else {
-            //from department
-
-            //validation
-            departmentSchema.shape.id.parse(departmentAuth.departmentIdBeingAccessed)
-
-            //ensure user exists in department
-            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: departmentAuth.departmentIdBeingAccessed, runSecurityCheck: false })
-            if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
-
-            return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
-        }
-
-    } else if (crudOption === "ra") {
-        //who can read multiple department records
-        //admin
-        //company user - no
-        //department user - no
-
-        if (session.user.accessLevel !== "admin") return "not authorised to access department records"
-
-        return { session, accessLevel: session.user.accessLevel }
-
-    } else if (crudOption === "u") {
-        //who can update department
-        //admin 
-        //company user - no
-        //department user - admin only 
-
-        if (!session.user.fromDepartment) {
-            //client
-            return "client cant update department"
-
-        } else {
-            //from department
-
-            //validation
-            departmentSchema.shape.id.parse(departmentAuth.departmentIdBeingAccessed)
-
-            //ensure user exists in department
-            const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: departmentAuth.departmentIdBeingAccessed, runSecurityCheck: false })
-            if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
-
-            //ensure only department admin can update
-            if (seenUserToDepartment.departmentAccessLevel !== "admin") return "not authorised to update"
-
-            return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
-        }
-
-    } else if (crudOption === "d") {
-        //who can delete department
-        //admin 
-        //company user - no
-        //department user - no 
-
-        //if not admin - can't delete department
-        if (session.user.accessLevel !== "admin") return "need to be admin to delete department"
-
-        return { session, accessLevel: session.user.accessLevel }
-
-    } else {
-        return "invalid selection"
-    }
-}
-
 export async function ensureCanAccessCompany(companyAuth: companyAuthType, crudOption: crudOptionType): Promise<string | authAccessLevelResponseType> {
     //security check - ensures only admin or elevated roles can make change
     const session = await sessionCheckWithError()
@@ -464,7 +371,7 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
         //admin pass
         if (session.user.accessLevel === "admin") return { session, accessLevel: session.user.accessLevel }
 
-        if (resource === undefined) return "user not admin - need to pass a specific resource to access"
+        if (resource.type === "admin" && session.user.accessLevel !== "admin") return "need to be admin for this resource selection"
 
         if (resource.type === "department") {
             if (crudOption === "c") {
@@ -751,7 +658,7 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
                     //enusre checklist is waiting for client change
                     if (latestChecklistItem === undefined) {
                         //ensure department has edit permissions
-                        const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, false)
+                        const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, {}, false)
                         if (seenDepartment === undefined) return "not seeing department"
 
                         //ensure department can make changes
@@ -787,9 +694,6 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
                 if (localSession.user.accessLevel === "admin") {
                     return { session: localSession, accessLevel: localSession.user.accessLevel }
                 }
-
-                //user not admin and didnt pass a localResource
-                if (localResource === undefined) return "not seeing local resource"
 
                 if (localResource.type === "tape") {
                     if (!localSession.user.fromDepartment) {
@@ -893,9 +797,6 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
     }
 }
 
-
-
-
 export async function checkIfDepartmentHasManageAccess(session: Session, departmentAuthId: department["id"]): Promise<string | authAccessLevelResponseType> {
     departmentSchema.shape.id.parse(departmentAuthId)
 
@@ -904,7 +805,7 @@ export async function checkIfDepartmentHasManageAccess(session: Session, departm
     if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
 
     //ensure department has edit permissions
-    const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, false)
+    const seenDepartment = await getSpecificDepartment(seenUserToDepartment.departmentId, {}, false)
     if (seenDepartment === undefined) return "not seeing department"
 
     //ensure department can make changes

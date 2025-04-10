@@ -76,6 +76,8 @@ export type tapeAuthType = { companyIdBeingAccessed?: company["id"], departmentI
 export type resourceAuthType = { compantyIdForAuth?: company["id"], departmentIdForAuth?: department["id"] }
 export type resourceAuthResponseType = { [key in crudOptionType]: boolean | undefined }
 export type expectedResourceType = {
+    type: "admin",
+} | {
     type: "company",
     companyId: company["id"]
 } | {
@@ -87,7 +89,7 @@ export type expectedResourceType = {
 } | {
     type: "tape",
     tapeId: tape["id"]
-} | undefined
+}
 
 export type userDepartmentCompanySelection = {
     type: "userDepartment",

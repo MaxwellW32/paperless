@@ -1,17 +1,41 @@
+"use client"
 import AddEditDepartment from '@/components/departments/AddEditDepartment'
-import { ensureCanAccessDepartment } from '@/serverFunctions/handleAuth'
+import useResourceAuth from '@/components/resourceAuth/UseLoad'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
-import { department } from '@/types'
-import { interpretAuthResponseAndBool } from '@/utility/utility'
-import React from 'react'
+import { department, expectedResourceType, resourceAuthType } from '@/types'
+import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
+import { resourceAuthGlobal } from '@/utility/globalState'
+import { useAtom } from 'jotai'
+import React, { useEffect, useState } from 'react'
 
-export default async function Page({ params }: { params: { id: string } }) {
-    const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: params.id }, "u")
-    const canEditDepartment = interpretAuthResponseAndBool(authResponse)
+export default function Page({ params }: { params: { id: string } }) {
+    //check if i can create a request
+    const [departmentExpectedResource,] = useState<expectedResourceType>({ type: "department", departmentId: params.id })
+    const departmentsAuthResponse = useResourceAuth(departmentExpectedResource)
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
-    const seenDepartment: department | undefined = canEditDepartment ? await getSpecificDepartment(params.id) : undefined
+    const [seenDepartment, seenDepartmentSet] = useState<department | undefined>()
 
-    if (!canEditDepartment) {
+    //search seenDepartment
+    useEffect(() => {
+        const search = async () => {
+            try {
+                //only run when can run
+                if (resourceAuth === undefined || departmentsAuthResponse["u"] !== true) return
+
+                seenDepartmentSet(await getSpecificDepartment(params.id, resourceAuth))
+
+            } catch (error) {
+                consoleAndToastError(error)
+            }
+        }
+        search()
+
+    }, [departmentsAuthResponse["u"]])
+
+    if (departmentsAuthResponse["u"] === undefined) return null
+
+    if (departmentsAuthResponse["u"] === false) {
         return <p>not authorised to edit department</p>
     }
 

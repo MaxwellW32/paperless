@@ -4,14 +4,18 @@ import styles from "./style.module.css"
 import { deepClone, interpretAuthResponseAndError } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { department, departmentSchema, newDepartment, newDepartmentSchema, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from '@/types'
+import { department, departmentSchema, newDepartment, newDepartmentSchema, resourceAuthType, smallAdminUpdateDepartmentSchema, updateDepartmentSchema } from '@/types'
 import { addDepartments, updateDepartments } from '@/serverFunctions/handleDepartments'
 import TextInput from '../textInput/TextInput'
-import { ensureCanAccessDepartment } from '@/serverFunctions/handleAuth'
 import { z } from "zod"
 import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray/SimpleDisplayStringArray'
+import { useAtom } from 'jotai'
+import { resourceAuthGlobal } from '@/utility/globalState'
+import { ensureCanAccessResource } from '@/serverFunctions/handleAuth'
 
 export default function AddEditDepartment({ sentDepartment }: { sentDepartment?: department }) {
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
     const [localUpdateSchema, localUpdateSchemaSet] = useState<z.ZodSchema | undefined>()
 
     const initialFormObj: newDepartment = {
@@ -31,9 +35,9 @@ export default function AddEditDepartment({ sentDepartment }: { sentDepartment?:
     useEffect(() => {
         const search = async () => {
             try {
-                if (sentDepartment === undefined) return
+                if (sentDepartment === undefined || resourceAuth === undefined) return
 
-                const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: sentDepartment.id }, "u")
+                const authResponse = await ensureCanAccessResource({ type: "department", departmentId: sentDepartment.id }, resourceAuth, "u")
                 const { session, accessLevel } = interpretAuthResponseAndError(authResponse)
 
                 if (session.user.accessLevel === "admin") {
@@ -92,6 +96,8 @@ export default function AddEditDepartment({ sentDepartment }: { sentDepartment?:
 
     async function handleSubmit() {
         try {
+            if (resourceAuth === undefined) throw new Error("not seeing auth")
+
             toast.success("submittting")
 
             //new department
@@ -99,7 +105,7 @@ export default function AddEditDepartment({ sentDepartment }: { sentDepartment?:
                 const validatedNewDepartment = newDepartmentSchema.parse(formObj)
 
                 //send up to server
-                await addDepartments(validatedNewDepartment)
+                await addDepartments(validatedNewDepartment, resourceAuth)
 
                 toast.success("submitted")
                 formObjSet(deepClone(initialFormObj))
@@ -111,7 +117,7 @@ export default function AddEditDepartment({ sentDepartment }: { sentDepartment?:
                 const validatedUpdatedDepartment = localUpdateSchema.parse(formObj)
 
                 //update
-                await updateDepartments(sentDepartment.id, validatedUpdatedDepartment)
+                await updateDepartments(sentDepartment.id, validatedUpdatedDepartment, resourceAuth)
 
                 toast.success("department updated")
             }

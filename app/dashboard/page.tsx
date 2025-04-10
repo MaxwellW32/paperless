@@ -1,18 +1,17 @@
 "use client"
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, clientRequestAuthType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType, expectedResourceType } from '@/types'
+import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType, expectedResourceType, resourceAuthType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import { useAtom } from 'jotai'
-import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal } from '@/utility/globalState'
+import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal } from '@/utility/globalState'
 import { getClientRequests, getClientRequestsForDepartments } from '@/serverFunctions/handleClientRequests'
 import { useSession } from 'next-auth/react'
 import { getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import ViewClientRequest from '@/components/clientRequests/ViewClientRequest'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
-import { interpretAuthResponseAndBool, updateRefreshObj } from '@/utility/utility'
+import { updateRefreshObj } from '@/utility/utility'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
-import { ensureCanAccessClientRequest } from '@/serverFunctions/handleAuth'
 import DashboardClientRequest from '@/components/clientRequests/DashboardClientRequest'
 import useResourceAuth from '@/components/resourceAuth/UseLoad'
 
@@ -20,8 +19,10 @@ export default function Page() {
     const { data: session } = useSession()
 
     //check if i can create a request
-    const [clientRequestsExpectedResource, clientRequestsExpectedResourceSet] = useState<expectedResourceType>({ type: "clientRequests", clientRequestId: "" })
+    const [clientRequestsExpectedResource,] = useState<expectedResourceType>({ type: "clientRequests", clientRequestId: "" })
     const clientRequestsAuthResponse = useResourceAuth(clientRequestsExpectedResource)
+
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
     const [showingSideBar, showingSideBarSet] = useState(true)
     const [makingNewRequest, makingNewRequestSet] = useState(false)
@@ -118,16 +119,18 @@ export default function Page() {
 
     }, [refreshWSObj["clientRequests"]])
 
-    //search department
+    //search department - when user from a department only
     useEffect(() => {
         const search = async () => {
-            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
+            if (resourceAuth === undefined || userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userDepartment") return
 
-            seenDepartmentSet(await getSpecificDepartment(userDepartmentCompanySelection.seenUserToDepartment.departmentId))
+            seenDepartmentSet(await getSpecificDepartment(userDepartmentCompanySelection.seenUserToDepartment.departmentId, resourceAuth))
         }
         search()
 
-    }, [userDepartmentCompanySelection])
+    }, [userDepartmentCompanySelection, resourceAuth])
+
+
 
     //set viewing sidebar on desktop
     useEffect(() => {

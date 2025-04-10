@@ -193,7 +193,7 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
                 if (departmentHasManageAccess === undefined) {
                     //fix
                     //ensure department has edit permissions
-                    const seenDepartment = await getSpecificDepartment(departmentId, false)
+                    const seenDepartment = await getSpecificDepartment(departmentId, {}, false)
                     if (seenDepartment === undefined) throw new Error("not seeing department")
 
                     //set whether true/false

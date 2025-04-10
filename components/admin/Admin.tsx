@@ -1,7 +1,7 @@
 "use client"
 import React, { useRef, useState } from 'react'
 import styles from "./admin.module.css"
-import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest } from '@/types'
+import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType } from '@/types'
 import { getChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
@@ -21,12 +21,16 @@ import { getUsers } from '@/serverFunctions/handleUser'
 import AddEditClientRequest from '../clientRequests/AddEditClientRequest'
 import { getClientRequests } from '@/serverFunctions/handleClientRequests'
 import DashboardClientRequest from '../clientRequests/DashboardClientRequest'
+import { useAtom } from 'jotai'
+import { resourceAuthGlobal } from '@/utility/globalState'
 
 type schemaType = typeof schema;
 type schemaTableNamesType = keyof schemaType;
 type activeScreenType = schemaTableNamesType
 
 export default function Page() {
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
     const allTables = Object.keys(schema) as schemaTableNamesType[];
     const editableTables = allTables.filter(key => !key.endsWith("Relations") && !key.endsWith("Enum") && key !== "accounts" && key !== "sessions" && key !== "verificationTokens").sort((a, b) => a.localeCompare(b)) //get all tables defined in the schema, sort it alphabetically
 
@@ -290,9 +294,10 @@ export default function Page() {
                                     <button className='button3'
                                         onClick={async () => {
                                             try {
+                                                if (resourceAuth === undefined) return
                                                 toast.success("searching")
 
-                                                departmentsSet(await getDepartments())
+                                                departmentsSet(await getDepartments(resourceAuth))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)
@@ -410,9 +415,11 @@ export default function Page() {
                                     <button className='button3'
                                         onClick={async () => {
                                             try {
+                                                if (resourceAuth === undefined) return
+
                                                 toast.success("searching")
 
-                                                departmentsSet(await getDepartments())
+                                                departmentsSet(await getDepartments(resourceAuth))
 
                                             } catch (error) {
                                                 consoleAndToastError(error)

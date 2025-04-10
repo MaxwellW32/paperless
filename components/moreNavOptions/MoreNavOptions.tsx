@@ -7,30 +7,37 @@ import SignOutButton from "../SignOutButton"
 import { Session } from "next-auth"
 import Link from "next/link"
 import { useAtom } from "jotai"
-import { userDepartmentCompanySelection } from "@/types"
+import { expectedResourceType, userDepartmentCompanySelection } from "@/types"
 import { userDepartmentCompanySelectionGlobal } from "@/utility/globalState"
-import { ensureCanAccessCompany, ensureCanAccessDepartment } from "@/serverFunctions/handleAuth"
-import { interpretAuthResponseAndBool } from "@/utility/utility"
+import useResourceAuth from "../resourceAuth/UseLoad"
 
 export default function MoreNavOptions({ session }: { session: Session }) {
+    const [departmentExpectedResource, departmentExpectedResourceSet] = useState<expectedResourceType | undefined>(undefined)
+    const departmentsAuthResponse = useResourceAuth(departmentExpectedResource)
+
+    const [companyExpectedResource, companyExpectedResourceSet] = useState<expectedResourceType | undefined>(undefined)
+    const companiesAuthResponse = useResourceAuth(companyExpectedResource)
+
     const [showingNav, showingNavSet] = useState(false)
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
-    const [canViewEditDepartment, canViewEditDepartmentSet] = useState(false)
-    const [canViewEditCompany, canViewEditCompanySet] = useState(false)
 
-    //get canViewEditDepartment on load
+    //set starter for auth response
     useEffect(() => {
         const search = async () => {
             if (userDepartmentCompanySelection === null) return
 
             //check if non admin user can edit company/department 
             if (userDepartmentCompanySelection.type === "userDepartment") {
-                const authResponse = await ensureCanAccessDepartment({ departmentIdBeingAccessed: userDepartmentCompanySelection.seenUserToDepartment.departmentId }, "u")
-                canViewEditDepartmentSet(interpretAuthResponseAndBool(authResponse));
+                departmentExpectedResourceSet({
+                    type: "department",
+                    departmentId: userDepartmentCompanySelection.seenUserToDepartment.departmentId
+                })
 
             } else if (userDepartmentCompanySelection.type === "userCompany") {
-                const authResponse = await ensureCanAccessCompany({ companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId }, "u")
-                canViewEditCompanySet(interpretAuthResponseAndBool(authResponse));
+                companyExpectedResourceSet({
+                    type: "company",
+                    companyId: userDepartmentCompanySelection.seenUserToCompany.companyId
+                })
             }
         }
         search()
@@ -54,20 +61,22 @@ export default function MoreNavOptions({ session }: { session: Session }) {
                         <Link href={"/dashboard"}>dashboard</Link>
                     </li>
 
-                    {canViewEditDepartment && userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userDepartment" && (
+                    {userDepartmentCompanySelection !== null && (
+                        <>
+                            {departmentsAuthResponse["u"] && userDepartmentCompanySelection.type === "userDepartment" && (
+                                <li className={styles.moreIntemsItem}
+                                >
+                                    <Link href={`/departments/edit/${userDepartmentCompanySelection.seenUserToDepartment.departmentId}`}>edit department</Link>
+                                </li>
+                            )}
 
-                        <li className={styles.moreIntemsItem}
-                        >
-                            <Link href={`/departments/edit/${userDepartmentCompanySelection.seenUserToDepartment.departmentId}`}>edit department</Link>
-                        </li>
-                    )}
-
-                    {canViewEditCompany && userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany" && (
-
-                        <li className={styles.moreIntemsItem}
-                        >
-                            <Link href={`/companies/edit/${userDepartmentCompanySelection.seenUserToCompany.companyId}`}>edit company</Link>
-                        </li>
+                            {companiesAuthResponse["u"] && userDepartmentCompanySelection.type === "userCompany" && (
+                                <li className={styles.moreIntemsItem}
+                                >
+                                    <Link href={`/companies/edit/${userDepartmentCompanySelection.seenUserToCompany.companyId}`}>edit company</Link>
+                                </li>
+                            )}
+                        </>
                     )}
 
                     {session.user.accessLevel === "admin" && (

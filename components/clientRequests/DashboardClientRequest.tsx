@@ -134,7 +134,7 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                                         const companyAuth: companyAuthType = { companyIdBeingAccessed: eachNewTape.companyId, departmentIdForAuth: seenDepartment !== undefined && seenDepartment.canManageRequests ? seenDepartment.id : undefined }
 
                                         //update tape location
-                                        eachNewTape.tapeLocation === "in-vault"
+                                        eachNewTape.tapeLocation = "in-vault"
 
                                         if (eachNewTape.id !== undefined) {
                                             //update tape

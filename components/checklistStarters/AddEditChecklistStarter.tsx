@@ -4,7 +4,7 @@ import styles from "./style.module.css"
 import { deepClone } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistItemType, checklistStarter, company, department, newChecklistStarter, newChecklistStarterSchema, formTypesType, updateChecklistStarterSchema, checklistItemDynamicFormType, checklistStarterSchema } from '@/types'
+import { checklistItemType, checklistStarter, company, department, newChecklistStarter, newChecklistStarterSchema, formTypesType, updateChecklistStarterSchema, checklistItemDynamicFormType, checklistStarterSchema, resourceAuthType } from '@/types'
 import { addChecklistStarters, updateChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import ConfirmationBox from '../confirmationBox/ConfirmationBox'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
@@ -12,8 +12,12 @@ import { getCompanies } from '@/serverFunctions/handleCompanies'
 import ShowMore from '../showMore/ShowMore'
 import { MakeDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
 import TextInput from '../textInput/TextInput'
+import { useAtom } from 'jotai'
+import { resourceAuthGlobal } from '@/utility/globalState'
 
 export default function AddEditChecklistStarter({ sentChecklistStarter, submissionAction, ...elProps }: { sentChecklistStarter?: checklistStarter, submissionAction?: () => void } & HTMLAttributes<HTMLFormElement>) {
+    const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+
     const initialFormObj: newChecklistStarter = {
         type: "",
         checklist: []
@@ -303,8 +307,10 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
 
                                                         <button className='button1'
                                                             onClick={async () => {
+                                                                if (resourceAuth === undefined) return
+
                                                                 toast.success("searching")
-                                                                const seenDepartments = await getDepartments()
+                                                                const seenDepartments = await getDepartments(resourceAuth)
 
                                                                 departmentsSet(seenDepartments)
                                                             }}
@@ -563,8 +569,10 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
 
                                                         <button className='button1'
                                                             onClick={async () => {
+                                                                if (resourceAuth === undefined) return
+
                                                                 toast.success("searching")
-                                                                const seenDepartments = await getDepartments()
+                                                                const seenDepartments = await getDepartments(resourceAuth)
 
                                                                 departmentsSet(seenDepartments)
                                                             }}

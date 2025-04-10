@@ -9,7 +9,7 @@ import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 
 //tell me if i have crud auth for specific resrouces
-export default function useResourceAuth(resource: expectedResourceType) {
+export default function useResourceAuth(resource: expectedResourceType | undefined) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
     const [resourceAuthResponse, resourceAuthResponseSet] = useState<resourceAuthResponseType>({
         c: undefined,
@@ -21,7 +21,7 @@ export default function useResourceAuth(resource: expectedResourceType) {
 
     //run checks on specifc resource wanted
     useEffect(() => {
-        if (resourceAuth === undefined) return
+        if (resourceAuth === undefined || resource === undefined) return
 
         const crudOptions: crudOptionType[] = ["c", "r", "ra", "u", "d"]
 
@@ -43,7 +43,7 @@ export default function useResourceAuth(resource: expectedResourceType) {
             }
         })
 
-    }, [resourceAuth, resource?.type])
+    }, [resourceAuth, resource])
 
     return resourceAuthResponse
 }
