@@ -14,7 +14,7 @@ export default async function Nav() {
     return (
         <nav className={styles.nav}>
             <Link href={"/"}>
-                <Image alt="logo" src={logo} width={30} height={30} style={{ objectFit: "contain" }} />
+                <Image alt="logo" src={logo} width={30} height={30} priority={true} style={{ objectFit: "contain" }} />
             </Link>
 
             {seenUser !== undefined && (

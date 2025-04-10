@@ -69,10 +69,6 @@ export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema
 export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
 export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
 
-export type clientRequestAuthType = { clientRequestIdBeingAccessed?: clientRequest["id"], companyIdForAuth?: company["id"], departmentIdForAuth?: department["id"], closingRequest?: boolean }
-export type companyAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"] }
-export type departmentAuthType = { departmentIdBeingAccessed: department["id"] }
-export type tapeAuthType = { companyIdBeingAccessed?: company["id"], departmentIdForAuth?: department["id"] }
 export type resourceAuthType = { compantyIdForAuth?: company["id"], departmentIdForAuth?: department["id"] }
 export type resourceAuthResponseType = { [key in crudOptionType]: boolean | undefined }
 export type expectedResourceType = {
@@ -375,7 +371,7 @@ export type tapeDepositNewTapeType = z.infer<typeof tapeDepositNewTapeSchema>;
 export const tapeDepositFormSchema = z.object({
     type: z.literal(formTypesSchema.Values.tapeDeposit),
     data: z.object({
-        newTapes: z.array(tapeDepositNewTapeSchema).min(1, "need at least one tape to deposit"),
+        tapesInRequest: z.array(tapeDepositNewTapeSchema).min(1, "need at least one tape to deposit"),
     }).nullable(),
 });
 export type tapeDepositFormType = z.infer<typeof tapeDepositFormSchema>
@@ -384,9 +380,11 @@ export type tapeDepositFormNonNullDataType = NonNullable<tapeDepositFormType["da
 export const tapeWithdrawFormSchema = z.object({
     type: z.literal(formTypesSchema.Values.tapeWithdraw),
     data: z.object({
+        tapesToWithdraw: z.array(tapeDepositNewTapeSchema).min(1, "need at least one tape to withdraw"),
     }).nullable(),
 });
 export type tapeWithdrawFormType = z.infer<typeof tapeWithdrawFormSchema>
+export type tapeWithdrawFormNonNullDataType = NonNullable<tapeWithdrawFormType["data"]>
 
 export const equipmentDepositFormSchema = z.object({
     type: z.literal(formTypesSchema.Values.equipmentDeposit),

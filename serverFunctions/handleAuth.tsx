@@ -4,14 +4,10 @@ import { getSpecificClientRequest } from "@/serverFunctions/handleClientRequests
 import { getSpecificDepartment } from "@/serverFunctions/handleDepartments"
 import { getSpecificUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies"
 import { getSpecificUsersToDepartments } from "@/serverFunctions/handleUsersToDepartments"
-import { authAccessLevelResponseType, clientRequestAuthType, companyAuthType, departmentAuthType, departmentSchema, crudOptionType, department, expectedResourceType, resourceAuthType, companySchema } from "@/types"
+import { authAccessLevelResponseType, departmentSchema, crudOptionType, department, expectedResourceType, resourceAuthType, companySchema } from "@/types"
 import { Session } from "next-auth"
 import { getSpecificTapes } from "./handleTapes"
 import { errorZodErrorAsString } from "@/usefulFunctions/consoleErrorWithToast"
-
-//reject on no auth
-//return roles 
-//for each resource not edited by admins alone
 
 export async function sessionCheckWithError() {
     const session = await auth()
@@ -467,10 +463,34 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
             } else if (crudOption === "ra") {//same as above
                 //who can read multiple tape record
                 //admin 
-                //company user - yes if from same company
-                //department user - yes, if can manage requests
+                //company user - yes 
+                //department user - yes
 
-                return ensureClientFromCompanyAndDepartmentHasAccess(session, resource, resourceAuth)
+                if (!session.user.fromDepartment) {
+                    //client
+
+                    if (resourceAuth.compantyIdForAuth === undefined) return "provide companyId for auth"
+                    companySchema.shape.id.parse(resourceAuth.compantyIdForAuth)
+
+                    //ensure client is from same company on request
+                    const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: resourceAuth.compantyIdForAuth, runAuth: false })
+                    if (seenUserToCompany === undefined) return "not seeing seenUserToCompany info"
+
+                    return { session, accessLevel: seenUserToCompany.companyAccessLevel }
+
+                } else {
+                    //department
+
+                    //validation
+                    if (resourceAuth.departmentIdForAuth === undefined) return "not seeing departmentIdForAuth"
+                    departmentSchema.shape.id.parse(resourceAuth.departmentIdForAuth)
+
+                    //ensure user exists in department
+                    const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: resourceAuth.departmentIdForAuth, runSecurityCheck: false })
+                    if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
+
+                    return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+                }
 
             } else if (crudOption === "u") {
                 //who can update tape

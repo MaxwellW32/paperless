@@ -6,11 +6,12 @@ import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import Moment from 'react-moment';
 import { getSpecificUsers } from '@/serverFunctions/handleUser'
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
-import { ViewTapeDepositForm } from '../forms/tapeDeposit/ViewTapeDepositForm'
 import { formatLocalDateTime } from '@/utility/utility'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
 import { useSession } from 'next-auth/react'
+import { ViewTapeDepositForm } from '../forms/tapeDeposit/ViewEditTapeDepositForm'
+import { ViewTapeWithdrawForm } from '../forms/tapeWithdraw/ViewEditTapeWithdrawForm'
 
 export default function ViewClientRequest({ sentClientRequest, department }: { sentClientRequest: clientRequest, department?: department }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -116,6 +117,10 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
 
                             {eachChecklistItem.form.type === "tapeDeposit" && (
                                 <ViewTapeDepositForm seenFormData={eachChecklistItem.form.data} />
+                            )}
+
+                            {eachChecklistItem.form.type === "tapeWithdraw" && (
+                                <ViewTapeWithdrawForm seenFormData={eachChecklistItem.form.data} />
                             )}
                         </div>
                     )

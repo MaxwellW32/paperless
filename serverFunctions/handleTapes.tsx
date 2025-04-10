@@ -1,8 +1,8 @@
 "use server"
 import { db } from "@/db";
-import { eq, ne, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { ensureCanAccessResource } from "./handleAuth";
-import { newTape, newTapeSchema, tape, tapeSchema, tapeLocation, updateTape, resourceAuthType } from "@/types";
+import { newTape, newTapeSchema, tape, tapeSchema, tapeLocation, updateTape, resourceAuthType, company } from "@/types";
 import { tapes } from "@/db/schema";
 import { interpretAuthResponseAndError } from "@/utility/utility";
 
@@ -55,7 +55,7 @@ export async function getSpecificTapes(tapeId: tape["id"], resourceAuth: resourc
     return result
 }
 
-export async function getTapes(option: { type: "mediaLabel", mediaLabel: string } | { type: "status", status: tapeLocation, getOppositeOfStatus: boolean } | { type: "all" }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<tape[]> {
+export async function getTapes(option: { type: "mediaLabel", mediaLabel: string } | { type: "status", tapeLocation: tapeLocation, getOppositeOfStatus: boolean } | { type: "all" }, companyId: company["id"], resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<tape[]> {
     //security check  
     const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: "" }, resourceAuth, "ra")
     interpretAuthResponseAndError(authResponse)
@@ -64,9 +64,9 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string 
         const results = await db.query.tapes.findMany({
             limit: limit,
             offset: offset,
-            where: (
+            where: and(eq(tapes.companyId, companyId), (
                 sql`LOWER(${tapes.mediaLabel}) LIKE LOWER(${`%${option.mediaLabel}%`})`
-            )
+            ))
         });
 
         return results
@@ -83,7 +83,7 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string 
         const results = await db.query.tapes.findMany({
             limit: limit,
             offset: offset,
-            where: option.getOppositeOfStatus ? ne(tapes.tapeLocation, option.status) : eq(tapes.tapeLocation, option.status),
+            where: and(eq(tapes.companyId, companyId), option.getOppositeOfStatus ? ne(tapes.tapeLocation, option.tapeLocation) : eq(tapes.tapeLocation, option.tapeLocation))
         });
 
         return results

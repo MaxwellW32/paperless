@@ -23,7 +23,10 @@ export default function Page({ params }: { params: { id: string } }) {
                 //only run when can run
                 if (resourceAuth === undefined || companiesAuthResponse["u"] !== true) return
 
-                seenCompanySet(await getSpecificCompany(params.id, resourceAuth))
+                const seenCompany = await getSpecificCompany(params.id, resourceAuth)
+                if (seenCompany === undefined) throw new Error("not seeing company")
+
+                seenCompanySet(seenCompany)
 
             } catch (error) {
                 consoleAndToastError(error)
@@ -39,9 +42,7 @@ export default function Page({ params }: { params: { id: string } }) {
         return <p>not authorised to edit department</p>
     }
 
-    if (seenCompany === undefined) {
-        return <p>not seeing company</p>
-    }
+    if (seenCompany === undefined) return null
 
     return (
         <AddEditCompany sentCompany={seenCompany} />

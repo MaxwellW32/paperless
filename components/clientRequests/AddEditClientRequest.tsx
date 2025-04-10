@@ -4,7 +4,7 @@ import styles from "./style.module.css"
 import { deepClone, offsetTime, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestAuthType, clientRequestStatusType, clientRequestSchema, resourceAuthType } from '@/types'
+import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestStatusType, clientRequestSchema, resourceAuthType } from '@/types'
 import { addClientRequests, updateClientRequests } from '@/serverFunctions/handleClientRequests'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal } from '@/utility/globalState'
@@ -13,8 +13,9 @@ import { useSession } from 'next-auth/react'
 import { getUsersToCompaniesWithVisitAccess } from '@/serverFunctions/handleUsersToCompanies'
 import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
-import { EditTapeDepositForm } from '../forms/tapeDeposit/EditTapeDepositForm'
+import { EditTapeDepositForm } from '../forms/tapeDeposit/ViewEditTapeDepositForm'
 import TextInput from '../textInput/TextInput'
+import { EditTapeWithdrawForm } from '../forms/tapeWithdraw/ViewEditTapeWithdrawForm'
 
 export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -65,8 +66,9 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
     }, [sentClientRequest])
 
-    //load checklist starters if checklistStarterType undefined
+    //load checklist starters if one was not provided
     useEffect(() => {
+        //dont search if it was provided
         if (seenChecklistStarterType !== undefined) return
 
         handleSearchChecklistStarters()
@@ -151,7 +153,6 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         }
     }, [formObj?.companyId])
 
-
     function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
         // @ts-expect-error type
         const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
@@ -234,10 +235,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 //mark as complete
                 validatedUpdatedClientRequest.checklist = markLatestFormAsComplete(validatedUpdatedClientRequest.checklist)
 
-                const clientRequestAuth: clientRequestAuthType = { clientRequestIdBeingAccessed: sentClientRequest.id, departmentIdForAuth: department !== undefined ? department.id : undefined }
-
                 //update
-                await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, clientRequestAuth)
+                await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, resourceAuth)
 
                 toast.success("request updated")
             }
@@ -271,9 +270,11 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         }
     }
 
+    if (session === null) return null
+
     return (
         <form className={styles.form} action={() => { }}>
-            {seenChecklistStarterType === undefined && sentClientRequest === undefined && (
+            {seenChecklistStarterType === undefined && sentClientRequest === undefined && (//show options to set the checklist to use only on new client requests
                 <>
                     <label>set the checklist starter</label>
 
@@ -306,7 +307,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 </>
             )}
 
-            {((session !== null && session.user.accessLevel === "admin") || (department !== undefined && department.canManageRequests)) && (
+            {((session.user.accessLevel === "admin") || (department !== undefined && department.canManageRequests)) && (//if admin or can manage requests show the pair company display
                 <>
                     <label>company for request</label>
 
@@ -353,22 +354,21 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 </>
             )}
 
-            {(userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany") && (
-                <>
-                    <button className='button3'
-                        onClick={async () => {
-                            try {
-                                toast.success("searching")
+            {formObj.companyId !== undefined && (
+                <button className='button3'
+                    onClick={async () => {
+                        try {
+                            if (formObj.companyId === undefined) throw new Error("not seeing company id")
+                            toast.success("searching")
 
-                                //search 
-                                handleSearchUsersToCompaniesWithAccess(userDepartmentCompanySelection.seenUserToCompany.companyId)
+                            //search 
+                            handleSearchUsersToCompaniesWithAccess(formObj.companyId)
 
-                            } catch (error) {
-                                consoleAndToastError(error)
-                            }
-                        }}
-                    >refresh clients</button>
-                </>
+                        } catch (error) {
+                            consoleAndToastError(error)
+                        }
+                    }}
+                >refresh clients</button>
             )}
 
             {formObj.clientsAccessingSite !== undefined && usersToCompaniesWithAccess !== undefined && (
@@ -411,15 +411,15 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                             </div>
                         </>
                     ) : (
-                        <div>
-                            <p>No users seen to facilitate visit</p>
+                        <>
+                            <p>No users seen with facility access</p>
                             <p>Please ask our team to add visiting access for some users</p>
-                        </div>
+                        </>
                     )}
                 </>
             )}
 
-            {formObj.status !== undefined && session !== null && session.user.accessLevel === "admin" && (
+            {formObj.status !== undefined && session.user.accessLevel === "admin" && ( //for admin only show the form status
                 <>
                     <label>status</label>
 
@@ -472,14 +472,15 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
             {formObj.checklist !== undefined && (
                 <>
-                    {session !== null && session.user.accessLevel === "admin" && (
+                    {session.user.accessLevel === "admin" && (
                         <label>checklist</label>
                     )}
 
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                         {formObj.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
-                            let canShowCheckListItem = false
                             if (session === null) return null
+
+                            let canShowCheckListItem = false
 
                             if (session.user.accessLevel === "admin") {
                                 canShowCheckListItem = true
@@ -530,6 +531,28 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                                             //edit new checklist item
                                                             const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
                                                             if (newChecklistItem.type !== "form" || newChecklistItem.form.type !== "tapeDeposit") return prevFormObj
+
+                                                            //set the new form data
+                                                            newChecklistItem.form.data = seenLatestForm
+
+                                                            newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                            return newFormObj
+                                                        })
+                                                    }}
+                                                />
+                                            )}
+
+                                            {eachChecklistItem.form.type === "tapeWithdraw" && formObj.companyId !== undefined && (
+                                                <EditTapeWithdrawForm seenFormData={eachChecklistItem.form.data} seenCompanyId={formObj.companyId}
+                                                    handleFormUpdate={(seenLatestForm) => {
+                                                        formObjSet(prevFormObj => {
+                                                            const newFormObj = { ...prevFormObj }
+                                                            if (newFormObj.checklist === undefined) return prevFormObj
+
+                                                            //edit new checklist item
+                                                            const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
+                                                            if (newChecklistItem.type !== "form" || newChecklistItem.form.type !== "tapeWithdraw") return prevFormObj
 
                                                             //set the new form data
                                                             newChecklistItem.form.data = seenLatestForm
@@ -599,94 +622,3 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         </form>
     )
 }
-
-
-
-
-// const [activeChecklistFormIndex, activeChecklistFormIndexSet] = useState<number | undefined>()
-
-// {editableChecklistFormIndexes.length > 1 && (
-//     <>
-//         <label>choose active form</label>
-
-//         <div style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: "50px" }}>
-//             {editableChecklistFormIndexes.map(eachEditableFormIndex => {
-//                 return (
-//                     <button className='button2' key={eachEditableFormIndex}
-//                         onClick={() => {
-//                             activeChecklistFormIndexSet(eachEditableFormIndex)
-//                         }}
-//                     ></button>
-//                 )
-//             })}
-//         </div>
-//     </>
-// )}
-
-// {activeChecklistFormIndex !== undefined && formObj.checklist !== undefined && formObj.checklist[activeChecklistFormIndex].type === "form" && (
-//     <ReadRecursiveChecklistForm seenForm={formObj.checklist[activeChecklistFormIndex].data}
-//         handleFormUpdate={(seenLatestForm) => {
-//             formObjSet(prevFormObj => {
-//                 const newFormObj = { ...prevFormObj }
-//                 if (newFormObj.checklist === undefined) return prevFormObj
-
-//                 //edit new checklist item
-//                 const newChecklistItem = { ...newFormObj.checklist[activeChecklistFormIndex] }
-//                 if (newChecklistItem.type !== "form") return prevFormObj
-
-//                 newChecklistItem.data = seenLatestForm
-
-//                 newFormObj.checklist[activeChecklistFormIndex] = newChecklistItem
-
-//                 return newFormObj
-//             })
-//         }}
-//     />
-// )}
-
-
-// const editableChecklistFormIndexes = useMemo<number[]>(() => {
-//     if (formObj.checklist === undefined) return []
-
-//     const newNumArray: number[] = []
-
-//     formObj.checklist.map((eachChecklist, eachChecklistIndex) => {
-//         if (eachChecklist.type !== "form") return
-//         if (formObj.checklist === undefined) return
-
-//         const previousIsComplete = eachChecklistIndex !== 0 ? formObj.checklist[eachChecklistIndex - 1].completed : true
-
-//         //if checklist item is a form and previous items are complete, make available to the client to edit
-//         if (previousIsComplete) {
-//             newNumArray.push(eachChecklistIndex)
-//         }
-//     })
-
-//     if (newNumArray.length === 1) {
-//         activeChecklistFormIndexSet(newNumArray[0])
-//     }
-
-//     return newNumArray
-
-// }, [formObj.checklist])
-
-// const companyAuth = useMemo<companyAuthType | undefined>(() => {
-//     if (session === null) return undefined
-
-//     //if admin
-//     if (session.user.accessLevel === "admin") {
-//         return {}
-
-//         //if from department
-//     } else if (department !== undefined && department.canManageRequests) {
-//         return { departmentIdForAuth: department.id }
-
-//         //if from client
-//     } else if (userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany") {
-//         return { companyIdBeingAccessed: userDepartmentCompanySelection.seenUserToCompany.companyId }
-
-//     } else {
-//         return undefined
-//     }
-
-// }, [session, userDepartmentCompanySelection, department])

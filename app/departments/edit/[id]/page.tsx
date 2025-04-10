@@ -23,7 +23,10 @@ export default function Page({ params }: { params: { id: string } }) {
                 //only run when can run
                 if (resourceAuth === undefined || departmentsAuthResponse["u"] !== true) return
 
-                seenDepartmentSet(await getSpecificDepartment(params.id, resourceAuth))
+                const seenDepartment = await getSpecificDepartment(params.id, resourceAuth)
+                if (seenDepartment === undefined) throw new Error("not seeing department")
+
+                seenDepartmentSet(seenDepartment)
 
             } catch (error) {
                 consoleAndToastError(error)
@@ -39,9 +42,7 @@ export default function Page({ params }: { params: { id: string } }) {
         return <p>not authorised to edit department</p>
     }
 
-    if (seenDepartment === undefined) {
-        return <p>not seeing department</p>
-    }
+    if (seenDepartment === undefined) return null
 
     return (
         <AddEditDepartment sentDepartment={seenDepartment} />

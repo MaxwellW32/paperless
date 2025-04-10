@@ -1,5 +1,5 @@
 "use client"
-import { checklistItemFormType, checklistItemType, clientRequest, clientRequestAuthType, department, refreshObjType, refreshWSObjType, resourceAuthType, userDepartmentCompanySelection } from '@/types'
+import { checklistItemFormType, checklistItemType, clientRequest, department, refreshObjType, refreshWSObjType, resourceAuthType, tapeDepositNewTapeType, userDepartmentCompanySelection } from '@/types'
 import React from 'react'
 import styles from "./style.module.css"
 import ConfirmationBox from '../confirmationBox/ConfirmationBox'
@@ -28,8 +28,6 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
     const activeChecklistItem: checklistItemType | undefined = activeChecklistItemIndex !== -1 ? eachClientRequest.checklist[activeChecklistItemIndex] : undefined
 
     const progressBar: number | undefined = activeChecklistItemIndex !== -1 ? (activeChecklistItemIndex + 1) / eachClientRequest.checklist.length : undefined
-
-    const newClientRequestAuth: clientRequestAuthType = { clientRequestIdBeingAccessed: eachClientRequest.id, departmentIdForAuth: userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userDepartment" ? userDepartmentCompanySelection.seenUserToDepartment.departmentId : undefined }
 
     const canEditRequest = (session !== null && session.user.accessLevel === "admin") || (userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany" && userDepartmentCompanySelection.seenUserToCompany.companyId === eachClientRequest.companyId)
     let canAccessManualCheck = false
@@ -91,11 +89,13 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                     <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
                         runAction={async () => {
                             try {
+                                if (resourceAuth === undefined) throw new Error("not seeing auth")
+
                                 const newCompletedManualChecklistItem = { ...activeChecklistItem }
                                 newCompletedManualChecklistItem.completed = true
 
                                 //update server
-                                await updateClientRequestsChecklist(eachClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, newClientRequestAuth)
+                                await updateClientRequestsChecklist(eachClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, resourceAuth)
 
                                 //update locally
                                 refreshObjSet(prevRefreshObj => {
@@ -132,21 +132,22 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                                 const clientForms: checklistItemFormType[] = eachClientRequest.checklist.filter(eachChecklistFilter => eachChecklistFilter.type === "form")
 
                                 clientForms.map(async eachClientForm => {
-                                    if (eachClientForm.form.type === "tapeDeposit") {
+                                    if (eachClientForm.form.type === "tapeDeposit" || eachClientForm.form.type === "tapeWithdraw") {
                                         if (eachClientForm.form.data === null) return
 
-                                        eachClientForm.form.data.newTapes.map(async eachNewTape => {
+                                        const seenTapes: tapeDepositNewTapeType[] = eachClientForm.form.type === "tapeDeposit" ? eachClientForm.form.data.tapesInRequest : eachClientForm.form.data.tapesToWithdraw
+
+                                        seenTapes.map(async eachSeenTape => {
                                             //update tape location
-                                            eachNewTape.tapeLocation = "in-vault"
+                                            eachSeenTape.tapeLocation = eachClientForm.form.type === "tapeDeposit" ? "in-vault" : "with-client"
 
-                                            if (eachNewTape.id !== undefined) {
+                                            if (eachSeenTape.id !== undefined) {
                                                 //update tape
-                                                await updateTapes(eachNewTape.id, eachNewTape, resourceAuth)
-
+                                                await updateTapes(eachSeenTape.id, eachSeenTape, resourceAuth)
 
                                             } else {
                                                 //new tape to db
-                                                await addTapes(eachNewTape, resourceAuth)
+                                                await addTapes(eachSeenTape, resourceAuth)
                                             }
 
                                             //update locally
