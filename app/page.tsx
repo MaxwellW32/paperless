@@ -15,10 +15,7 @@ import styles from "./page.module.css"
 //ws use refresh/update modes for client requests - get all, or run specific update
 //way to refresh admin - search properly
 //remove manual company id check - just keep it at manual check
-//update auth to trturn - app admin, dep admin, comp admin, ...etc - for proper updates
 //set checklist to null on complete on older records
-//make tape deposit forms the same
-
 
 //understand
 //what is resource auth response used for
