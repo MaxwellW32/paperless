@@ -4,10 +4,11 @@ import { getSpecificClientRequest } from "@/serverFunctions/handleClientRequests
 import { getSpecificDepartment } from "@/serverFunctions/handleDepartments"
 import { getSpecificUsersToCompanies } from "@/serverFunctions/handleUsersToCompanies"
 import { getSpecificUsersToDepartments } from "@/serverFunctions/handleUsersToDepartments"
-import { authAccessLevelResponseType, departmentSchema, crudOptionType, department, expectedResourceType, resourceAuthType, companySchema } from "@/types"
+import { authAccessLevelResponseType, departmentSchema, crudOptionType, department, expectedResourceType, resourceAuthType, companySchema, resourceAuthResponseType } from "@/types"
 import { Session } from "next-auth"
 import { getSpecificTapes } from "./handleTapes"
 import { errorZodErrorAsString } from "@/usefulFunctions/consoleErrorWithToast"
+import { interpretAuthResponseAndBool } from "@/utility/utility"
 
 export async function sessionCheckWithError() {
     const session = await auth()
@@ -522,6 +523,27 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
     } catch (error) {
         return errorZodErrorAsString(error)
     }
+}
+
+export async function clientCallEnsureCanAccessResource(resource: expectedResourceType, resourceAuth: resourceAuthType, crudOptions: crudOptionType[] = ["c", "r", "ra", "u", "d"]): Promise<resourceAuthResponseType> {
+    const newRerouseAuthResponseObj: resourceAuthResponseType = {
+        c: undefined,
+        r: undefined,
+        ra: undefined,
+        u: undefined,
+        d: undefined,
+    }
+
+    await Promise.all(
+        crudOptions.map(async (eachCrudOption) => {
+            const authResponse = await ensureCanAccessResource(resource, resourceAuth, eachCrudOption)
+            const allowed = interpretAuthResponseAndBool(authResponse)
+
+            newRerouseAuthResponseObj[eachCrudOption] = allowed
+        })
+    )
+
+    return newRerouseAuthResponseObj
 }
 
 export async function checkIfDepartmentHasManageAccess(session: Session, departmentAuthId: department["id"]): Promise<string | authAccessLevelResponseType> {

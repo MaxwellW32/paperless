@@ -460,7 +460,13 @@ export type newChecklistStarter = z.infer<typeof newChecklistStarterSchema>
 export const updateChecklistStarterSchema = checklistStarterSchema.omit({ id: true })
 export type updateChecklistStarter = z.infer<typeof updateChecklistStarterSchema>
 
-
+export type searchObj<T> = {
+    searchItems: T[],
+    limit?: number, //how many
+    offset?: number, //increaser
+    incrementOffsetBy?: number, //how much to increase by
+    refreshAll?: boolean
+}
 
 
 

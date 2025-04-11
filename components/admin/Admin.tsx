@@ -1,7 +1,7 @@
 "use client"
 import React, { useRef, useState } from 'react'
 import styles from "./admin.module.css"
-import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType } from '@/types'
+import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObj } from '@/types'
 import { getChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
@@ -23,6 +23,7 @@ import { getClientRequests } from '@/serverFunctions/handleClientRequests'
 import DashboardClientRequest from '../clientRequests/DashboardClientRequest'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
+import Search from '../search/Search'
 
 type schemaType = typeof schema;
 type schemaTableNamesType = keyof schemaType;
@@ -37,16 +38,29 @@ export default function Page() {
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>(undefined)
     const [showingSideBar, showingSideBarSet] = useState(true)
 
-    const [users, usersSet] = useState<user[]>([])
-    const [checklistStarters, checklistStartersSet] = useState<checklistStarter[]>([])
-    const [clientRequests, clientRequestsSet] = useState<clientRequest[]>([])
-    const [departments, departmentsSet] = useState<department[]>([])
-    const [companies, companiesSet] = useState<company[]>([])
-    const [usersToDepartments, usersToDepartmentsSet] = useState<userToDepartment[]>([])
-    const [usersToCompanies, usersToCompaniesSet] = useState<userToCompany[]>([])
+    const [usersSearchObj, usersSearchObjSet] = useState<searchObj<user>>({
+        searchItems: [],
+    })
+    const [checklistStartersSearchObj, checklistStartersSearchObjSet] = useState<searchObj<checklistStarter>>({
+        searchItems: [],
+    })
+    const [clientRequestsSearchObj, clientRequestsSearchObjSet] = useState<searchObj<clientRequest>>({
+        searchItems: [],
+    })
+    const [departmentsSearchObj, departmentsSearchObjSet] = useState<searchObj<department>>({
+        searchItems: [],
+    })
+    const [companiesSearchObj, companiesSearchObjSet] = useState<searchObj<company>>({
+        searchItems: [],
+    })
+    const [usersToDepartmentsSearchObj, usersToDepartmentsSearchObjSet] = useState<searchObj<userToDepartment>>({
+        searchItems: [],
+    })
+    const [usersToCompaniesSearchObj, usersToCompaniesSearchObjSet] = useState<searchObj<userToCompany>>({
+        searchItems: [],
+    })
 
     const [adding, addingSet] = useState<Partial<{ [key in activeScreenType]: boolean }>>({})
-
     const [editing, editingSet] = useState<{
         users?: user,
         checklistStarters?: checklistStarter,
@@ -114,22 +128,17 @@ export default function Page() {
                                         <AddEditChecklistStarter />
                                     )}
 
-                                    <button className='button3'
-                                        onClick={async () => {
-                                            try {
-                                                toast.success("searching")
-
-                                                checklistStartersSet(await getChecklistStarters())
-
-                                            } catch (error) {
-                                                consoleAndToastError(error)
-                                            }
+                                    <Search
+                                        searchObj={checklistStartersSearchObj}
+                                        searchObjSet={checklistStartersSearchObjSet}
+                                        searchFunction={async () => {
+                                            return await getChecklistStarters(checklistStartersSearchObj.limit, checklistStartersSearchObj.offset)
                                         }}
-                                    >search checklist starters</button>
+                                    />
 
-                                    {checklistStarters.length > 0 && (
+                                    {checklistStartersSearchObj.searchItems.length > 0 && (
                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {checklistStarters.map(eachCheckliststarter => {
+                                            {checklistStartersSearchObj.searchItems.map(eachCheckliststarter => {
 
                                                 return (
                                                     <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
@@ -185,24 +194,19 @@ export default function Page() {
                                         </>
                                     )}
 
-                                    <button className='button3'
-                                        onClick={async () => {
-                                            try {
-                                                if (resourceAuth === undefined) throw new Error("not seeing auth")
+                                    <Search
+                                        searchObj={clientRequestsSearchObj}
+                                        searchObjSet={clientRequestsSearchObjSet}
+                                        searchFunction={async () => {
+                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
 
-                                                toast.success("searching")
-
-                                                clientRequestsSet(await getClientRequests({ type: "all" }, { type: "date" }, resourceAuth))
-
-                                            } catch (error) {
-                                                consoleAndToastError(error)
-                                            }
+                                            return await getClientRequests({ type: "all" }, { type: "date" }, resourceAuth, clientRequestsSearchObj.limit, clientRequestsSearchObj.offset)
                                         }}
-                                    >search client requests</button>
+                                    />
 
-                                    {clientRequests.length > 0 && (
+                                    {clientRequestsSearchObj.searchItems.length > 0 && (
                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "300px", overflow: "auto" }} className='snap'>
-                                            {clientRequests.map(eachClientRequest => {
+                                            {clientRequestsSearchObj.searchItems.map(eachClientRequest => {
                                                 if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
 
                                                 return (
@@ -246,28 +250,22 @@ export default function Page() {
                                         keyName={"companies"}
                                     />
 
-                                    {adding.companies === true && (
+                                    {adding.companies && (
                                         <AddEditCompany />
                                     )}
 
-                                    <button className='button3'
-                                        onClick={async () => {
-                                            try {
-                                                if (resourceAuth === undefined) throw new Error("not seeing auth")
-
-                                                toast.success("searching")
-
-                                                companiesSet(await getCompanies(resourceAuth))
-
-                                            } catch (error) {
-                                                consoleAndToastError(error)
-                                            }
+                                    <Search
+                                        searchObj={companiesSearchObj}
+                                        searchObjSet={companiesSearchObjSet}
+                                        searchFunction={async () => {
+                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
+                                            return await getCompanies(resourceAuth, companiesSearchObj.limit, companiesSearchObj.offset)
                                         }}
-                                    >search companies</button>
+                                    />
 
-                                    {companies.length > 0 && (
+                                    {companiesSearchObj.searchItems.length > 0 && (
                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {companies.map(eachCompany => {
+                                            {companiesSearchObj.searchItems.map(eachCompany => {
                                                 return (
                                                     <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                                         <h3>{eachCompany.name}</h3>
@@ -291,27 +289,22 @@ export default function Page() {
                                         keyName={"departments"}
                                     />
 
-                                    {adding.departments === true && (
+                                    {adding.departments && (
                                         <AddEditDepartment />
                                     )}
 
-                                    <button className='button3'
-                                        onClick={async () => {
-                                            try {
-                                                if (resourceAuth === undefined) return
-                                                toast.success("searching")
-
-                                                departmentsSet(await getDepartments(resourceAuth))
-
-                                            } catch (error) {
-                                                consoleAndToastError(error)
-                                            }
+                                    <Search
+                                        searchObj={departmentsSearchObj}
+                                        searchObjSet={departmentsSearchObjSet}
+                                        searchFunction={async () => {
+                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
+                                            return await getDepartments(resourceAuth, departmentsSearchObj.limit, departmentsSearchObj.offset)
                                         }}
-                                    >search departments</button>
+                                    />
 
-                                    {departments.length > 0 && (
+                                    {departmentsSearchObj.searchItems.length > 0 && (
                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {departments.map(eachDepartment => {
+                                            {departmentsSearchObj.searchItems.map(eachDepartment => {
                                                 return (
                                                     <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                                         <h3>{eachDepartment.name}</h3>
@@ -335,7 +328,7 @@ export default function Page() {
                                         keyName={"users"}
                                     />
 
-                                    {adding.users === true && (
+                                    {adding.users && (
                                         <AddEditUser />
                                     )}
 
@@ -351,7 +344,15 @@ export default function Page() {
 
                                                     toast.success("searching")
 
-                                                    usersSet(await getUsers({ type: "name", name: e.target.value }))
+                                                    const seenUsers = await getUsers({ type: "name", name: e.target.value })
+
+                                                    usersSearchObjSet(prevUsersSearchObj => {
+                                                        const newUsersSearchObj = { ...prevUsersSearchObj }
+
+                                                        newUsersSearchObj.searchItems = seenUsers
+
+                                                        return newUsersSearchObj
+                                                    })
                                                 }, 1000);
 
                                             } catch (error) {
@@ -360,9 +361,19 @@ export default function Page() {
                                         }}
                                     />
 
-                                    {users.length > 0 && (
+                                    <label>search all</label>
+
+                                    <Search
+                                        searchObj={usersSearchObj}
+                                        searchObjSet={usersSearchObjSet}
+                                        searchFunction={async () => {
+                                            return await getUsers({ type: "all" }, usersSearchObj.limit, usersSearchObj.offset)
+                                        }}
+                                    />
+
+                                    {usersSearchObj.searchItems.length > 0 && (
                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {users.map(eachUser => {
+                                            {usersSearchObj.searchItems.map(eachUser => {
 
                                                 return (
                                                     <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
@@ -413,27 +424,24 @@ export default function Page() {
                                     />
 
                                     {adding.usersToDepartments === true && (
-                                        <AddEditUserDepartment departmentsStarter={departments} />
+                                        <AddEditUserDepartment departmentsStarter={departmentsSearchObj.searchItems} />
                                     )}
 
-                                    <button className='button3'
-                                        onClick={async () => {
-                                            try {
-                                                if (resourceAuth === undefined) return
+                                    <h3>search by department</h3>
 
-                                                toast.success("searching")
-
-                                                departmentsSet(await getDepartments(resourceAuth))
-
-                                            } catch (error) {
-                                                consoleAndToastError(error)
-                                            }
+                                    <Search
+                                        searchLabel='search departments'
+                                        searchObj={departmentsSearchObj}
+                                        searchObjSet={departmentsSearchObjSet}
+                                        searchFunction={async () => {
+                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
+                                            return await getDepartments(resourceAuth, departmentsSearchObj.limit, departmentsSearchObj.offset)
                                         }}
-                                    >search departments</button>
+                                    />
 
-                                    {departments.length > 0 && (
+                                    {departmentsSearchObj.searchItems.length > 0 && (
                                         <>
-                                            <h3>Select department to search</h3>
+                                            <h3>department selection</h3>
 
                                             <select defaultValue={""}
                                                 onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -443,8 +451,16 @@ export default function Page() {
 
                                                         const eachDepartmentId = event.target.value as department["id"]
 
+                                                        const seenUsersToDepartments = await getUsersToDepartments({ type: "department", departmentId: eachDepartmentId })
+
                                                         //search latest usersToDepartments
-                                                        usersToDepartmentsSet(await getUsersToDepartments({ type: "department", departmentId: eachDepartmentId }))
+                                                        usersToDepartmentsSearchObjSet(prevUsersToDepartmentsSearchObj => {
+                                                            const newUsersToDepartmentsSearchObj = { ...prevUsersToDepartmentsSearchObj }
+
+                                                            newUsersToDepartmentsSearchObj.searchItems = seenUsersToDepartments
+
+                                                            return newUsersToDepartmentsSearchObj
+                                                        })
 
                                                     } catch (error) {
                                                         consoleAndToastError(error)
@@ -454,7 +470,7 @@ export default function Page() {
                                                 <option value={""}
                                                 >select</option>
 
-                                                {departments.map(eachDepartment => {
+                                                {departmentsSearchObj.searchItems.map(eachDepartment => {
 
                                                     return (
                                                         <option key={eachDepartment.id} value={eachDepartment.id}
@@ -465,9 +481,19 @@ export default function Page() {
                                         </>
                                     )}
 
-                                    {usersToDepartments.length > 0 && (
+                                    <h3>search all</h3>
+
+                                    <Search
+                                        searchObj={usersToDepartmentsSearchObj}
+                                        searchObjSet={usersToDepartmentsSearchObjSet}
+                                        searchFunction={async () => {
+                                            return await getUsersToDepartments({ type: "all" }, usersToDepartmentsSearchObj.limit, usersToDepartmentsSearchObj.offset)
+                                        }}
+                                    />
+
+                                    {usersToDepartmentsSearchObj.searchItems.length > 0 && (
                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {usersToDepartments.map(eachUserToDepartment => {
+                                            {usersToDepartmentsSearchObj.searchItems.map(eachUserToDepartment => {
                                                 if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
 
                                                 return (
@@ -501,7 +527,7 @@ export default function Page() {
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                                 <AddEditUserDepartment
                                                     sentUserDepartment={editing.usersToDepartments}
-                                                    departmentsStarter={departments}
+                                                    departmentsStarter={departmentsSearchObj.searchItems}
                                                 />
                                             </div>
                                         </>
@@ -518,25 +544,21 @@ export default function Page() {
                                     />
 
                                     {adding.usersToCompanies === true && (
-                                        <AddEditUserCompany companiesStarter={companies} />
+                                        <AddEditUserCompany companiesStarter={companiesSearchObj.searchItems} />
                                     )}
 
-                                    <button className='button3'
-                                        onClick={async () => {
-                                            try {
-                                                if (resourceAuth === undefined) throw new Error("not seeing auth")
+                                    <h3>search by company</h3>
 
-                                                toast.success("searching")
-
-                                                companiesSet(await getCompanies(resourceAuth))
-
-                                            } catch (error) {
-                                                consoleAndToastError(error)
-                                            }
+                                    <Search
+                                        searchObj={companiesSearchObj}
+                                        searchObjSet={companiesSearchObjSet}
+                                        searchFunction={async () => {
+                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
+                                            return await getCompanies(resourceAuth, companiesSearchObj.limit, companiesSearchObj.offset)
                                         }}
-                                    >search companies</button>
+                                    />
 
-                                    {companies.length > 0 && (
+                                    {companiesSearchObj.searchItems.length > 0 && (
                                         <>
                                             <h3>Select company to search</h3>
 
@@ -548,8 +570,16 @@ export default function Page() {
 
                                                         const eachCompanyId = event.target.value as company["id"]
 
-                                                        //search latest usersToDepartments
-                                                        usersToCompaniesSet(await getUsersToCompanies({ type: "company", companyId: eachCompanyId }))
+                                                        const seenUsersToCompanies = await getUsersToCompanies({ type: "company", companyId: eachCompanyId })
+
+                                                        //search latest usersToCompanies
+                                                        usersToCompaniesSearchObjSet(prevUsersToCompaniesSearchObj => {
+                                                            const newUsersToCompaniesSearchObj = { ...prevUsersToCompaniesSearchObj }
+
+                                                            newUsersToCompaniesSearchObj.searchItems = seenUsersToCompanies
+
+                                                            return newUsersToCompaniesSearchObj
+                                                        })
 
                                                     } catch (error) {
                                                         consoleAndToastError(error)
@@ -559,7 +589,7 @@ export default function Page() {
                                                 <option value={""}
                                                 >select</option>
 
-                                                {companies.map(eachCompany => {
+                                                {companiesSearchObj.searchItems.map(eachCompany => {
                                                     return (
                                                         <option key={eachCompany.id} value={eachCompany.id}
                                                         >{eachCompany.name}</option>
@@ -569,9 +599,19 @@ export default function Page() {
                                         </>
                                     )}
 
-                                    {usersToCompanies.length > 0 && (
+                                    <h3>search all</h3>
+
+                                    <Search
+                                        searchObj={usersToCompaniesSearchObj}
+                                        searchObjSet={usersToCompaniesSearchObjSet}
+                                        searchFunction={async () => {
+                                            return await getUsersToCompanies({ type: "all" }, usersToCompaniesSearchObj.limit, usersToCompaniesSearchObj.offset)
+                                        }}
+                                    />
+
+                                    {usersToCompaniesSearchObj.searchItems.length > 0 && (
                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {usersToCompanies.map(eachUserToCompany => {
+                                            {usersToCompaniesSearchObj.searchItems.map(eachUserToCompany => {
                                                 if (eachUserToCompany.user === undefined || eachUserToCompany.company === undefined) return null
 
                                                 return (
@@ -605,7 +645,7 @@ export default function Page() {
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                                 <AddEditUserCompany
                                                     sentUserCompany={editing.usersToCompanies}
-                                                    companiesStarter={companies}
+                                                    companiesStarter={companiesSearchObj.searchItems}
                                                 />
                                             </div>
                                         </>

@@ -75,11 +75,13 @@ export async function getSpecificCompany(companyId: company["id"], resourceAuth:
     return result
 }
 
-export async function getCompanies(resourceAuth: resourceAuthType): Promise<company[]> {
+export async function getCompanies(resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<company[]> {
     const authResponse = await ensureCanAccessResource({ type: "company", companyId: "" }, resourceAuth, "ra")
     interpretAuthResponseAndError(authResponse)
 
     const results = await db.query.companies.findMany({
+        limit: limit,
+        offset: offset,
         with: {
             usersToCompanies: {
                 with: {

@@ -16,6 +16,8 @@ import styles from "./page.module.css"
 //way to refresh admin - search properly
 //remove manual company id check - just keep it at manual check
 //set checklist to null on complete on older records
+//create tapes/equipment forms
+//complete equipment workflow
 
 //understand
 //what is resource auth response used for
@@ -23,6 +25,32 @@ import styles from "./page.module.css"
 //
 //go resrouce by resource and figure out what you're trying to do
 //1) client requests
+//
+//
+
+
+//plan for today
+//update forms on completion, same with adding
+//add submissionaction function - that sends reset signal
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 //
 

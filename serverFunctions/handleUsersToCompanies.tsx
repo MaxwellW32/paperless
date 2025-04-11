@@ -90,7 +90,7 @@ export async function getSpecificUsersToCompanies(options: { type: "id", userCom
     }
 }
 
-export async function getUsersToCompanies(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] }): Promise<userToCompany[]> {
+export async function getUsersToCompanies(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] } | { type: "all" }, limit = 50, offset = 0): Promise<userToCompany[]> {
     //security check
     await ensureUserIsAdmin()
 
@@ -112,6 +112,18 @@ export async function getUsersToCompanies(option: { type: "user", userId: user["
 
         const result = await db.query.usersToCompanies.findMany({
             where: eq(usersToCompanies.companyId, option.companyId),
+            with: {
+                user: true,
+                company: true,
+            }
+        });
+
+        return result
+
+    } else if (option.type === "all") {
+        const result = await db.query.usersToCompanies.findMany({
+            limit: limit,
+            offset: offset,
             with: {
                 user: true,
                 company: true,

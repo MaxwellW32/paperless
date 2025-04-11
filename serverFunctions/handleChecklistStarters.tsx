@@ -49,11 +49,14 @@ export async function getSpecificChecklistStarters(checklistStarterType: checkli
 }
 
 //only run this on server
-export async function getChecklistStarters(): Promise<checklistStarter[]> {
+export async function getChecklistStarters(limit = 50, offset = 0): Promise<checklistStarter[]> {
     //logged in check
     await sessionCheckWithError()
 
-    const results = await db.query.checklistStarters.findMany();
+    const results = await db.query.checklistStarters.findMany({
+        limit: limit,
+        offset: offset,
+    });
 
     return results
 }

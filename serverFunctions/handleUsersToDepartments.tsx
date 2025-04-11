@@ -92,7 +92,7 @@ export async function getSpecificUsersToDepartments(options: { type: "id", userD
     }
 }
 
-export async function getUsersToDepartments(option: { type: "user", userId: user["id"] } | { type: "department", departmentId: department["id"] }): Promise<userToDepartment[]> {
+export async function getUsersToDepartments(option: { type: "user", userId: user["id"] } | { type: "department", departmentId: department["id"] } | { type: "all" }, limit = 50, offset = 0): Promise<userToDepartment[]> {
     //security check
     await ensureUserIsAdmin()
 
@@ -100,6 +100,8 @@ export async function getUsersToDepartments(option: { type: "user", userId: user
         userSchema.shape.id.parse(option.userId)
 
         const result = await db.query.usersToDepartments.findMany({
+            limit: limit,
+            offset: offset,
             where: eq(usersToDepartments.userId, option.userId),
             with: {
                 user: true,
@@ -113,7 +115,21 @@ export async function getUsersToDepartments(option: { type: "user", userId: user
         departmentSchema.shape.id.parse(option.departmentId)
 
         const result = await db.query.usersToDepartments.findMany({
+            limit: limit,
+            offset: offset,
             where: eq(usersToDepartments.departmentId, option.departmentId),
+            with: {
+                user: true,
+                department: true,
+            }
+        });
+
+        return result
+
+    } else if (option.type === "all") {
+        const result = await db.query.usersToDepartments.findMany({
+            limit: limit,
+            offset: offset,
             with: {
                 user: true,
                 department: true,

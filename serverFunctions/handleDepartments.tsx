@@ -77,7 +77,7 @@ export async function getSpecificDepartment(deparmentId: department["id"], resou
     return result
 }
 
-export async function getDepartments(resourceAuth: resourceAuthType): Promise<department[]> {
+export async function getDepartments(resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<department[]> {
     //security check
     const authResponse = await ensureCanAccessResource({ type: "department", departmentId: "" }, resourceAuth, "ra")
 
