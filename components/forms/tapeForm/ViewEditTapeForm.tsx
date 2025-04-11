@@ -282,8 +282,6 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
 export function ViewTapeForm({ seenForm }: { seenForm: tapeFormType }) {
     if (seenForm.data === null) return null
 
-    console.log(`$seenForm`, seenForm);
-
     return (
         <div className={styles.form}>
             <label>tapes</label>

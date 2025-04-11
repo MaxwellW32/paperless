@@ -3,23 +3,23 @@ import React, { useRef, useState } from 'react'
 import styles from "./admin.module.css"
 import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObj, webSocketStandardMessageType } from '@/types'
 import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
-import { getDepartments } from '@/serverFunctions/handleDepartments'
+import { getDepartments, getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { getCompanies } from '@/serverFunctions/handleCompanies'
+import { getCompanies, getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import AddEditChecklistStarter from '../checklistStarters/AddEditChecklistStarter'
-import { getUsersToDepartments } from '@/serverFunctions/handleUsersToDepartments'
+import { getSpecificUsersToDepartments, getUsersToDepartments } from '@/serverFunctions/handleUsersToDepartments'
 import AddEditCompany from '../companies/AddEditCompany'
 import AddEditDepartment from '../departments/AddEditDepartment'
 import AddEditUserDepartment from '../usersToDepartments/AddEditUserDepartment'
 import AddEditUserCompany from '../usersToCompanies/AddEditUserCompany'
-import { getUsersToCompanies } from '@/serverFunctions/handleUsersToCompanies'
+import { getSpecificUsersToCompanies, getUsersToCompanies } from '@/serverFunctions/handleUsersToCompanies'
 import * as schema from "@/db/schema"
 import AddEditUser from '../users/AddEditUser'
-import { getUsers } from '@/serverFunctions/handleUser'
+import { getSpecificUsers, getUsers } from '@/serverFunctions/handleUser'
 import AddEditClientRequest from '../clientRequests/AddEditClientRequest'
-import { getClientRequests } from '@/serverFunctions/handleClientRequests'
+import { getClientRequests, getSpecificClientRequest } from '@/serverFunctions/handleClientRequests'
 import DashboardClientRequest from '../clientRequests/DashboardClientRequest'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
@@ -30,8 +30,11 @@ type schemaType = typeof schema;
 type schemaTableNamesType = keyof schemaType;
 type activeScreenType = schemaTableNamesType
 
-//refresh all items on any kind of list on create/delete
-//refresh specific item in list on update
+//refresh all items on any kind of list on create/delete - all
+//refresh specific item in list on update - specific
+//on search - loads the all function
+//on edit form submit - loads the specific function
+//ws sends update from loader
 
 export default function Page() {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -45,6 +48,8 @@ export default function Page() {
 
     const [usersSearchObj, usersSearchObjSet] = useState<searchObj<user>>({
         searchItems: [],
+        limit: 1,
+        incrementOffsetBy: 1
     })
     const [checklistStartersSearchObj, checklistStartersSearchObjSet] = useState<searchObj<checklistStarter>>({
         searchItems: [],
@@ -78,62 +83,27 @@ export default function Page() {
 
     type updateOption = { type: "all" } | { type: "specific", id: string }
 
-    async function getResults<T>(updateOption: updateOption, specificFunction: () => Promise<T | undefined>, getAllFunction: () => Promise<T[]>): Promise<T[]> {
-        let results: T[] = []
 
-        if (updateOption.type === "specific") {
-            const seenSpecificResult = await specificFunction()
-            if (seenSpecificResult !== undefined) {
-                results = [(seenSpecificResult as T)]
-            }
-
-        } else if (updateOption.type === "all") {
-            results = await getAllFunction()
-        }
-
-        return results
-    }
-
-    async function functionFetcher<T>(sentActiveScreen: activeScreenType, updateOption: updateOption): Promise<T[]> {
+    async function loadStarterValues(sentActiveScreen: activeScreenType, updateOption: updateOption, runWebsocketUpdate = true) {
         if (resourceAuth === undefined) throw new Error("no auth seen")
 
-        if (sentActiveScreen === "checklistStarters") {
-            return await getResults<T>(updateOption,
-                async () => {
-                    return await getSpecificChecklistStarters({ type: "id", checklistId: updateOption.type === "specific" ? updateOption.id : "" }) as T
-                },
-                async () => {
-                    return await getChecklistStarters(checklistStartersSearchObj.limit, checklistStartersSearchObj.offset) as T[]
-                })
+        async function getResults<T>(updateOption: updateOption, specificFunction: () => Promise<T | undefined>, getAllFunction: () => Promise<T[]>): Promise<T[]> {
+            let results: T[] = []
 
-        } else if (sentActiveScreen === "clientRequests") {
-            return await getClientRequests({ type: "all" }, { type: "date" }, resourceAuth, clientRequestsSearchObj.limit, clientRequestsSearchObj.offset) as T[]
+            if (updateOption.type === "specific") {
+                const seenSpecificResult = await specificFunction()
+                if (seenSpecificResult !== undefined) {
+                    results = [(seenSpecificResult as T)]
+                }
 
-        } else if (sentActiveScreen === "companies") {
-            return await getCompanies(resourceAuth, companiesSearchObj.limit, companiesSearchObj.offset) as T[]
+            } else if (updateOption.type === "all") {
+                results = await getAllFunction()
+            }
 
-        } else if (sentActiveScreen === "departments") {
-            return await getDepartments(resourceAuth, departmentsSearchObj.limit, departmentsSearchObj.offset) as T[]
-
-        } else if (sentActiveScreen === "users") {
-            return await getUsers({ type: "all" }, usersSearchObj.limit, usersSearchObj.offset) as T[]
-
-        } else if (sentActiveScreen === "usersToDepartments") {
-            return await getUsersToDepartments({ type: "all" }, usersToDepartmentsSearchObj.limit, usersToDepartmentsSearchObj.offset) as T[]
-
-        } else if (sentActiveScreen === "usersToCompanies") {
-            return await getUsersToCompanies({ type: "all" }, usersToCompaniesSearchObj.limit, usersToCompaniesSearchObj.offset) as T[]
-
-        } else {
-            throw new Error("invalid selection")
+            return results
         }
-    }
 
-    //general function that refreshed all on the active screen
-    async function loadStarterValues(sentActiveScreen: activeScreenType | undefined, updateOption: updateOption, runWebsocketUpdate = true) {
-        if (sentActiveScreen === undefined) return
-
-        //preform update or new array
+        //perform update or new array
         function setSearchItemsOnSearchObj<T>(sentSearchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchItems: T[], seenUpdateOption: updateOption) {
             sentSearchObjSet(prevSearchObj => {
                 const newSearchObj = { ...prevSearchObj }
@@ -147,7 +117,7 @@ export default function Page() {
                     if (inArrayAlready) {
                         newSearchObj.searchItems = newSearchObj.searchItems.map(eachSearchItemMap => {
                             //@ts-expect-error type
-                            if (eachSearchItemMap.id !== undefined && eachSearchItemMap.id === seenUpdateOption.id) {
+                            if (eachSearchItemMap.id !== undefined && eachSearchItemMap.id === seenUpdateOption.id && searchItems[0] !== undefined) {//protection against empty arrays
                                 return searchItems[0]
                             }
 
@@ -166,28 +136,140 @@ export default function Page() {
             })
         }
 
-        //set the values to state locally
+        function respondToResults(sentResults: unknown[]) {
+            //tell of results
+            if (sentResults.length === 0) {
+                toast.error("not seeing anything")
+            }
+        }
+
         if (sentActiveScreen === "checklistStarters") {
-            setSearchItemsOnSearchObj(checklistStartersSearchObjSet, await functionFetcher<checklistStarter>(sentActiveScreen, updateOption), updateOption)
+            const results = await getResults<checklistStarter>(updateOption,
+                async () => {
+                    if (updateOption.type !== "specific") throw new Error("incorrect updateOption sent")
+
+                    return await getSpecificChecklistStarters({ type: "id", checklistId: updateOption.id })
+                },
+                async () => {
+                    return await getChecklistStarters(checklistStartersSearchObj.limit, checklistStartersSearchObj.offset)
+                },
+            )
+
+            //general send off
+            respondToResults(results)
+
+            //update state
+            setSearchItemsOnSearchObj(checklistStartersSearchObjSet, results, updateOption)
 
         } else if (sentActiveScreen === "clientRequests") {
-            setSearchItemsOnSearchObj(clientRequestsSearchObjSet, await functionFetcher<clientRequest>(sentActiveScreen, updateOption), updateOption)
+            const results = await getResults<clientRequest>(updateOption,
+                async () => {
+                    if (updateOption.type !== "specific") throw new Error("incorrect updateOption sent")
+
+                    return await getSpecificClientRequest(updateOption.id, resourceAuth)
+                },
+                async () => {
+                    return await getClientRequests({ type: "all" }, { type: "date" }, resourceAuth, clientRequestsSearchObj.limit, clientRequestsSearchObj.offset)
+                },
+            )
+
+            //general send off
+            respondToResults(results)
+
+            //update state
+            setSearchItemsOnSearchObj(clientRequestsSearchObjSet, results, updateOption)
 
         } else if (sentActiveScreen === "companies") {
-            setSearchItemsOnSearchObj(companiesSearchObjSet, await functionFetcher<company>(sentActiveScreen, updateOption), updateOption)
+            const results = await getResults<company>(updateOption,
+                async () => {
+                    if (updateOption.type !== "specific") throw new Error("incorrect updateOption sent")
+
+                    return await getSpecificCompany(updateOption.id, resourceAuth)
+                },
+                async () => {
+                    return await getCompanies(resourceAuth, companiesSearchObj.limit, companiesSearchObj.offset)
+                },
+            )
+
+            //general send off
+            respondToResults(results)
+
+            //update state
+            setSearchItemsOnSearchObj(companiesSearchObjSet, results, updateOption)
 
         } else if (sentActiveScreen === "departments") {
-            setSearchItemsOnSearchObj(departmentsSearchObjSet, await functionFetcher<department>(sentActiveScreen, updateOption), updateOption)
+            const results = await getResults<department>(updateOption,
+                async () => {
+                    if (updateOption.type !== "specific") throw new Error("incorrect updateOption sent")
+
+                    return await getSpecificDepartment(updateOption.id, resourceAuth)
+                },
+                async () => {
+                    return await getDepartments(resourceAuth, departmentsSearchObj.limit, departmentsSearchObj.offset)
+                },
+            )
+
+            //general send off
+            respondToResults(results)
+
+            //update state
+            setSearchItemsOnSearchObj(departmentsSearchObjSet, results, updateOption)
 
         } else if (sentActiveScreen === "users") {
-            setSearchItemsOnSearchObj(usersSearchObjSet, await functionFetcher<user>(sentActiveScreen, updateOption), updateOption)
+            const results = await getResults<user>(updateOption,
+                async () => {
+                    if (updateOption.type !== "specific") throw new Error("incorrect updateOption sent")
+
+                    return await getSpecificUsers(updateOption.id)
+                },
+                async () => {
+                    return await getUsers({ type: "all" }, usersSearchObj.limit, usersSearchObj.offset)
+                },
+            )
+
+            //general send off
+            respondToResults(results)
+
+            //update state
+            setSearchItemsOnSearchObj(usersSearchObjSet, results, updateOption)
 
         } else if (sentActiveScreen === "usersToDepartments") {
-            setSearchItemsOnSearchObj(usersToDepartmentsSearchObjSet, await functionFetcher<userToDepartment>(sentActiveScreen, updateOption), updateOption)
+            const results = await getResults<userToDepartment>(updateOption,
+                async () => {
+                    if (updateOption.type !== "specific") throw new Error("incorrect updateOption sent")
+
+                    return await getSpecificUsersToDepartments({ type: "id", userDepartmentId: updateOption.id })
+                },
+                async () => {
+                    return await getUsersToDepartments({ type: "all" }, usersToDepartmentsSearchObj.limit, usersToDepartmentsSearchObj.offset)
+                },
+            )
+
+            //general send off
+            respondToResults(results)
+
+            //update state
+            setSearchItemsOnSearchObj(usersToDepartmentsSearchObjSet, results, updateOption)
 
         } else if (sentActiveScreen === "usersToCompanies") {
-            setSearchItemsOnSearchObj(usersToCompaniesSearchObjSet, await functionFetcher<userToCompany>(sentActiveScreen, updateOption), updateOption)
+            const results = await getResults<userToCompany>(updateOption,
+                async () => {
+                    if (updateOption.type !== "specific") throw new Error("incorrect updateOption sent")
+                    return await getSpecificUsersToCompanies({ type: "id", userCompanyId: updateOption.id })
+                },
+                async () => {
+                    return await getUsersToCompanies({ type: "all" }, usersToCompaniesSearchObj.limit, usersToCompaniesSearchObj.offset)
+                },
+            )
 
+            //general send off
+            respondToResults(results)
+
+            //update state
+            setSearchItemsOnSearchObj(usersToCompaniesSearchObjSet, results, updateOption)
+
+        } else {
+            throw new Error("invalid selection")
         }
 
         //send update off for other admins
@@ -201,10 +283,11 @@ export default function Page() {
     }
 
     //respond to updates from other admins
-    function handleMessageFromWebsocket(seenMessage: webSocketStandardMessageType) {
+    async function handleMessageFromWebsocket(seenMessage: webSocketStandardMessageType) {
         if (seenMessage.type === "standard" && seenMessage.data.updated.type === "adminPage") {
             //update specific table
-            loadStarterValues(seenMessage.data.updated.activeScreen as activeScreenType, seenMessage.data.updated.updateType, false)
+            //update the state
+            await loadStarterValues(seenMessage.data.updated.activeScreen as activeScreenType, seenMessage.data.updated.updateType, false)
         };
     }
 
@@ -273,7 +356,7 @@ export default function Page() {
                                         searchObj={checklistStartersSearchObj}
                                         searchObjSet={checklistStartersSearchObjSet}
                                         searchFunction={async () => {
-                                            return await functionFetcher<checklistStarter>(activeScreen, { type: "all" })
+                                            loadStarterValues(activeScreen, { type: "all" }, false)
                                         }}
                                     />
 
@@ -348,7 +431,7 @@ export default function Page() {
                                         searchObj={clientRequestsSearchObj}
                                         searchObjSet={clientRequestsSearchObjSet}
                                         searchFunction={async () => {
-                                            return await functionFetcher<clientRequest>(activeScreen, { type: "all" })
+                                            await loadStarterValues(activeScreen, { type: "all" }, false)
                                         }}
                                     />
 
@@ -415,7 +498,7 @@ export default function Page() {
                                         searchObj={companiesSearchObj}
                                         searchObjSet={companiesSearchObjSet}
                                         searchFunction={async () => {
-                                            return await functionFetcher<company>(activeScreen, { type: "all" })
+                                            await loadStarterValues(activeScreen, { type: "all" }, false)
                                         }}
                                     />
 
@@ -457,7 +540,7 @@ export default function Page() {
                                         searchObj={departmentsSearchObj}
                                         searchObjSet={departmentsSearchObjSet}
                                         searchFunction={async () => {
-                                            return await functionFetcher<department>(activeScreen, { type: "all" })
+                                            await loadStarterValues(activeScreen, { type: "all" }, false)
                                         }}
                                     />
 
@@ -530,7 +613,7 @@ export default function Page() {
                                         searchObj={usersSearchObj}
                                         searchObjSet={usersSearchObjSet}
                                         searchFunction={async () => {
-                                            return await functionFetcher<user>(activeScreen, { type: "all" })
+                                            await loadStarterValues(activeScreen, { type: "all" }, false)
                                         }}
                                     />
 
@@ -606,7 +689,7 @@ export default function Page() {
                                         searchObj={departmentsSearchObj}
                                         searchObjSet={departmentsSearchObjSet}
                                         searchFunction={async () => {
-                                            return await functionFetcher<department>("departments", { type: "all" })
+                                            await loadStarterValues("departments", { type: "all" }, false)
                                         }}
                                     />
 
@@ -658,7 +741,7 @@ export default function Page() {
                                         searchObj={usersToDepartmentsSearchObj}
                                         searchObjSet={usersToDepartmentsSearchObjSet}
                                         searchFunction={async () => {
-                                            return await functionFetcher<userToDepartment>(activeScreen, { type: "all" })
+                                            await loadStarterValues(activeScreen, { type: "all" }, false)
                                         }}
                                     />
 
@@ -734,7 +817,7 @@ export default function Page() {
                                         searchObjSet={companiesSearchObjSet}
                                         searchFunction={async () => {
                                             if (resourceAuth === undefined) throw new Error("not seeing auth")
-                                            return await functionFetcher<company>("companies", { type: "all" })
+                                            await loadStarterValues("companies", { type: "all" }, false)
                                         }}
                                     />
 
@@ -785,7 +868,7 @@ export default function Page() {
                                         searchObj={usersToCompaniesSearchObj}
                                         searchObjSet={usersToCompaniesSearchObjSet}
                                         searchFunction={async () => {
-                                            return await functionFetcher<userToCompany>(activeScreen, { type: "all" })
+                                            await loadStarterValues(activeScreen, { type: "all" }, false)
                                         }}
                                     />
 

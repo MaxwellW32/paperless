@@ -58,6 +58,8 @@ export default function useWebsockets(receivedMessageFunction: (webSocketStandar
 
     //send messages
     function sendWebsocketUpdate(updateOption: webSocketStandardMessageType["data"]["updated"]) {
+        if (wsRef.current === null) return
+
         const newWebSocketsMessage: webSocketStandardMessageType = {
             type: "standard",
             data: {
@@ -67,7 +69,7 @@ export default function useWebsockets(receivedMessageFunction: (webSocketStandar
 
         webSocketStandardMessageSchema.parse(newWebSocketsMessage)
 
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
+        if (wsRef.current.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify(newWebSocketsMessage));
         }
     }

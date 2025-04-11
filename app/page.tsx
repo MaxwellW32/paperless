@@ -31,8 +31,6 @@ import styles from "./page.module.css"
 
 
 //plan for today
-//update forms on completion, same with adding
-//add submissionaction function - that sends reset signal
 //
 //
 //

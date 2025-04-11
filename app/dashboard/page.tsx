@@ -1,7 +1,7 @@
 "use client"
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, webSocketStandardMessageSchema, webSocketMessageJoinType, webSocketMessageJoinSchema, webSocketMessagePingType, webSocketStandardMessageType, refreshWSObjType, expectedResourceType, resourceAuthType } from '@/types'
+import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, webSocketStandardMessageType, refreshWSObjType, expectedResourceType, resourceAuthType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal } from '@/utility/globalState'

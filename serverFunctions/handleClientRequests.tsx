@@ -206,8 +206,6 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
                 canReturnClientRequest = departmentHasManageAccess
 
             } else {
-                console.log(`$normal`);
-
                 //checklist item needs to be completed
                 if (seenIncompleteChecklistItem.type === "manual" && seenIncompleteChecklistItem.for.type === "department" && seenIncompleteChecklistItem.for.departmenId === departmentId) {
                     canReturnClientRequest = true

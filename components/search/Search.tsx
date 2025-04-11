@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 
 export default function Search<T>({ searchObj, searchObjSet, searchFunction, searchLabel = "search" }: {
-    searchObj: searchObj<T>, searchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchFunction: () => Promise<T[]>, searchLabel?: string,
+    searchObj: searchObj<T>, searchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchFunction: () => void, searchLabel?: string,
 }) {
     const wantsToSearchAgain = useRef(false)
 
@@ -43,19 +43,7 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
                 toast.success("searching")
             }
 
-            const seenResults = await searchFunction()
-
-            if (seenResults.length === 0) {
-                toast.error("not seeing anything")
-            }
-
-            searchObjSet(prevSearchObj => {
-                const newSearchObj = { ...prevSearchObj }
-
-                newSearchObj.searchItems = seenResults
-
-                return newSearchObj
-            })
+            await searchFunction()
 
         } catch (error) {
             consoleAndToastError(error)
