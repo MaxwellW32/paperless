@@ -35,17 +35,31 @@ export async function updateChecklistStarters(checklistStarterId: checklistStart
 }
 
 //only run this on server
-export async function getSpecificChecklistStarters(checklistStarterType: checklistStarter["type"]): Promise<checklistStarter | undefined> {
+export async function getSpecificChecklistStarters(option: { type: "id", checklistId: checklistStarter["id"] } | { type: "type", checklistType: checklistStarter["type"] }): Promise<checklistStarter | undefined> {
     //logged in check
     await sessionCheckWithError()
 
-    checklistStarterSchema.shape.type.parse(checklistStarterType)
+    if (option.type === "id") {
+        checklistStarterSchema.shape.id.parse(option.checklistId)
 
-    const result = await db.query.checklistStarters.findFirst({
-        where: eq(checklistStarters.type, checklistStarterType),
-    });
+        const result = await db.query.checklistStarters.findFirst({
+            where: eq(checklistStarters.id, option.checklistId),
+        });
 
-    return result
+        return result
+
+    } else if (option.type === "type") {
+        checklistStarterSchema.shape.type.parse(option.checklistType)
+
+        const result = await db.query.checklistStarters.findFirst({
+            where: eq(checklistStarters.type, option.checklistType),
+        });
+
+        return result
+
+    } else {
+        throw new Error("invalid selection")
+    }
 }
 
 //only run this on server

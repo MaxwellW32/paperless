@@ -12,19 +12,28 @@ if (resourceAuth === undefined) throw new Error("not seeing auth")
 
 
 
-                if (seenMessage.type === "standard") {
-                    const seenMessageObj = seenMessage.data.updated
-    
-                    if (seenMessageObj.type === "clientRequests") {
-                        //update locally
-                        refreshObjSet(prevRefreshObj => {
-                            return updateRefreshObj(prevRefreshObj, "clientRequests")
-                        })
-                    }
-                };
+if (seenMessage.type === "standard") {
+    const seenMessageObj = seenMessage.data.updated
+
+    if (seenMessageObj.type === "clientRequests") {
+        //update locally
+        refreshObjSet(prevRefreshObj => {
+            return updateRefreshObj(prevRefreshObj, "clientRequests")
+        })
+    }
+};
 
 
 
+
+
+, {type: "all"}
+
+
+
+
+    if (editing.checklistStarters === undefined) return
+    loadStarterValues(activeScreen, {type: "specific", id: editing.checklistStarters.id})
 
 
 

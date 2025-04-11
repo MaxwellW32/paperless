@@ -42,7 +42,16 @@ export type wsUpdateClientRequestsType = z.infer<typeof wsUpdateClientRequestsSc
 
 export const wsUpdateAdminPageSchema = z.object({
     type: z.literal("adminPage"),
-    activeScreen: z.string().min(1)
+    activeScreen: z.string().min(1),
+    updateType: z.union([
+        z.object({
+            type: z.literal("all")
+        }),
+        z.object({
+            type: z.literal("specific"),
+            id: z.string()
+        }),
+    ])
 });
 export type wsUpdateAdminPageType = z.infer<typeof wsUpdateAdminPageSchema>
 

@@ -84,7 +84,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                     //ensure cant change checklist if updating a client request
                     if (sentClientRequest !== undefined) return
 
-                    const seenChecklistStarter = await getSpecificChecklistStarters(chosenChecklistStarterType)
+                    const seenChecklistStarter = await getSpecificChecklistStarters({ type: "type", checklistType: chosenChecklistStarterType })
                     if (seenChecklistStarter === undefined) throw new Error("not seeing checklist")
 
                     //set the checklist and checklist id in the inital form obj - for when its time to reset
