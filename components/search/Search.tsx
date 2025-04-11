@@ -21,8 +21,8 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
 
     //respond to want to refresh all
     useEffect(() => {
-        //ensure only run when true
-        if (searchObj.refreshAll !== true) return
+        //run everytime it flips
+        if (searchObj.refreshAll === undefined) return
 
         //reset refreshAll
         searchObjSet(prevSearchObj => {

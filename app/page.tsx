@@ -18,6 +18,7 @@ import styles from "./page.module.css"
 //set checklist to null on complete on older records
 //create tapes/equipment forms
 //complete equipment workflow
+//round off timing on client request
 
 //understand
 //what is resource auth response used for

@@ -13,7 +13,7 @@ import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
 import { ensureCanAccessResource } from '@/serverFunctions/handleAuth'
 
-export default function AddEditDepartment({ sentDepartment }: { sentDepartment?: department }) {
+export default function AddEditDepartment({ sentDepartment, submissionAction }: { sentDepartment?: department, submissionAction?: () => void }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
     const [localUpdateSchema, localUpdateSchemaSet] = useState<z.ZodSchema | undefined>()
@@ -120,6 +120,10 @@ export default function AddEditDepartment({ sentDepartment }: { sentDepartment?:
                 await updateDepartments(sentDepartment.id, validatedUpdatedDepartment, resourceAuth)
 
                 toast.success("department updated")
+            }
+
+            if (submissionAction !== undefined) {
+                submissionAction()
             }
 
         } catch (error) {

@@ -40,12 +40,13 @@ export const wsUpdateClientRequestsSchema = z.object({
 });
 export type wsUpdateClientRequestsType = z.infer<typeof wsUpdateClientRequestsSchema>
 
-export const wsUpdateOtherSchema = z.object({
-    type: z.literal("other"),
+export const wsUpdateAdminPageSchema = z.object({
+    type: z.literal("adminPage"),
+    activeScreen: z.string().min(1)
 });
-export type wsUpdateOtherType = z.infer<typeof wsUpdateOtherSchema>
+export type wsUpdateAdminPageType = z.infer<typeof wsUpdateAdminPageSchema>
 
-export const wsUpdatedUnionSchema = z.union([wsUpdateClientRequestsSchema, wsUpdateOtherSchema])
+export const wsUpdatedUnionSchema = z.union([wsUpdateClientRequestsSchema, wsUpdateAdminPageSchema])
 export type wsUpdatedUnionType = z.infer<typeof wsUpdatedUnionSchema>
 
 export const webSocketStandardMessageSchema = z.object({

@@ -13,7 +13,7 @@ import SimpleDisplayStringArray from '../reusableSimple/simpleDisplayStringArray
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
 
-export default function AddEditCompany({ sentCompany }: { sentCompany?: company }) {
+export default function AddEditCompany({ sentCompany, submissionAction }: { sentCompany?: company, submissionAction?: () => void }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
     const [localUpdateSchema, localUpdateSchemaSet] = useState<z.ZodSchema | undefined>()
@@ -120,6 +120,10 @@ export default function AddEditCompany({ sentCompany }: { sentCompany?: company 
                 await updateCompanies(sentCompany.id, validatedUpdatedDepartment, resourceAuth)
 
                 toast.success("company updated")
+            }
+
+            if (submissionAction !== undefined) {
+                submissionAction()
             }
 
         } catch (error) {

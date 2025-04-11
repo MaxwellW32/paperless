@@ -13,7 +13,6 @@ export default function LoadResourceAuth() {
 
     //set the resource auth - can be done globally
     useEffect(() => {
-        console.log(`$use effect ran`);
         if (session === null) return
 
         let newResourceAuth: resourceAuthType | undefined = undefined

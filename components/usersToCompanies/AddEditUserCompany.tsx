@@ -13,7 +13,7 @@ import { ensureUserCanBeAddedToCompany } from '@/utility/validation'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
 
-export default function AddEditUserCompany({ sentUserCompany, companiesStarter, submissionFunction }: { sentUserCompany?: userToCompany, companiesStarter: company[], submissionFunction?: () => void }) {
+export default function AddEditUserCompany({ sentUserCompany, companiesStarter, submissionAction }: { sentUserCompany?: userToCompany, companiesStarter: company[], submissionAction?: () => void }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
     const initialFormObj: newUserToCompany = {
@@ -114,8 +114,8 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
             }
 
             //notify above that form submitted
-            if (submissionFunction !== undefined) {
-                submissionFunction()
+            if (submissionAction !== undefined) {
+                submissionAction()
             }
 
         } catch (error) {

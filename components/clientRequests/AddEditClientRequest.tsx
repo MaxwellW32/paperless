@@ -16,7 +16,7 @@ import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/Dynami
 import { EditTapeForm } from '../forms/tapeForm/ViewEditTapeForm'
 import TextInput from '../textInput/TextInput'
 
-export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department }) {
+export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department, submissionAction }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department, submissionAction?: () => void }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
     const { data: session } = useSession()
@@ -249,6 +249,10 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
             refreshWSObjSet(prevWSRefreshObj => {
                 return updateRefreshObj(prevWSRefreshObj, "clientRequests")
             })
+
+            if (submissionAction !== undefined) {
+                submissionAction()
+            }
 
         } catch (error) {
             consoleAndToastError(error)

@@ -9,7 +9,7 @@ import { newUser, newUserSchema, updateUserSchema, user, userAccessLevel, userSc
 import { addUsers, updateUsers } from '@/serverFunctions/handleUser'
 import Image from 'next/image'
 
-export default function AddEditUser({ sentUser }: { sentUser?: user }) {
+export default function AddEditUser({ sentUser, submissionAction }: { sentUser?: user, submissionAction?: () => void }) {
     const initialFormObj: newUser = {
         fromDepartment: false,
         accessLevel: null,
@@ -86,6 +86,10 @@ export default function AddEditUser({ sentUser }: { sentUser?: user }) {
                 await updateUsers(sentUser.id, validatedUpdatedUser)
 
                 toast.success("user updated")
+            }
+
+            if (submissionAction !== undefined) {
+                submissionAction()
             }
 
         } catch (error) {

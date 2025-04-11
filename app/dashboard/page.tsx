@@ -14,9 +14,11 @@ import { updateRefreshObj } from '@/utility/utility'
 import AddEditClientRequest from '@/components/clientRequests/AddEditClientRequest'
 import DashboardClientRequest from '@/components/clientRequests/DashboardClientRequest'
 import useResourceAuth from '@/components/resourceAuth/UseLoad'
+import useWebsockets from '@/components/websockets/UseWebsockets'
 
 export default function Page() {
     const { data: session } = useSession()
+    const { sendWebsocketUpdate, } = useWebsockets(handleMessageFromWebsocket)
 
     //check if i can create a request
     const [clientRequestsExpectedResource,] = useState<expectedResourceType>({ type: "clientRequests", clientRequestId: "" })
@@ -38,8 +40,6 @@ export default function Page() {
     const [clientRequestsHistory, clientRequestsHistorySet] = useState<clientRequest[]>([])
 
     const [seenDepartment, seenDepartmentSet] = useState<department | undefined>()
-    const wsRef = useRef<WebSocket | null>(null);
-    const [, webSocketsConnectedSet] = useState(false)
 
     const foundClientRequestToView = useMemo<clientRequest | undefined>(() => {
         if (activeScreen === undefined || activeScreen.type !== "viewRequest") return undefined
@@ -130,8 +130,6 @@ export default function Page() {
 
     }, [userDepartmentCompanySelection, resourceAuth])
 
-
-
     //set viewing sidebar on desktop
     useEffect(() => {
         if (window.innerWidth < 600) {
@@ -139,79 +137,13 @@ export default function Page() {
         }
     }, [])
 
-    //handle websockets
-    useEffect(() => {
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const ws = new WebSocket(`${protocol}//${window.location.host}/api/ws`);
-        wsRef.current = ws;
-
-        ws.onopen = () => {
-            webSocketsConnectedSet(true);
-            console.log(`$ws connected`);
-
-            const newJoinMessage: webSocketMessageJoinType = {
-                type: "join",
-            }
-
-            webSocketMessageJoinSchema.parse(newJoinMessage)
-
-            //send request to join a website id room
-            ws.send(JSON.stringify(newJoinMessage));
+    function handleMessageFromWebsocket(seenMessage: webSocketStandardMessageType) {
+        if (seenMessage.type === "standard" && seenMessage.data.updated.type === "clientRequests") {
+            //update locally
+            refreshObjSet(prevRefreshObj => {
+                return updateRefreshObj(prevRefreshObj, "clientRequests")
+            })
         };
-
-        ws.onclose = () => {
-            webSocketsConnectedSet(false);
-        };
-
-        ws.onmessage = (event) => {
-            const seenMessage = webSocketStandardMessageSchema.parse(JSON.parse(event.data.toString()))
-
-            if (seenMessage.type === "standard") {
-                const seenMessageObj = seenMessage.data.updated
-
-                if (seenMessageObj.type === "clientRequests") {
-                    //update locally
-                    refreshObjSet(prevRefreshObj => {
-                        return updateRefreshObj(prevRefreshObj, "clientRequests")
-                    })
-                }
-            };
-        }
-
-        const pingInterval = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-                const newPingMessage: webSocketMessagePingType = {
-                    type: "ping"
-                }
-
-                //keep connection alive
-                ws.send(JSON.stringify(newPingMessage));
-                console.log(`$sent ping`);
-            }
-        }, 29000);
-
-        return () => {
-            clearInterval(pingInterval);
-
-            if (wsRef.current !== null) {
-                wsRef.current.close();
-            }
-        };
-    }, [])
-
-    function sendWebsocketUpdate(updateOption: webSocketStandardMessageType["data"]["updated"]) {
-        const newWebSocketsMessage: webSocketStandardMessageType = {
-            type: "standard",
-            data: {
-                updated: updateOption
-            }
-        }
-
-        webSocketStandardMessageSchema.parse(newWebSocketsMessage)
-
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify(newWebSocketsMessage));
-        }
     }
 
     return (

@@ -1,7 +1,7 @@
 "use client"
 import React, { useRef, useState } from 'react'
 import styles from "./admin.module.css"
-import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObj } from '@/types'
+import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObj, webSocketStandardMessageType } from '@/types'
 import { getChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
@@ -24,13 +24,18 @@ import DashboardClientRequest from '../clientRequests/DashboardClientRequest'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
 import Search from '../search/Search'
+import useWebsockets from '../websockets/UseWebsockets'
 
 type schemaType = typeof schema;
 type schemaTableNamesType = keyof schemaType;
 type activeScreenType = schemaTableNamesType
 
+//refresh all items on any kind of list on create/delete
+//refresh specific item in list on update
+
 export default function Page() {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
+    const { sendWebsocketUpdate, } = useWebsockets(handleMessageFromWebsocket, [resourceAuth])
 
     const allTables = Object.keys(schema) as schemaTableNamesType[];
     const editableTables = allTables.filter(key => !key.endsWith("Relations") && !key.endsWith("Enum") && key !== "accounts" && key !== "sessions" && key !== "verificationTokens").sort((a, b) => a.localeCompare(b)) //get all tables defined in the schema, sort it alphabetically
@@ -70,6 +75,90 @@ export default function Page() {
     }>({})
 
     const searchDebounce = useRef<NodeJS.Timeout>()
+
+    async function functionFetcher<T>(sentActiveScreen: activeScreenType): Promise<T[]> {
+        if (resourceAuth === undefined) throw new Error("no auth seen")
+
+        if (sentActiveScreen === "checklistStarters") {
+            return await getChecklistStarters(checklistStartersSearchObj.limit, checklistStartersSearchObj.offset) as T[]
+
+        } else if (sentActiveScreen === "clientRequests") {
+            return await getClientRequests({ type: "all" }, { type: "date" }, resourceAuth, clientRequestsSearchObj.limit, clientRequestsSearchObj.offset) as T[]
+
+        } else if (sentActiveScreen === "companies") {
+            return await getCompanies(resourceAuth, companiesSearchObj.limit, companiesSearchObj.offset) as T[]
+
+        } else if (sentActiveScreen === "departments") {
+            return await getDepartments(resourceAuth, departmentsSearchObj.limit, departmentsSearchObj.offset) as T[]
+
+        } else if (sentActiveScreen === "users") {
+            return await getUsers({ type: "all" }, usersSearchObj.limit, usersSearchObj.offset) as T[]
+
+        } else if (sentActiveScreen === "usersToDepartments") {
+            return await getUsersToDepartments({ type: "all" }, usersToDepartmentsSearchObj.limit, usersToDepartmentsSearchObj.offset) as T[]
+
+        } else if (sentActiveScreen === "usersToCompanies") {
+            return await getUsersToCompanies({ type: "all" }, usersToCompaniesSearchObj.limit, usersToCompaniesSearchObj.offset) as T[]
+
+        } else {
+            throw new Error("invalid selection")
+        }
+    }
+
+    //general function that refreshed all on the active screen
+    async function loadStarterValues(sentActiveScreen: activeScreenType | undefined, runWebsocketUpdate = true) {
+        if (sentActiveScreen === undefined) return
+
+        function setSearchItemsOnSearchObj<T>(sentSearchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchItems: T[]) {
+            sentSearchObjSet(prevSearchObj => {
+                const newSearchObj = { ...prevSearchObj }
+
+                newSearchObj.searchItems = searchItems
+
+                return newSearchObj
+            })
+        }
+
+        //set the values to state locally
+        if (sentActiveScreen === "checklistStarters") {
+            setSearchItemsOnSearchObj(checklistStartersSearchObjSet, await functionFetcher<checklistStarter>(sentActiveScreen))
+
+        } else if (sentActiveScreen === "clientRequests") {
+            setSearchItemsOnSearchObj(clientRequestsSearchObjSet, await functionFetcher<clientRequest>(sentActiveScreen))
+
+        } else if (sentActiveScreen === "companies") {
+            setSearchItemsOnSearchObj(companiesSearchObjSet, await functionFetcher<company>(sentActiveScreen))
+
+        } else if (sentActiveScreen === "departments") {
+            setSearchItemsOnSearchObj(departmentsSearchObjSet, await functionFetcher<department>(sentActiveScreen))
+
+        } else if (sentActiveScreen === "users") {
+            setSearchItemsOnSearchObj(usersSearchObjSet, await functionFetcher<user>(sentActiveScreen))
+
+        } else if (sentActiveScreen === "usersToDepartments") {
+            setSearchItemsOnSearchObj(usersToDepartmentsSearchObjSet, await functionFetcher<userToDepartment>(sentActiveScreen))
+
+        } else if (sentActiveScreen === "usersToCompanies") {
+            setSearchItemsOnSearchObj(usersToCompaniesSearchObjSet, await functionFetcher<userToCompany>(sentActiveScreen))
+
+        }
+
+        //send update off for other admins
+        if (runWebsocketUpdate) {
+            sendWebsocketUpdate({
+                type: "adminPage",
+                activeScreen: sentActiveScreen
+            })
+        }
+    }
+
+    //send updates to other admins
+    function handleMessageFromWebsocket(seenMessage: webSocketStandardMessageType) {
+        if (seenMessage.type === "standard" && seenMessage.data.updated.type === "adminPage") {
+            //update specific table
+            loadStarterValues(seenMessage.data.updated.activeScreen as activeScreenType)
+        };
+    }
 
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
@@ -125,14 +214,18 @@ export default function Page() {
                                     />
 
                                     {adding.checklistStarters === true && (
-                                        <AddEditChecklistStarter />
+                                        <AddEditChecklistStarter
+                                            submissionAction={() => {
+                                                loadStarterValues(activeScreen)
+                                            }}
+                                        />
                                     )}
 
                                     <Search
                                         searchObj={checklistStartersSearchObj}
                                         searchObjSet={checklistStartersSearchObjSet}
                                         searchFunction={async () => {
-                                            return await getChecklistStarters(checklistStartersSearchObj.limit, checklistStartersSearchObj.offset)
+                                            return await functionFetcher<checklistStarter>(activeScreen)
                                         }}
                                     />
 
@@ -173,6 +266,9 @@ export default function Page() {
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                                 <AddEditChecklistStarter
                                                     sentChecklistStarter={editing.checklistStarters}
+                                                    submissionAction={() => {
+                                                        loadStarterValues(activeScreen)
+                                                    }}
                                                 />
                                             </div>
                                         </>
@@ -190,7 +286,11 @@ export default function Page() {
 
                                     {adding.clientRequests === true && (
                                         <>
-                                            <AddEditClientRequest />
+                                            <AddEditClientRequest
+                                                submissionAction={() => {
+                                                    loadStarterValues(activeScreen)
+                                                }}
+                                            />
                                         </>
                                     )}
 
@@ -198,9 +298,7 @@ export default function Page() {
                                         searchObj={clientRequestsSearchObj}
                                         searchObjSet={clientRequestsSearchObjSet}
                                         searchFunction={async () => {
-                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
-
-                                            return await getClientRequests({ type: "all" }, { type: "date" }, resourceAuth, clientRequestsSearchObj.limit, clientRequestsSearchObj.offset)
+                                            return await functionFetcher<clientRequest>(activeScreen)
                                         }}
                                     />
 
@@ -235,6 +333,9 @@ export default function Page() {
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                                 <AddEditClientRequest
                                                     sentClientRequest={editing.clientRequests}
+                                                    submissionAction={() => {
+                                                        loadStarterValues(activeScreen)
+                                                    }}
                                                 />
                                             </div>
                                         </>
@@ -251,15 +352,18 @@ export default function Page() {
                                     />
 
                                     {adding.companies && (
-                                        <AddEditCompany />
+                                        <AddEditCompany
+                                            submissionAction={() => {
+                                                loadStarterValues(activeScreen)
+                                            }}
+                                        />
                                     )}
 
                                     <Search
                                         searchObj={companiesSearchObj}
                                         searchObjSet={companiesSearchObjSet}
                                         searchFunction={async () => {
-                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
-                                            return await getCompanies(resourceAuth, companiesSearchObj.limit, companiesSearchObj.offset)
+                                            return await functionFetcher<company>(activeScreen)
                                         }}
                                     />
 
@@ -290,15 +394,18 @@ export default function Page() {
                                     />
 
                                     {adding.departments && (
-                                        <AddEditDepartment />
+                                        <AddEditDepartment
+                                            submissionAction={() => {
+                                                loadStarterValues(activeScreen)
+                                            }}
+                                        />
                                     )}
 
                                     <Search
                                         searchObj={departmentsSearchObj}
                                         searchObjSet={departmentsSearchObjSet}
                                         searchFunction={async () => {
-                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
-                                            return await getDepartments(resourceAuth, departmentsSearchObj.limit, departmentsSearchObj.offset)
+                                            return await functionFetcher<department>(activeScreen)
                                         }}
                                     />
 
@@ -329,7 +436,11 @@ export default function Page() {
                                     />
 
                                     {adding.users && (
-                                        <AddEditUser />
+                                        <AddEditUser
+                                            submissionAction={() => {
+                                                loadStarterValues(activeScreen)
+                                            }}
+                                        />
                                     )}
 
                                     <label>search users by name</label>
@@ -367,7 +478,7 @@ export default function Page() {
                                         searchObj={usersSearchObj}
                                         searchObjSet={usersSearchObjSet}
                                         searchFunction={async () => {
-                                            return await getUsers({ type: "all" }, usersSearchObj.limit, usersSearchObj.offset)
+                                            return await functionFetcher<user>(activeScreen)
                                         }}
                                     />
 
@@ -408,6 +519,9 @@ export default function Page() {
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                                                 <AddEditUser
                                                     sentUser={editing.users}
+                                                    submissionAction={() => {
+                                                        loadStarterValues(activeScreen)
+                                                    }}
                                                 />
                                             </div>
                                         </>
@@ -424,7 +538,11 @@ export default function Page() {
                                     />
 
                                     {adding.usersToDepartments === true && (
-                                        <AddEditUserDepartment departmentsStarter={departmentsSearchObj.searchItems} />
+                                        <AddEditUserDepartment departmentsStarter={departmentsSearchObj.searchItems}
+                                            submissionAction={() => {
+                                                loadStarterValues(activeScreen)
+                                            }}
+                                        />
                                     )}
 
                                     <h3>search by department</h3>
@@ -434,8 +552,7 @@ export default function Page() {
                                         searchObj={departmentsSearchObj}
                                         searchObjSet={departmentsSearchObjSet}
                                         searchFunction={async () => {
-                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
-                                            return await getDepartments(resourceAuth, departmentsSearchObj.limit, departmentsSearchObj.offset)
+                                            return await functionFetcher<department>("departments")
                                         }}
                                     />
 
@@ -487,7 +604,7 @@ export default function Page() {
                                         searchObj={usersToDepartmentsSearchObj}
                                         searchObjSet={usersToDepartmentsSearchObjSet}
                                         searchFunction={async () => {
-                                            return await getUsersToDepartments({ type: "all" }, usersToDepartmentsSearchObj.limit, usersToDepartmentsSearchObj.offset)
+                                            return await functionFetcher<userToDepartment>(activeScreen)
                                         }}
                                     />
 
@@ -528,6 +645,9 @@ export default function Page() {
                                                 <AddEditUserDepartment
                                                     sentUserDepartment={editing.usersToDepartments}
                                                     departmentsStarter={departmentsSearchObj.searchItems}
+                                                    submissionAction={() => {
+                                                        loadStarterValues(activeScreen)
+                                                    }}
                                                 />
                                             </div>
                                         </>
@@ -544,7 +664,11 @@ export default function Page() {
                                     />
 
                                     {adding.usersToCompanies === true && (
-                                        <AddEditUserCompany companiesStarter={companiesSearchObj.searchItems} />
+                                        <AddEditUserCompany companiesStarter={companiesSearchObj.searchItems}
+                                            submissionAction={() => {
+                                                loadStarterValues(activeScreen)
+                                            }}
+                                        />
                                     )}
 
                                     <h3>search by company</h3>
@@ -554,7 +678,7 @@ export default function Page() {
                                         searchObjSet={companiesSearchObjSet}
                                         searchFunction={async () => {
                                             if (resourceAuth === undefined) throw new Error("not seeing auth")
-                                            return await getCompanies(resourceAuth, companiesSearchObj.limit, companiesSearchObj.offset)
+                                            return await functionFetcher<company>("companies")
                                         }}
                                     />
 
@@ -605,7 +729,7 @@ export default function Page() {
                                         searchObj={usersToCompaniesSearchObj}
                                         searchObjSet={usersToCompaniesSearchObjSet}
                                         searchFunction={async () => {
-                                            return await getUsersToCompanies({ type: "all" }, usersToCompaniesSearchObj.limit, usersToCompaniesSearchObj.offset)
+                                            return await functionFetcher<userToCompany>(activeScreen)
                                         }}
                                     />
 
@@ -646,6 +770,9 @@ export default function Page() {
                                                 <AddEditUserCompany
                                                     sentUserCompany={editing.usersToCompanies}
                                                     companiesStarter={companiesSearchObj.searchItems}
+                                                    submissionAction={() => {
+                                                        loadStarterValues(activeScreen)
+                                                    }}
                                                 />
                                             </div>
                                         </>

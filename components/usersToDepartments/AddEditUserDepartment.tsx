@@ -13,7 +13,7 @@ import { ensureUserCanBeAddedToDepartment } from '@/utility/validation'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
 
-export default function AddEditUserDepartment({ sentUserDepartment, departmentsStarter, submissionFunction }: { sentUserDepartment?: userToDepartment, departmentsStarter: department[], submissionFunction?: () => void }) {
+export default function AddEditUserDepartment({ sentUserDepartment, departmentsStarter, submissionAction }: { sentUserDepartment?: userToDepartment, departmentsStarter: department[], submissionAction?: () => void, }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
     const initialFormObj: newUserToDepartment = {
@@ -114,8 +114,8 @@ export default function AddEditUserDepartment({ sentUserDepartment, departmentsS
             }
 
             //notify above that form submitted
-            if (submissionFunction !== undefined) {
-                submissionFunction()
+            if (submissionAction !== undefined) {
+                submissionAction()
             }
 
         } catch (error) {

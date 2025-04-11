@@ -23,9 +23,6 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
     }
     const [formObj, formObjSet] = useState<tapeFormType>(deepClone(seenForm.data !== null ? seenForm : initialFormObj))
 
-    console.log(`$seenForm`, seenForm);
-    console.log(`$formObj`, formObj);
-
     // type tapeDepositFormTypeNonNullKeys = keyof tapeDepositFormNonNullDataType
     const [formErrors, formErrorsSet] = useState<Partial<{ [key: string]: string }>>({})
 
