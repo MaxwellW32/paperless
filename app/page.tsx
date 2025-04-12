@@ -13,28 +13,17 @@ import styles from "./page.module.css"
 //on array map - add required label
 //checklist form re ordering
 //ws use refresh/update modes for client requests - get all, or run specific update
-//way to refresh admin - search properly
 //remove manual company id check - just keep it at manual check
 //set checklist to null on complete on older records
 //create tapes/equipment forms
 //complete equipment workflow
 //round off timing on client request
 
-//understand
-//what is resource auth response used for
-//used to show/hide certain features based on the resource - e.g dashboard - who can add client request
-//
-//go resrouce by resource and figure out what you're trying to do
-//1) client requests
-//
-//
-
-
 //plan for today
-//
-//
-//
-//
+//round off time
+//client request ws
+//tape form
+//new form design
 //
 //
 //
