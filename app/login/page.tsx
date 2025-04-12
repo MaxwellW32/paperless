@@ -1,4 +1,5 @@
 "use client"
+import { checkIfUserEmailInUse } from "@/serverFunctions/handleUser"
 import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast"
 import { signIn } from "next-auth/react"
 import { useState } from "react"
@@ -20,6 +21,13 @@ export default function Page() {
             <button className="button1" style={{ justifySelf: "center" }}
                 onClick={async () => {
                     try {
+                        //ensure user is expected
+                        const canLogin = await checkIfUserEmailInUse(email)
+
+                        if (!canLogin) {
+                            throw new Error("not seeing email - contact us to setup an account")
+                        }
+
                         toast.success("sending login email")
 
                         await signIn("nodemailer", {

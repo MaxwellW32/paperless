@@ -11,6 +11,7 @@ import { useAtom } from 'jotai'
 import { resourceAuthGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
 import { useSession } from 'next-auth/react'
 import { ViewTapeForm } from '../forms/tapeForm/ViewEditTapeForm'
+import { ViewEquipmentForm } from '../forms/equipmentForm/ViewEditEquipmentForm'
 
 export default function ViewClientRequest({ sentClientRequest, department }: { sentClientRequest: clientRequest, department?: department }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -116,6 +117,10 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
 
                             {((eachChecklistItem.form.type === "tapeDeposit") || (eachChecklistItem.form.type === "tapeWithdraw")) && (
                                 <ViewTapeForm seenForm={eachChecklistItem.form} />
+                            )}
+
+                            {((eachChecklistItem.form.type === "equipmentDeposit") || (eachChecklistItem.form.type === "equipmentWithdraw")) && (
+                                <ViewEquipmentForm seenForm={eachChecklistItem.form} />
                             )}
                         </div>
                     )

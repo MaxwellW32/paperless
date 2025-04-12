@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, webSocketStandardMessageType, refreshWSObjType, expectedResourceType, resourceAuthType } from '@/types'
+import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, refreshWSObjType, expectedResourceType, resourceAuthType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal } from '@/utility/globalState'
@@ -15,6 +15,7 @@ import AddEditClientRequest from '@/components/clientRequests/AddEditClientReque
 import DashboardClientRequest from '@/components/clientRequests/DashboardClientRequest'
 import useResourceAuth from '@/components/resourceAuth/UseLoad'
 import useWebsockets from '@/components/websockets/UseWebsockets'
+import { webSocketStandardMessageType } from '@/types/wsTypes'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -113,7 +114,12 @@ export default function Page() {
             if (refreshWSObj["clientRequests"] === undefined) return
 
             //if stuff in refreshObj, then update the client requests
-            sendWebsocketUpdate({ type: "clientRequests" })
+            sendWebsocketUpdate({
+                type: "clientRequests",
+                update: {
+                    type: "all",
+                }
+            })
         }
         search()
 

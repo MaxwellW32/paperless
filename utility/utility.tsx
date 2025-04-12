@@ -27,6 +27,14 @@ export function formatLocalDateTime(dateInput: Date | string) {
     return customDateTime
 }
 
+export function cleanHourTimeRound(timeChange: number) {
+    const etaDate = new Date();
+    etaDate.setHours(etaDate.getHours() + timeChange);
+    etaDate.setMinutes(0, 0, 0);
+
+    return etaDate
+}
+
 export async function resolveFuncToBool(seenFunc: () => Promise<void>): Promise<boolean> {
     try {
         await seenFunc()

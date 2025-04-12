@@ -1,4 +1,4 @@
-import { webSocketMessageJoinSchema, webSocketMessageJoinType, webSocketMessagePingType, webSocketStandardMessageSchema, webSocketStandardMessageType } from '@/types';
+import { webSocketMessageJoinSchema, webSocketMessageJoinType, webSocketMessagePingType, webSocketStandardMessageSchema, webSocketStandardMessageType } from '@/types/wsTypes';
 import { useEffect, useRef, useState } from 'react'
 
 export default function useWebsockets(receivedMessageFunction: (webSocketStandardMessage: webSocketStandardMessageType) => void, useEffectRefresher: unknown[] = []) {

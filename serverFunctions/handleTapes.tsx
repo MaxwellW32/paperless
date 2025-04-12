@@ -13,7 +13,7 @@ export async function addTapes(newTapeObj: newTape, resourceAuth: resourceAuthTy
 
     newTapeSchema.parse(newTapeObj)
 
-    //add new request
+    //add new
     const [addedTape] = await db.insert(tapes).values({
         ...newTapeObj,
         dateAdded: new Date()
@@ -55,7 +55,7 @@ export async function getSpecificTapes(tapeId: tape["id"], resourceAuth: resourc
     return result
 }
 
-export async function getTapes(option: { type: "mediaLabel", mediaLabel: string } | { type: "status", tapeLocation: tapeLocation, getOppositeOfStatus: boolean } | { type: "all" }, companyId: company["id"], resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<tape[]> {
+export async function getTapes(option: { type: "mediaLabel", mediaLabel: string, companyId: company["id"], } | { type: "status", tapeLocation: tapeLocation, getOppositeOfStatus: boolean, companyId: company["id"] } | { type: "all" }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<tape[]> {
     //security check  
     const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: "" }, resourceAuth, "ra")
     interpretAuthResponseAndError(authResponse)
@@ -64,7 +64,7 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string 
         const results = await db.query.tapes.findMany({
             limit: limit,
             offset: offset,
-            where: and(eq(tapes.companyId, companyId), (
+            where: and(eq(tapes.companyId, option.companyId), (
                 sql`LOWER(${tapes.mediaLabel}) LIKE LOWER(${`%${option.mediaLabel}%`})`
             ))
         });
@@ -75,6 +75,9 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string 
         const results = await db.query.tapes.findMany({
             limit: limit,
             offset: offset,
+            with: {
+                company: true
+            }
         });
 
         return results
@@ -83,7 +86,7 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string 
         const results = await db.query.tapes.findMany({
             limit: limit,
             offset: offset,
-            where: and(eq(tapes.companyId, companyId), option.getOppositeOfStatus ? ne(tapes.tapeLocation, option.tapeLocation) : eq(tapes.tapeLocation, option.tapeLocation))
+            where: and(eq(tapes.companyId, option.companyId), option.getOppositeOfStatus ? ne(tapes.tapeLocation, option.tapeLocation) : eq(tapes.tapeLocation, option.tapeLocation))
         });
 
         return results

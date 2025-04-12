@@ -63,6 +63,8 @@ export const equipment = pgTable("equipment", {
     powerSupplyCount: integer("powerSupplyCount").notNull(),
     rackUnits: integer("rackUnits").notNull(),
     companyId: varchar("companyId", { length: 255 }).notNull().references(() => companies.id),
+    equipmentLocation: varchar("equipmentLocation", { length: 255 }).notNull(),
+    dateAdded: timestamp("dateAdded", { mode: "date" }).notNull(),
 
     amps: varchar("amps", { length: 255 }),
     weight: varchar("weight", { length: 255 }),
@@ -72,7 +74,7 @@ export const equipmentRelations = relations(equipment, ({ many }) => ({
 
 
 
-export const tapeLocationEnum = pgEnum("tapeStatus", ["in-vault", "with-client"]);
+export const tapeLocationEnum = pgEnum("tapeLocation", ["in-vault", "with-client"]);
 
 export const tapes = pgTable("tapes", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),

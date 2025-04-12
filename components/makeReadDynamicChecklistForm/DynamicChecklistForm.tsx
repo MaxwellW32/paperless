@@ -3,10 +3,10 @@ import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ChecklistShowMore from "./checklistShowMore/ChecklistShowMore";
 import styles from "./style.module.css"
-import { dynamicFormInputType, dynamicFormType } from "@/types";
+import { baseDynamicFormInputType, baseDynamicFormType } from "@/types";
 
-export function MakeDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenForm: dynamicFormType, handleFormUpdate: (updatedForm: dynamicFormType) => void }) {
-    const [formData, formDataSet] = useState<dynamicFormType>(deepClone(seenForm));
+export function MakeDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenForm: baseDynamicFormType, handleFormUpdate: (updatedForm: baseDynamicFormType) => void }) {
+    const [formData, formDataSet] = useState<baseDynamicFormType>(deepClone(seenForm));
     const updating = useRef(false)
 
     //react to changes from above
@@ -37,7 +37,7 @@ export function MakeDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenF
         </>
     );
 }
-function DynamicMakeChecklistForm({ formData, formDataSet, sentKeys = "", parentArrayName, ...elProps }: { formData: dynamicFormType, formDataSet: React.Dispatch<React.SetStateAction<dynamicFormType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
+function DynamicMakeChecklistForm({ formData, formDataSet, sentKeys = "", parentArrayName, ...elProps }: { formData: baseDynamicFormType, formDataSet: React.Dispatch<React.SetStateAction<baseDynamicFormType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
     const handleChange = (path: string, value: unknown) => {
         formDataSet(prev => {
             const newData = deepClone(prev);
@@ -63,7 +63,7 @@ function DynamicMakeChecklistForm({ formData, formDataSet, sentKeys = "", parent
         });
     };
 
-    const addField = (path: string, newKeyName: string, typeToAdd: dynamicFormType[string]["type"], inputTypeSelection: dynamicFormInputType["data"]["type"]) => {
+    const addField = (path: string, newKeyName: string, typeToAdd: baseDynamicFormType[string]["type"], inputTypeSelection: baseDynamicFormInputType["data"]["type"]) => {
         formDataSet(prev => {
             const newData = deepClone(prev);
 
@@ -343,12 +343,12 @@ function DynamicMakeChecklistForm({ formData, formDataSet, sentKeys = "", parent
 }
 
 function ButtonSelectionOptions({ seenKeys, addField }: {
-    seenKeys: string, addField: (path: string, newKeyName: string, typeToAdd: dynamicFormType[string]["type"], inputTypeSelection: dynamicFormInputType["data"]["type"]) => void
+    seenKeys: string, addField: (path: string, newKeyName: string, typeToAdd: baseDynamicFormType[string]["type"], inputTypeSelection: baseDynamicFormInputType["data"]["type"]) => void
 }) {
-    const fieldTypeOptions: dynamicFormType[string]["type"][] = ["input", "object", "array"];
-    const [fieldTypeSelection, fieldTypeSelectionSet] = useState<dynamicFormType[string]["type"]>("input")
-    const inputTypeOptions: dynamicFormInputType["data"]["type"][] = ["string", "number", "boolean", "date"];
-    const [inputTypeSelection, inputTypeSelectionSet] = useState<dynamicFormInputType["data"]["type"]>("string")
+    const fieldTypeOptions: baseDynamicFormType[string]["type"][] = ["input", "object", "array"];
+    const [fieldTypeSelection, fieldTypeSelectionSet] = useState<baseDynamicFormType[string]["type"]>("input")
+    const inputTypeOptions: baseDynamicFormInputType["data"]["type"][] = ["string", "number", "boolean", "date"];
+    const [inputTypeSelection, inputTypeSelectionSet] = useState<baseDynamicFormInputType["data"]["type"]>("string")
     const [newKeyName, newKeyNameSet] = useState("");
 
     return (
@@ -400,8 +400,8 @@ function ButtonSelectionOptions({ seenKeys, addField }: {
 
 
 
-export function ReadDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenForm: dynamicFormType, handleFormUpdate?: (updatedForm: dynamicFormType) => void }) {
-    const [formData, setFormData] = useState<dynamicFormType>(deepClone(seenForm));
+export function ReadDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenForm: baseDynamicFormType, handleFormUpdate?: (updatedForm: baseDynamicFormType) => void }) {
+    const [formData, setFormData] = useState<baseDynamicFormType>(deepClone(seenForm));
     const updating = useRef(false)
 
     //react to changes from above
@@ -433,7 +433,7 @@ export function ReadDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenF
         </>
     );
 }
-function DynamicReadChecklistForm({ formData, setFormData, sentKeys = "", parentArrayName, ...elProps }: { formData: dynamicFormType, setFormData: React.Dispatch<React.SetStateAction<dynamicFormType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
+function DynamicReadChecklistForm({ formData, setFormData, sentKeys = "", parentArrayName, ...elProps }: { formData: baseDynamicFormType, setFormData: React.Dispatch<React.SetStateAction<baseDynamicFormType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
     const handleChange = (path: string, value: unknown) => {
         setFormData(prev => {
             const newData = deepClone(prev);

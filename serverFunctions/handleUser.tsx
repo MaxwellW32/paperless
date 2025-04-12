@@ -94,3 +94,13 @@ export async function deleteUsers(userId: user["id"]) {
 
     await db.delete(users).where(eq(users.id, userId));
 }
+
+export async function checkIfUserEmailInUse(email: NonNullable<user["email"]>): Promise<boolean> {
+    userSchema.shape.email.parse(email)
+
+    const result = await db.query.users.findFirst({
+        where: eq(users.email, email),
+    });
+
+    return result !== undefined
+}

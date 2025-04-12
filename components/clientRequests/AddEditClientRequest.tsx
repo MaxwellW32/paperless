@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { deepClone, offsetTime, updateRefreshObj } from '@/utility/utility'
+import { cleanHourTimeRound, deepClone, offsetTime, updateRefreshObj } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestStatusType, clientRequestSchema, resourceAuthType } from '@/types'
@@ -15,6 +15,7 @@ import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunc
 import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
 import { EditTapeForm } from '../forms/tapeForm/ViewEditTapeForm'
 import TextInput from '../textInput/TextInput'
+import { EditEquipmentForm } from '../forms/equipmentForm/ViewEditEquipmentForm'
 
 export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department, submissionAction }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department, submissionAction?: () => void }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -30,7 +31,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         checklist: undefined,
         checklistStarterId: undefined,
         clientsAccessingSite: [],
-        eta: `${new Date().toISOString()}`,
+        eta: `${cleanHourTimeRound(1).toISOString()}`,
     })
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest === undefined ? initialFormObj : updateClientRequestSchema.parse(sentClientRequest)))
@@ -524,27 +525,54 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                                 />
                                             )}
 
-                                            {((eachChecklistItem.form.type === "tapeDeposit") || (eachChecklistItem.form.type === "tapeWithdraw")) && formObj.companyId !== undefined && (
-                                                <EditTapeForm seenForm={eachChecklistItem.form} seenCompanyId={formObj.companyId}
-                                                    handleFormUpdate={(seenLatestForm) => {
-                                                        formObjSet(prevFormObj => {
-                                                            const newFormObj = { ...prevFormObj }
-                                                            if (newFormObj.checklist === undefined) return prevFormObj
+                                            {formObj.companyId !== undefined && (
+                                                <>
+                                                    {((eachChecklistItem.form.type === "tapeDeposit") || (eachChecklistItem.form.type === "tapeWithdraw")) && (
+                                                        <EditTapeForm seenForm={eachChecklistItem.form} seenCompanyId={formObj.companyId}
+                                                            handleFormUpdate={(seenLatestForm) => {
+                                                                formObjSet(prevFormObj => {
+                                                                    const newFormObj = { ...prevFormObj }
+                                                                    if (newFormObj.checklist === undefined) return prevFormObj
 
-                                                            //edit new checklist item
-                                                            const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
-                                                            if (newChecklistItem.type !== "form") return prevFormObj
-                                                            if (newChecklistItem.form.type !== "tapeDeposit" && newChecklistItem.form.type !== "tapeWithdraw") return prevFormObj
+                                                                    //edit new checklist item
+                                                                    const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
+                                                                    if (newChecklistItem.type !== "form") return prevFormObj
+                                                                    if (newChecklistItem.form.type !== "tapeDeposit" && newChecklistItem.form.type !== "tapeWithdraw") return prevFormObj
 
-                                                            //set the new form data
-                                                            newChecklistItem.form = seenLatestForm
+                                                                    //set the new form data
+                                                                    newChecklistItem.form = seenLatestForm
 
-                                                            newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
+                                                                    newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
 
-                                                            return newFormObj
-                                                        })
-                                                    }}
-                                                />
+                                                                    return newFormObj
+                                                                })
+                                                            }}
+                                                        />
+                                                    )}
+
+                                                    {((eachChecklistItem.form.type === "equipmentDeposit") || (eachChecklistItem.form.type === "equipmentWithdraw")) && (
+                                                        <EditEquipmentForm seenForm={eachChecklistItem.form} seenCompanyId={formObj.companyId}
+                                                            handleFormUpdate={(seenLatestForm) => {
+                                                                formObjSet(prevFormObj => {
+                                                                    const newFormObj = { ...prevFormObj }
+                                                                    if (newFormObj.checklist === undefined) return prevFormObj
+
+                                                                    //edit new checklist item
+                                                                    const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
+                                                                    if (newChecklistItem.type !== "form") return prevFormObj
+                                                                    if (newChecklistItem.form.type !== "equipmentDeposit" && newChecklistItem.form.type !== "equipmentWithdraw") return prevFormObj
+
+                                                                    //set the new form data
+                                                                    newChecklistItem.form = seenLatestForm
+
+                                                                    newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                                    return newFormObj
+                                                                })
+                                                            }}
+                                                        />
+                                                    )}
+                                                </>
                                             )}
                                         </>
                                     )}

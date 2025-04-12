@@ -1,102 +1,36 @@
 import { Session } from "next-auth";
 import { z } from "zod";
 
-// regular types
+//5 space - new purpose types
+//1 space - similar but clarity
+//no space - show closeness
 
-//recursive form
-//basically controlling the look of an element and the data validation
-export type recursiveFormMoreFormInfoElementType =
-    {
-        type: "input",
-        isNumeric?: true,
-        isFloat?: true,
-    } | {
-        type: "textarea",
-    } | {
-        type: "color",
-    } | {
-        type: "file"
-    } | {
-        type: "image",
-    }
-export type recursiveFormMoreInfo = {
-    [key: string]: {
-        label?: string,
-        placeholder?: string,
-        element?: recursiveFormMoreFormInfoElementType,
-        returnToNull?: true,
-        returnToUndefined?: true,
-    }
-}
-export type recursiveFormArrayStarterItems = {
-    [key: string]: unknown
-}
-export type nullishStarters = {
-    [key: string]: unknown
-}
-
-export const wsUpdateClientRequestsSchema = z.object({
-    type: z.literal("clientRequests"),
-});
-export type wsUpdateClientRequestsType = z.infer<typeof wsUpdateClientRequestsSchema>
-
-export const wsUpdateAdminPageSchema = z.object({
-    type: z.literal("adminPage"),
-    activeScreen: z.string().min(1),
-    updateType: z.union([
-        z.object({
-            type: z.literal("all")
-        }),
-        z.object({
-            type: z.literal("specific"),
-            id: z.string()
-        }),
-    ])
-});
-export type wsUpdateAdminPageType = z.infer<typeof wsUpdateAdminPageSchema>
-
-export const wsUpdatedUnionSchema = z.union([wsUpdateClientRequestsSchema, wsUpdateAdminPageSchema])
-export type wsUpdatedUnionType = z.infer<typeof wsUpdatedUnionSchema>
-
-export const webSocketStandardMessageSchema = z.object({
-    type: z.literal("standard"),
-    data: z.object({
-        updated: wsUpdatedUnionSchema
-    })
-});
-export type webSocketStandardMessageType = z.infer<typeof webSocketStandardMessageSchema>
-
-export const webSocketMessageJoinSchema = z.object({
-    type: z.literal("join"),
-});
-export type webSocketMessageJoinType = z.infer<typeof webSocketMessageJoinSchema>
-
-export const webSocketMessagePingSchema = z.object({
-    type: z.literal("ping"),
-});
-export type webSocketMessagePingType = z.infer<typeof webSocketMessagePingSchema>
-
-export const webSocketMessageSchema = z.union([webSocketStandardMessageSchema, webSocketMessageJoinSchema, webSocketMessagePingSchema])
-export type webSocketMessageType = z.infer<typeof webSocketMessageSchema>
-
+//resources are shared database models - tables updated by different users
 export type resourceAuthType = { compantyIdForAuth?: company["id"], departmentIdForAuth?: department["id"] }
 export type resourceAuthResponseType = { [key in crudOptionType]: boolean | undefined }
-export type expectedResourceType = {
-    type: "admin",
-} | {
-    type: "company",
-    companyId: company["id"]
-} | {
-    type: "department",
-    departmentId: department["id"]
-} | {
-    type: "clientRequests",
-    clientRequestId: clientRequest["id"]
-} | {
-    type: "tape",
-    tapeId: tape["id"]
-}
+export type expectedResourceType =
+    {
+        type: "admin",
+    } | {
+        type: "company",
+        companyId: company["id"]
+    } | {
+        type: "department",
+        departmentId: department["id"]
+    } | {
+        type: "clientRequests",
+        clientRequestId: clientRequest["id"]
+    } | {
+        type: "tape",
+        tapeId: tape["id"]
+    } | {
+        type: "equipment",
+        equipmentId: equipmentT["id"]
+    }
 
+
+
+//handle user selection - company/department/admin user
 export type userDepartmentCompanySelection = {
     type: "userDepartment",
     seenUserToDepartment: userToDepartment
@@ -105,6 +39,9 @@ export type userDepartmentCompanySelection = {
     seenUserToCompany: userToCompany
 }
 
+
+
+//dashboard types
 export type refreshObjType = { [key: string]: boolean }
 export type refreshWSObjType = { [key: string]: boolean }
 
@@ -119,12 +56,26 @@ export type activeScreenType = {
     clientRequestId: clientRequest["id"]
 }
 
-export type authAccessLevelResponseType = { session: Session, accessLevel: userDepartmentAccessLevel | companyAccessLevel }
 
+
+//handle auth all in one place - what operation are you doing, and what access level do you have
+export type authAccessLevelResponseType = { session: Session, accessLevel: userDepartmentAccessLevel | companyAccessLevel }
 export type crudOptionType = "c" | "r" | "ra" | "u" | "d"
 
 
-export type dynamicFormInputType = {
+
+//handle search component with limits/offsets
+export type searchObj<T> = {
+    searchItems: T[],
+    limit?: number, //how many
+    offset?: number, //increaser
+    incrementOffsetBy?: number, //how much to increase by
+    refreshAll?: boolean
+}
+
+
+
+export type baseDynamicFormInputType = {
     type: "input";
     label: string;
     required: boolean,
@@ -133,26 +84,26 @@ export type dynamicFormInputType = {
     | { type: "boolean"; value: boolean }
     | { type: "date"; value: string },
 };
-export type dynamicFormInputObjType = {
+export type baseDynamicFormInputObjType = {
     type: "object";
     label: string;
     required: boolean,
-    data: dynamicFormType;
+    data: baseDynamicFormType;
 };
-export type dynamicFormInputArrType = {
+export type baseDynamicFormInputArrType = {
     type: "array";
     label: string;
     required: boolean,
-    arrayStarter: dynamicFormType,
+    arrayStarter: baseDynamicFormType,
     arrayAddLabel: string,
-    data: dynamicFormType[];
+    data: baseDynamicFormType[];
 };
-export type dynamicFormType = { [key: string]: dynamicFormInputType | dynamicFormInputObjType | dynamicFormInputArrType; }
+export type baseDynamicFormType = { [key: string]: baseDynamicFormInputType | baseDynamicFormInputObjType | baseDynamicFormInputArrType; }
 
-export const dynamicFormSchema: z.ZodType<dynamicFormType> = z.lazy(() =>
-    z.record(z.string(), z.union([dynamicFormInputSchema, dynamicFormInputObjSchema, dynamicFormInputArrSchema]))
+export const baseDynamicFormSchema: z.ZodType<baseDynamicFormType> = z.lazy(() =>
+    z.record(z.string(), z.union([baseDynamicFormInputSchema, baseDynamicFormInputObjSchema, baseDynamicFormInputArrSchema]))
 );
-export const dynamicFormInputSchema = z.object({
+export const baseDynamicFormInputSchema = z.object({
     type: z.literal("input"),
     label: z.string(),
     required: z.boolean(),
@@ -163,19 +114,19 @@ export const dynamicFormInputSchema = z.object({
         z.object({ type: z.literal("date"), value: z.string() }),
     ]),
 });
-export const dynamicFormInputObjSchema = z.object({
+export const baseDynamicFormInputObjSchema = z.object({
     type: z.literal("object"),
     label: z.string(),
     required: z.boolean(),
-    data: dynamicFormSchema,
+    data: baseDynamicFormSchema,
 });
-export const dynamicFormInputArrSchema = z.object({
+export const baseDynamicFormInputArrSchema = z.object({
     type: z.literal("array"),
     label: z.string(),
     required: z.boolean(),
-    arrayStarter: dynamicFormSchema,
+    arrayStarter: baseDynamicFormSchema,
     arrayAddLabel: z.string(),
-    data: z.array(dynamicFormSchema),
+    data: z.array(baseDynamicFormSchema),
 });
 
 
@@ -312,15 +263,20 @@ export const equipmentSchema = z.object({
     powerSupplyCount: z.number(),
     rackUnits: z.number(),
     companyId: companySchema.shape.id,
+    equipmentLocation: z.string().min(1),
+    dateAdded: z.date(),
 
     amps: z.string().min(1).nullable(),
     weight: z.string().min(1).nullable(),
 })
-export type equipmet = z.infer<typeof equipmentSchema> & {
+export type equipmentT = z.infer<typeof equipmentSchema> & {
 }
 
-export const updateEquipmentSchema = equipmentSchema.omit({ id: true })
-export type updateEquipment = z.infer<typeof updateEquipmentSchema>
+export const newEquipmentSchema = equipmentSchema.omit({ id: true, dateAdded: true })
+export type newEquipmentT = z.infer<typeof newEquipmentSchema>
+
+export const updateEquipmentSchema = equipmentSchema.omit({ id: true, dateAdded: true })
+export type updateEquipmentT = z.infer<typeof updateEquipmentSchema>
 
 
 
@@ -337,6 +293,7 @@ export const tapeSchema = z.object({
     tapeLocation: tapeLocationSchema,
 })
 export type tape = z.infer<typeof tapeSchema> & {
+    company?: company
 }
 
 export const newTapeSchema = tapeSchema.omit({ id: true, dateAdded: true })
@@ -370,14 +327,13 @@ export type updateTape = z.infer<typeof updateTapeSchema>
 
 
 
-export const formTypesSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther", "dynamic"])
+export const formTypesSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "dynamic"])
 export type formTypesType = z.infer<typeof formTypesSchema>
 
 export const tapeFormNewTapeSchema = newTapeSchema.extend({
     id: tapeSchema.shape.id.optional(),
 });
 export type tapeFormNewTapeType = z.infer<typeof tapeFormNewTapeSchema>;
-
 export const tapeFormSchema = z.object({
     type: z.union([z.literal(formTypesSchema.Values.tapeDeposit), z.literal(formTypesSchema.Values.tapeWithdraw)]),
     data: z.object({
@@ -386,35 +342,32 @@ export const tapeFormSchema = z.object({
 });
 export type tapeFormType = z.infer<typeof tapeFormSchema>
 
-export const equipmentDepositFormSchema = z.object({
-    type: z.literal(formTypesSchema.Values.equipmentDeposit),
+export const equipmentFormNewEquipmentSchema = newEquipmentSchema.extend({
+    id: equipmentSchema.shape.id.optional(),
+});
+export type equipmentFormNewEquipmentType = z.infer<typeof equipmentFormNewEquipmentSchema>;
+export const equipmentFormSchema = z.object({
+    type: z.union([z.literal(formTypesSchema.Values.equipmentDeposit), z.literal(formTypesSchema.Values.equipmentWithdraw)]),
     data: z.object({
+        equipmentInRequest: z.array(equipmentFormNewEquipmentSchema).min(1, "need at least one item for request"),
     }).nullable(),
 });
-export type equipmentDepositFormType = z.infer<typeof equipmentDepositFormSchema>
+export type equipmentFormType = z.infer<typeof equipmentFormSchema>
 
-export const equipmentWithdrawFormSchema = z.object({
-    type: z.literal(formTypesSchema.Values.equipmentWithdraw),
-    data: z.object({
-    }).nullable(),
-});
-export type equipmentWithdrawFormType = z.infer<typeof equipmentWithdrawFormSchema>
-
-export const equipmentOtherFormSchema = z.object({
-    type: z.literal(formTypesSchema.Values.equipmentOther),
-    data: z.object({
-    }).nullable(),
-});
-export type equipmentOtherFormType = z.infer<typeof equipmentOtherFormSchema>
-
-export const checklistItemDynamicFormSchema = z.object({
+export const dynamicFormSchema = z.object({
     type: z.literal("dynamic"),
-    data: dynamicFormSchema
+    data: baseDynamicFormSchema
 })
-export type checklistItemDynamicFormType = z.infer<typeof checklistItemDynamicFormSchema>
+export type dynamicFormType = z.infer<typeof dynamicFormSchema>
 
-export const checklistItemFormDataSchema = z.union([tapeFormSchema, equipmentDepositFormSchema, equipmentWithdrawFormSchema, equipmentOtherFormSchema, checklistItemDynamicFormSchema])
+
+
+
+export const checklistItemFormDataSchema = z.union([tapeFormSchema, equipmentFormSchema, dynamicFormSchema])
 export type checklistItemFormDataType = z.infer<typeof checklistItemFormDataSchema>
+
+
+
 
 export const checklistItemFormSchema = z.object({
     type: z.literal("form"),
@@ -422,11 +375,6 @@ export const checklistItemFormSchema = z.object({
     completed: z.boolean(),
 })
 export type checklistItemFormType = z.infer<typeof checklistItemFormSchema>
-//data is custom formSchema
-//or custom tape deposit form
-//or custom tape withdraw form
-//or custom equipment deposit form
-//or custom equipment withdraw form
 
 export const checklistItemEmailSchema = z.object({
     type: z.literal("email"),
@@ -454,8 +402,14 @@ export const checklistItemManualSchema = z.object({
 })
 export type checklistItemManualType = z.infer<typeof checklistItemManualSchema>
 
+
+
+
 export const checklistItemSchema = z.union([checklistItemFormSchema, checklistItemEmailSchema, checklistItemManualSchema])
 export type checklistItemType = z.infer<typeof checklistItemSchema>
+
+
+
 
 export const checklistStarterSchema = z.object({
     id: z.string().min(1),
@@ -470,37 +424,6 @@ export type newChecklistStarter = z.infer<typeof newChecklistStarterSchema>
 export const updateChecklistStarterSchema = checklistStarterSchema.omit({ id: true })
 export type updateChecklistStarter = z.infer<typeof updateChecklistStarterSchema>
 
-export type searchObj<T> = {
-    searchItems: T[],
-    limit?: number, //how many
-    offset?: number, //increaser
-    incrementOffsetBy?: number, //how much to increase by
-    refreshAll?: boolean
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 //keep synced with db schema
@@ -512,12 +435,12 @@ export const clientRequestSchema = z.object({
     id: z.string().min(1),
     userId: userSchema.shape.id, //who sent the request
     companyId: companySchema.shape.id, //what company is it on behalf of
-    dateSubmitted: z.string().datetime({ offset: true }),
+    dateSubmitted: z.string().datetime(),
     status: clientRequestStatusSchema,
     checklist: z.array(checklistItemSchema).min(1),
     checklistStarterId: checklistStarterSchema.shape.id,
     clientsAccessingSite: z.array(userSchema.shape.id),
-    eta: z.string().datetime({ offset: true })
+    eta: z.string().datetime()
 })
 export type clientRequest = z.infer<typeof clientRequestSchema> & {
     user?: user,
@@ -530,21 +453,6 @@ export type updateClientRequest = z.infer<typeof updateClientRequestSchema>
 
 export const newClientRequestSchema = clientRequestSchema.omit({ id: true, userId: true, status: true, dateSubmitted: true })
 export type newClientRequest = z.infer<typeof newClientRequestSchema>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

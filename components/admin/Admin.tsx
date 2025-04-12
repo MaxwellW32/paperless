@@ -1,7 +1,7 @@
 "use client"
 import React, { useRef, useState } from 'react'
 import styles from "./admin.module.css"
-import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObj, webSocketStandardMessageType } from '@/types'
+import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObj, tape } from '@/types'
 import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { getDepartments, getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
@@ -25,6 +25,9 @@ import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
 import Search from '../search/Search'
 import useWebsockets from '../websockets/UseWebsockets'
+import { webSocketStandardMessageType } from '@/types/wsTypes'
+import AddEditTape from '../tapes/AddEditTape'
+import { getSpecificTapes, getTapes } from '@/serverFunctions/handleTapes'
 
 type schemaType = typeof schema;
 type schemaTableNamesType = keyof schemaType;
@@ -57,10 +60,13 @@ export default function Page() {
     const [clientRequestsSearchObj, clientRequestsSearchObjSet] = useState<searchObj<clientRequest>>({
         searchItems: [],
     })
+    const [companiesSearchObj, companiesSearchObjSet] = useState<searchObj<company>>({
+        searchItems: [],
+    })
     const [departmentsSearchObj, departmentsSearchObjSet] = useState<searchObj<department>>({
         searchItems: [],
     })
-    const [companiesSearchObj, companiesSearchObjSet] = useState<searchObj<company>>({
+    const [tapesSearchObj, tapesSearchObjSet] = useState<searchObj<tape>>({
         searchItems: [],
     })
     const [usersToDepartmentsSearchObj, usersToDepartmentsSearchObjSet] = useState<searchObj<userToDepartment>>({
@@ -75,6 +81,7 @@ export default function Page() {
         users?: user,
         checklistStarters?: checklistStarter,
         clientRequests?: clientRequest,
+        tapes?: tape,
         usersToDepartments?: userToDepartment,
         usersToCompanies?: userToCompany,
     }>({})
@@ -215,6 +222,24 @@ export default function Page() {
             //update state
             setSearchItemsOnSearchObj(departmentsSearchObjSet, results, updateOption)
 
+        } else if (sentActiveScreen === "tapes") {
+            const results = await getResults<tape>(updateOption,
+                async () => {
+                    if (updateOption.type !== "specific") throw new Error("incorrect updateOption sent")
+
+                    return await getSpecificTapes(updateOption.id, resourceAuth)
+                },
+                async () => {
+                    return await getTapes({ type: "all" }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                },
+            )
+
+            //general send off
+            respondToResults(results)
+
+            //update state
+            setSearchItemsOnSearchObj(tapesSearchObjSet, results, updateOption)
+
         } else if (sentActiveScreen === "users") {
             const results = await getResults<user>(updateOption,
                 async () => {
@@ -277,7 +302,7 @@ export default function Page() {
             sendWebsocketUpdate({
                 type: "adminPage",
                 activeScreen: sentActiveScreen,
-                updateType: updateOption
+                update: updateOption
             })
         }
     }
@@ -287,7 +312,7 @@ export default function Page() {
         if (seenMessage.type === "standard" && seenMessage.data.updated.type === "adminPage") {
             //update specific table
             //update the state
-            await loadStarterValues(seenMessage.data.updated.activeScreen as activeScreenType, seenMessage.data.updated.updateType, false)
+            await loadStarterValues(seenMessage.data.updated.activeScreen as activeScreenType, seenMessage.data.updated.update, false)
         };
     }
 
@@ -341,7 +366,7 @@ export default function Page() {
                                     <AddResourceButton
                                         adding={adding}
                                         addingSet={addingSet}
-                                        keyName={"checklistStarters"}
+                                        keyName={activeScreen}
                                     />
 
                                     {adding.checklistStarters === true && (
@@ -414,7 +439,7 @@ export default function Page() {
                                     <AddResourceButton
                                         adding={adding}
                                         addingSet={addingSet}
-                                        keyName={"clientRequests"}
+                                        keyName={activeScreen}
                                     />
 
                                     {adding.clientRequests === true && (
@@ -483,7 +508,7 @@ export default function Page() {
                                     <AddResourceButton
                                         adding={adding}
                                         addingSet={addingSet}
-                                        keyName={"companies"}
+                                        keyName={activeScreen}
                                     />
 
                                     {adding.companies && (
@@ -525,7 +550,7 @@ export default function Page() {
                                     <AddResourceButton
                                         adding={adding}
                                         addingSet={addingSet}
-                                        keyName={"departments"}
+                                        keyName={activeScreen}
                                     />
 
                                     {adding.departments && (
@@ -562,12 +587,88 @@ export default function Page() {
                                 </>
                             )}
 
+                            {activeScreen === "tapes" && (
+                                <>
+                                    <AddResourceButton
+                                        adding={adding}
+                                        addingSet={addingSet}
+                                        keyName={activeScreen}
+                                    />
+
+                                    {adding.tapes && (
+                                        <AddEditTape
+                                            submissionAction={() => {
+                                                loadStarterValues(activeScreen, { type: "all" })
+                                            }}
+                                        />
+                                    )}
+
+                                    <Search
+                                        searchObj={tapesSearchObj}
+                                        searchObjSet={tapesSearchObjSet}
+                                        searchFunction={async () => {
+                                            await loadStarterValues(activeScreen, { type: "all" }, false)
+                                        }}
+                                    />
+
+                                    {tapesSearchObj.searchItems.length > 0 && (
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                            {tapesSearchObj.searchItems.map(eachTape => {
+                                                if (eachTape.company === undefined) return null
+
+                                                return (
+                                                    <div key={eachTape.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                        <h3>{eachTape.mediaLabel}</h3>
+
+                                                        <h3>{eachTape.company.name}</h3>
+
+                                                        {((editing.tapes !== undefined && editing.tapes.id === eachTape.id) || (editing.tapes === undefined)) && (
+                                                            <>
+                                                                <button className='button1'
+                                                                    onClick={() => {
+                                                                        editingSet(prevEditing => {
+                                                                            const newEditing = { ...prevEditing }
+
+                                                                            //set / reset editing
+                                                                            newEditing.tapes = newEditing.tapes === undefined ? eachTape : undefined
+
+                                                                            return newEditing
+                                                                        })
+                                                                    }}
+                                                                >{editing.tapes !== undefined ? "cancel edit" : "edit tapes"}</button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {editing.tapes !== undefined && (
+                                        <>
+                                            <h3>Edit form:</h3>
+
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                <AddEditTape
+                                                    sentTape={editing.tapes}
+                                                    submissionAction={() => {
+                                                        if (editing.tapes === undefined) return
+
+                                                        loadStarterValues(activeScreen, { type: "specific", id: editing.tapes.id })
+                                                    }}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
+
                             {activeScreen === "users" && (
                                 <>
                                     <AddResourceButton
                                         adding={adding}
                                         addingSet={addingSet}
-                                        keyName={"users"}
+                                        keyName={activeScreen}
                                     />
 
                                     {adding.users && (
@@ -671,7 +772,7 @@ export default function Page() {
                                     <AddResourceButton
                                         adding={adding}
                                         addingSet={addingSet}
-                                        keyName={"usersToDepartments"}
+                                        keyName={activeScreen}
                                     />
 
                                     {adding.usersToDepartments === true && (
@@ -799,7 +900,7 @@ export default function Page() {
                                     <AddResourceButton
                                         adding={adding}
                                         addingSet={addingSet}
-                                        keyName={"usersToCompanies"}
+                                        keyName={activeScreen}
                                     />
 
                                     {adding.usersToCompanies === true && (

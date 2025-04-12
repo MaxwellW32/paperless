@@ -18,19 +18,14 @@ import styles from "./page.module.css"
 //create tapes/equipment forms
 //complete equipment workflow
 //round off timing on client request
+//make admin model names same as db - make it a zod schema
+//make date string
+//enable saving of form data to storage
+//add equipment to admin page
+//add edit equipment
 
 //plan for today
-//round off time
-//client request ws
-//tape form
-//new form design
-//
-//
-//
-//
-//
-//
-//
+//department?
 //
 //
 //

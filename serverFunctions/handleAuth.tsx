@@ -9,6 +9,7 @@ import { Session } from "next-auth"
 import { getSpecificTapes } from "./handleTapes"
 import { errorZodErrorAsString } from "@/usefulFunctions/consoleErrorWithToast"
 import { interpretAuthResponseAndBool } from "@/utility/utility"
+import { getSpecificEquipment } from "./handleEquipment"
 
 export async function sessionCheckWithError() {
     const session = await auth()
@@ -394,7 +395,7 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
 
         } else if (resource.type === "tape") {
             //ensures client is from same company that holds the tape - and department has manage access
-            async function ensureClientFromCompanyAndDepartmentHasAccess(localSession: Session, localResource: expectedResourceType, localResourceAuth: resourceAuthType,): Promise<string | authAccessLevelResponseType> {
+            async function ensureClientFromCompanyAndDepartmentHasTapeAccess(localSession: Session, localResource: expectedResourceType, localResourceAuth: resourceAuthType,): Promise<string | authAccessLevelResponseType> {
                 if (localSession.user.accessLevel === "admin") {
                     return { session: localSession, accessLevel: localSession.user.accessLevel }
                 }
@@ -459,10 +460,10 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
                 //company user - has to be from same company that owns tape
                 //department user - yes if has manage access rights
 
-                return ensureClientFromCompanyAndDepartmentHasAccess(session, resource, resourceAuth)
+                return ensureClientFromCompanyAndDepartmentHasTapeAccess(session, resource, resourceAuth)
 
             } else if (crudOption === "ra") {//same as above
-                //who can read multiple tape record
+                //who can read multiple tape records
                 //admin 
                 //company user - yes 
                 //department user - yes
@@ -499,10 +500,134 @@ export async function ensureCanAccessResource(resource: expectedResourceType, re
                 //company user - yes if from same company
                 //department user - yes if can manage requests
 
-                return ensureClientFromCompanyAndDepartmentHasAccess(session, resource, resourceAuth)
+                return ensureClientFromCompanyAndDepartmentHasTapeAccess(session, resource, resourceAuth)
 
             } else if (crudOption === "d") {
                 //who can delete tape
+                //admin 
+                //company user - no
+                //department user - no
+
+                //if not admin - can't delete company
+                if (session.user.accessLevel !== "admin") return "need to be admin to delete company"
+
+                return { session, accessLevel: session.user.accessLevel }
+
+            } else {
+                return "invalid selection"
+            }
+
+        } else if (resource.type === "equipment") {
+            //ensures client is from same company that holds the tape - and department has manage access
+            async function ensureClientFromCompanyAndDepartmentHasEquipmentAccess(localSession: Session, localResource: expectedResourceType, localResourceAuth: resourceAuthType,): Promise<string | authAccessLevelResponseType> {
+                if (localSession.user.accessLevel === "admin") {
+                    return { session: localSession, accessLevel: localSession.user.accessLevel }
+                }
+
+                if (localResource.type === "equipment") {
+                    if (!localSession.user.fromDepartment) {
+                        //client
+
+                        //get tape
+                        const seenEquipment = await getSpecificEquipment(localResource.equipmentId, {}, false)
+                        if (seenEquipment === undefined) return "not seeing equipment"
+
+                        //then get company on equipment to compare
+
+                        //ensure client is from same company as equipment
+                        const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: localSession.user.id, companyId: seenEquipment.companyId, runAuth: false })
+                        if (seenUserToCompany === undefined) return "not seeing seenUserToCompany info"
+
+                        return { session: localSession, accessLevel: seenUserToCompany.companyAccessLevel }
+
+                    } else {
+                        //from department
+                        if (localResourceAuth.departmentIdForAuth === undefined) return "provide department id for auth"
+
+                        return checkIfDepartmentHasManageAccess(localSession, localResourceAuth.departmentIdForAuth)
+                    }
+
+                } else {
+                    return "for tapes check only"
+                }
+            }
+
+            if (crudOption === "c") {
+                //who can create equipment
+                //admin 
+                //company user - yes if from company
+                //department user - yes if manage access
+
+                if (!session.user.fromDepartment) {
+                    //client
+
+                    //validation
+                    if (resourceAuth.compantyIdForAuth === undefined) return "provide companyId for auth"
+                    companySchema.shape.id.parse(resourceAuth.compantyIdForAuth)
+
+                    //ensure client is from company
+                    const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: resourceAuth.compantyIdForAuth, runAuth: false })
+                    if (seenUserToCompany === undefined) return "not seeing seenUserToCompany info"
+
+                    return { session: session, accessLevel: seenUserToCompany.companyAccessLevel }
+
+                } else {
+                    //from department
+                    if (resourceAuth.departmentIdForAuth === undefined) return "provide department id for auth"
+
+                    return checkIfDepartmentHasManageAccess(session, resourceAuth.departmentIdForAuth)
+                }
+
+            } else if (crudOption === "r") {
+                //who can read equipment record
+                //admin 
+                //company user - has to be from same company that owns equipment
+                //department user - yes if has manage access rights
+
+                return ensureClientFromCompanyAndDepartmentHasEquipmentAccess(session, resource, resourceAuth)
+
+            } else if (crudOption === "ra") {
+                //who can read multiple equipment records
+                //admin 
+                //company user - yes 
+                //department user - yes
+
+                if (!session.user.fromDepartment) {
+                    //client
+
+                    if (resourceAuth.compantyIdForAuth === undefined) return "provide companyId for auth"
+                    companySchema.shape.id.parse(resourceAuth.compantyIdForAuth)
+
+                    //ensure client is from same company on request
+                    const seenUserToCompany = await getSpecificUsersToCompanies({ type: "both", userId: session.user.id, companyId: resourceAuth.compantyIdForAuth, runAuth: false })
+                    if (seenUserToCompany === undefined) return "not seeing seenUserToCompany info"
+
+                    return { session, accessLevel: seenUserToCompany.companyAccessLevel }
+
+                } else {
+                    //department
+
+                    //validation
+                    if (resourceAuth.departmentIdForAuth === undefined) return "not seeing departmentIdForAuth"
+                    departmentSchema.shape.id.parse(resourceAuth.departmentIdForAuth)
+
+                    //ensure user exists in department
+                    const seenUserToDepartment = await getSpecificUsersToDepartments({ type: "both", userId: session.user.id, departmentId: resourceAuth.departmentIdForAuth, runSecurityCheck: false })
+                    if (seenUserToDepartment === undefined) return "not seeing userToDepartment info"
+
+                    return { session, accessLevel: seenUserToDepartment.departmentAccessLevel }
+                }
+
+            } else if (crudOption === "u") {
+                //who can update equipment
+                //admin 
+                //company user - yes if from same company
+                //department user - yes if can manage requests
+
+                return ensureClientFromCompanyAndDepartmentHasEquipmentAccess(session, resource, resourceAuth)
+
+            } else if (crudOption === "d") {
+                //who can delete equipment
                 //admin 
                 //company user - no
                 //department user - no

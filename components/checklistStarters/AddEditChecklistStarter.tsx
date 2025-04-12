@@ -4,7 +4,7 @@ import styles from "./style.module.css"
 import { deepClone } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
-import { checklistItemType, checklistStarter, company, department, newChecklistStarter, newChecklistStarterSchema, formTypesType, updateChecklistStarterSchema, checklistItemDynamicFormType, checklistStarterSchema, resourceAuthType } from '@/types'
+import { checklistItemType, checklistStarter, company, department, newChecklistStarter, newChecklistStarterSchema, formTypesType, updateChecklistStarterSchema, dynamicFormType, checklistStarterSchema, resourceAuthType } from '@/types'
 import { addChecklistStarters, updateChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import ConfirmationBox from '../confirmationBox/ConfirmationBox'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
@@ -29,7 +29,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
     type checklistStarterKeys = keyof Partial<checklistStarter>
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in checklistStarterKeys]: string }>>({})
 
-    const premadeFormTypeOptions: formTypesType[] = ["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther", "dynamic"]
+    const premadeFormTypeOptions: formTypesType[] = ["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "dynamic"]
     const checklistTypeOptions: checklistItemType["type"][] = ["form", "email", "manual"]
 
     const [departments, departmentsSet] = useState<department[]>([])
@@ -253,7 +253,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                         newChecklistItem.form.type = eachFormType
 
                                                         if (newChecklistItem.form.type === "dynamic") {
-                                                            const newDynamicFormData: checklistItemDynamicFormType["data"] = {}
+                                                            const newDynamicFormData: dynamicFormType["data"] = {}
 
                                                             newChecklistItem.form.data = newDynamicFormData
 

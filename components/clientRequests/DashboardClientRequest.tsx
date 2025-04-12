@@ -10,6 +10,7 @@ import { updateClientRequests, updateClientRequestsChecklist } from '@/serverFun
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { updateRefreshObj } from '@/utility/utility'
 import { addTapes, updateTapes } from '@/serverFunctions/handleTapes'
+import { addEquipment, updateEquipment } from '@/serverFunctions/handleEquipment'
 
 //seen by admins
 //company users
@@ -51,6 +52,18 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
     }
 
     const dateSubmittedTime = new Date(eachClientRequest.dateSubmitted)
+
+    function runSameUpdate() {
+        //update locally
+        refreshObjSet(prevRefreshObj => {
+            return updateRefreshObj(prevRefreshObj, "clientRequests")
+        })
+
+        //send off ws
+        refreshWSObjSet(prevWSRefreshObj => {
+            return updateRefreshObj(prevWSRefreshObj, "clientRequests")
+        })
+    }
 
     if (session === null) return null
 
@@ -101,15 +114,7 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                                         //update server
                                         await updateClientRequestsChecklist(eachClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, resourceAuth)
 
-                                        //update locally
-                                        refreshObjSet(prevRefreshObj => {
-                                            return updateRefreshObj(prevRefreshObj, "clientRequests")
-                                        })
-
-                                        //send off ws
-                                        refreshWSObjSet(prevWSRefreshObj => {
-                                            return updateRefreshObj(prevWSRefreshObj, "clientRequests")
-                                        })
+                                        runSameUpdate()
 
                                     } catch (error) {
                                         consoleAndToastError(error)
@@ -138,9 +143,9 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                                         const clientForms: checklistItemFormType[] = eachClientRequest.checklist.filter(eachChecklistFilter => eachChecklistFilter.type === "form")
 
                                         clientForms.map(async eachClientForm => {
-                                            if (eachClientForm.form.type === "tapeDeposit" || eachClientForm.form.type === "tapeWithdraw") {
-                                                if (eachClientForm.form.data === null) return
+                                            if (eachClientForm.form.data === null) return
 
+                                            if (eachClientForm.form.type === "tapeDeposit" || eachClientForm.form.type === "tapeWithdraw") {
                                                 eachClientForm.form.data.tapesInRequest.map(async eachTapeInRequest => {
                                                     //update tape location
                                                     eachTapeInRequest.tapeLocation = eachClientForm.form.type === "tapeDeposit" ? "in-vault" : "with-client"
@@ -154,15 +159,25 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                                                         await addTapes(eachTapeInRequest, resourceAuth)
                                                     }
 
-                                                    //update locally
-                                                    refreshObjSet(prevRefreshObj => {
-                                                        return updateRefreshObj(prevRefreshObj, "clientRequests")
-                                                    })
+                                                    runSameUpdate()
+                                                })
+                                            }
 
-                                                    //send off ws
-                                                    refreshWSObjSet(prevWSRefreshObj => {
-                                                        return updateRefreshObj(prevWSRefreshObj, "clientRequests")
-                                                    })
+                                            if (eachClientForm.form.type === "equipmentDeposit" || eachClientForm.form.type === "equipmentWithdraw") {
+                                                eachClientForm.form.data.equipmentInRequest.map(async eachEquipmentInRequest => {
+                                                    //update equipment location
+                                                    eachEquipmentInRequest.equipmentLocation = eachClientForm.form.type === "equipmentDeposit" ? "on-site" : "off-site"
+
+                                                    if (eachEquipmentInRequest.id !== undefined) {
+                                                        //update tape
+                                                        await updateEquipment(eachEquipmentInRequest.id, eachEquipmentInRequest, resourceAuth)
+
+                                                    } else {
+                                                        //new tape to db
+                                                        await addEquipment(eachEquipmentInRequest, resourceAuth)
+                                                    }
+
+                                                    runSameUpdate()
                                                 })
                                             }
                                         })

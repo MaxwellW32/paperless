@@ -88,7 +88,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
         try {
             if (resourceAuth === undefined) return
 
-            const seenTapes = await getTapes({ type: "status", tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", getOppositeOfStatus: false }, seenCompanyId, resourceAuth)
+            const seenTapes = await getTapes({ type: "status", tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", getOppositeOfStatus: false, companyId: seenCompanyId }, resourceAuth)
             tapesSet(seenTapes)
 
         } catch (error) {
@@ -100,7 +100,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
 
     return (
         <div className={styles.form}>
-            <label>tapes</label>
+            <label>{formObj.type === "tapeDeposit" ? "Tape deposit" : "tape withdraw"}</label>
 
             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
                 <button className='button3'
@@ -112,7 +112,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
                 >search tapes</button>
 
                 {tapes.length > 0 && (
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 300px)", overflow: "auto" }} className='snap'>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
                         {tapes.map((eachTape, eachTapeIndex) => {
                             return (
                                 <ViewTape key={eachTapeIndex} seenTape={eachTape}
