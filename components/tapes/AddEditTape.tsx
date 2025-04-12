@@ -10,16 +10,12 @@ import { resourceAuthGlobal } from '@/utility/globalState'
 import { company, newTape, newTapeSchema, resourceAuthType, tape, tapeLocation, tapeSchema, updateTapeSchema } from '@/types'
 import { addTapes, updateTapes } from '@/serverFunctions/handleTapes'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
+import { getInitialTapeData } from './getTapeData'
 
 export default function AddEditTape({ sentTape, submissionAction }: { sentTape?: tape, submissionAction?: () => void }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
-    const initialFormObj: newTape = {
-        mediaLabel: "",
-        initial: "",
-        companyId: "",
-        tapeLocation: "with-client"
-    }
+    const initialFormObj: newTape = getInitialTapeData("")
 
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<tape>>(deepClone(sentTape === undefined ? initialFormObj : updateTapeSchema.parse(sentTape)))
@@ -191,30 +187,6 @@ export default function AddEditTape({ sentTape, submissionAction }: { sentTape?:
                         }}
                         onBlur={() => { checkIfValid(formObj, "initial", tapeSchema) }}
                         errors={formErrors["initial"]}
-                    />
-                </>
-            )}
-
-            {formObj.mediaLabel !== undefined && (
-                <>
-                    <TextInput
-                        name={"mediaLabel"}
-                        value={formObj.mediaLabel}
-                        type={"text"}
-                        label={"tape media label"}
-                        placeHolder={"enter tape media label"}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            formObjSet(prevFormObj => {
-                                const newFormObj = { ...prevFormObj }
-                                if (newFormObj.mediaLabel === undefined) return prevFormObj
-
-                                newFormObj.mediaLabel = e.target.value
-
-                                return newFormObj
-                            })
-                        }}
-                        onBlur={() => { checkIfValid(formObj, "mediaLabel", tapeSchema) }}
-                        errors={formErrors["mediaLabel"]}
                     />
                 </>
             )}

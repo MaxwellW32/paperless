@@ -72,6 +72,13 @@ export async function getSpecificDepartment(deparmentId: department["id"], resou
 
     const result = await db.query.departments.findFirst({
         where: eq(departments.id, deparmentId),
+        with: {
+            usersToDepartments: {
+                with: {
+                    user: true
+                }
+            }
+        },
     });
 
     return result

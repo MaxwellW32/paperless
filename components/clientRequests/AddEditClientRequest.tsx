@@ -31,7 +31,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         checklist: undefined,
         checklistStarterId: undefined,
         clientsAccessingSite: [],
-        eta: `${cleanHourTimeRound(1).toISOString()}`,
+        eta: cleanHourTimeRound(new Date, 1),
     })
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest === undefined ? initialFormObj : updateClientRequestSchema.parse(sentClientRequest)))
@@ -331,7 +331,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                             }}
                         >get companies</button>
 
-                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(250px, 90%)", overflow: "auto" }} className='snap'>
                             {companies.map(eachCompany => {
                                 return (
                                     <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: eachCompany.id === formObj.companyId ? "rgb(var(--color3))" : "rgb(var(--color2))", padding: "1rem" }}>
@@ -381,7 +381,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         <>
                             <label>Clients visiting</label>
 
-                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(250px, 90%)", overflow: "auto" }} className='snap'>
                                 {usersToCompaniesWithAccess.map(eachUserToCompany => {
                                     if (eachUserToCompany.user === undefined) return null
 
@@ -455,7 +455,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
             {formObj.eta !== undefined && (
                 <TextInput
                     name={`eta`}
-                    value={offsetTime(formObj.eta, -5).slice(0, 16)}
+                    value={offsetTime(new Date(formObj.eta), -5).toISOString().slice(0, 16)}
                     type={"datetime-local"}
                     label={"expected arrival"}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -464,8 +464,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                             const newFormObj = { ...prevFormObj }
                             if (newFormObj.eta === undefined) return prevFormObj
 
-                            //convert to iso
-                            newFormObj.eta = offsetTime(`${e.target.value}:00.000Z`, 5)
+                            newFormObj.eta = new Date(e.target.value)
                             return newFormObj
                         })
                     }}

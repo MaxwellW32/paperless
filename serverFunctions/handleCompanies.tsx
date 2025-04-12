@@ -70,6 +70,13 @@ export async function getSpecificCompany(companyId: company["id"], resourceAuth:
 
     const result = await db.query.companies.findFirst({
         where: eq(companies.id, companyId),
+        with: {
+            usersToCompanies: {
+                with: {
+                    user: true
+                }
+            }
+        },
     });
 
     return result

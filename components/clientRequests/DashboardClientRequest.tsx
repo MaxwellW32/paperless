@@ -16,7 +16,7 @@ import { addEquipment, updateEquipment } from '@/serverFunctions/handleEquipment
 //company users
 //department users
 
-export default function DashboardClientRequest({ eachClientRequest, viewButtonFunction, editButtonFunction, seenDepartment, ...elProps }: { eachClientRequest: clientRequest, viewButtonFunction?: () => void, editButtonFunction?: () => void, seenDepartment?: department } & React.HTMLAttributes<HTMLDivElement>) {
+export default function DashboardClientRequest({ eachClientRequest, viewButtonFunction, editButtonFunction, seenDepartment, editButtonComp, ...elProps }: { eachClientRequest: clientRequest, viewButtonFunction?: () => void, editButtonFunction?: () => void, seenDepartment?: department, editButtonComp?: React.JSX.Element } & React.HTMLAttributes<HTMLDivElement>) {
     const { data: session } = useSession()
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
@@ -90,10 +90,17 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                     >view</button>
                 )}
 
-                {canEditRequest && editButtonFunction !== undefined && (
-                    <button style={{ justifySelf: "flex-end" }} className='button2'
-                        onClick={editButtonFunction}
-                    >edit</button>
+                {canEditRequest && (
+                    <>
+                        {editButtonFunction !== undefined && (
+                            <button style={{ justifySelf: "flex-end" }} className='button2'
+                                onClick={editButtonFunction}
+                            >edit</button>
+                        )}
+
+                        {editButtonComp}
+                    </>
+
                 )}
             </div>
 

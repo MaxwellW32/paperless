@@ -50,6 +50,9 @@ export async function getSpecificEquipment(equipmentId: equipmentT["id"], resour
 
     const result = await db.query.equipment.findFirst({
         where: eq(equipment.id, equipmentId),
+        with: {
+            company: true
+        }
     });
 
     return result

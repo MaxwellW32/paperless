@@ -56,7 +56,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                 </>
             )}
 
-            <h3>{formatLocalDateTime(sentClientRequest.dateSubmitted)}</h3>
+            <h3>{formatLocalDateTime(new Date(sentClientRequest.dateSubmitted))}</h3>
 
             <p><Moment fromNow>{sentClientRequest.dateSubmitted}</Moment></p>
 

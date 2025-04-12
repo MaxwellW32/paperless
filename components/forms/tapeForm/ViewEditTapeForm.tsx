@@ -11,6 +11,7 @@ import ViewTape from '@/components/tapes/ViewTape'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
 import { company, resourceAuthType, tape, tapeFormNewTapeType, tapeFormSchema, tapeFormType } from '@/types'
+import { getInitialTapeData } from '@/components/tapes/getTapeData'
 
 export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { seenForm: tapeFormType, handleFormUpdate: (updatedFormData: tapeFormType) => void, seenCompanyId: company["id"] }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -263,12 +264,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
                         //refresh
                         newFormObj.data = { ...newFormObj.data }
 
-                        const newTape: tapeFormNewTapeType = {
-                            companyId: seenCompanyId,
-                            initial: "",
-                            mediaLabel: "",
-                            tapeLocation: newFormObj.type === "tapeDeposit" ? "with-client" : "in-vault"
-                        }
+                        const newTape: tapeFormNewTapeType = getInitialTapeData(seenCompanyId)
 
                         newFormObj.data.tapesInRequest = [...newFormObj.data.tapesInRequest, newTape]
                         return newFormObj

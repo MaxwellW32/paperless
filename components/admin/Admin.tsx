@@ -35,26 +35,28 @@ type schemaType = typeof schema;
 type schemaTableNamesType = keyof schemaType;
 type activeScreenType = schemaTableNamesType
 
-//refresh all items on any kind of list on create/delete - all
-//refresh specific item in list on update - specific
-//on search - loads the all function
-//on edit form submit - loads the specific function
-//ws sends update from loader
+type editingType = {
+    users?: user,
+    checklistStarters?: checklistStarter,
+    clientRequests?: clientRequest,
+    tapes?: tape,
+    equipment?: equipmentT,
+    usersToDepartments?: userToDepartment,
+    usersToCompanies?: userToCompany,
+}
 
 export default function Page() {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
     const { sendWebsocketUpdate, } = useWebsockets(handleMessageFromWebsocket, [resourceAuth])
 
-    const allTables = Object.keys(schema) as schemaTableNamesType[];
-    const editableTables = allTables.filter(key => !key.endsWith("Relations") && !key.endsWith("Enum") && key !== "accounts" && key !== "sessions" && key !== "verificationTokens").sort((a, b) => a.localeCompare(b)) //get all tables defined in the schema, sort it alphabetically
+    const allTablesKeys = Object.keys(schema) as schemaTableNamesType[];
+    const allTables = allTablesKeys.filter(key => !key.endsWith("Relations") && !key.endsWith("Enum") && key !== "accounts" && key !== "sessions" && key !== "verificationTokens").sort((a, b) => a.localeCompare(b)) //get all tables defined in the schema, sort it alphabetically
 
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>(undefined)
     const [showingSideBar, showingSideBarSet] = useState(true)
 
     const [usersSearchObj, usersSearchObjSet] = useState<searchObj<user>>({
         searchItems: [],
-        limit: 1,
-        incrementOffsetBy: 1
     })
     const [checklistStartersSearchObj, checklistStartersSearchObjSet] = useState<searchObj<checklistStarter>>({
         searchItems: [],
@@ -82,15 +84,7 @@ export default function Page() {
     })
 
     const [adding, addingSet] = useState<Partial<{ [key in activeScreenType]: boolean }>>({})
-    const [editing, editingSet] = useState<{
-        users?: user,
-        checklistStarters?: checklistStarter,
-        clientRequests?: clientRequest,
-        tapes?: tape,
-        equipment?: equipmentT,
-        usersToDepartments?: userToDepartment,
-        usersToCompanies?: userToCompany,
-    }>({})
+    const [editing, editingSet] = useState<editingType>({})
 
     const searchDebounce = useRef<NodeJS.Timeout>()
 
@@ -363,7 +357,7 @@ export default function Page() {
                     <option value={''}
                     >select a screen</option>
 
-                    {editableTables.map(eachEditableTableName => {
+                    {allTables.map(eachEditableTableName => {
 
                         return (
                             <option key={eachEditableTableName} value={eachEditableTableName}
@@ -417,22 +411,12 @@ export default function Page() {
                                                     <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
                                                         <h3>{eachCheckliststarter.type}</h3>
 
-                                                        {((editing.checklistStarters !== undefined && editing.checklistStarters.id === eachCheckliststarter.id) || (editing.checklistStarters === undefined)) && (
-                                                            <>
-                                                                <button className='button1'
-                                                                    onClick={() => {
-                                                                        editingSet(prevEditing => {
-                                                                            const newEditing = { ...prevEditing }
-
-                                                                            //set / reset editing
-                                                                            newEditing.checklistStarters = newEditing.checklistStarters === undefined ? eachCheckliststarter : undefined
-
-                                                                            return newEditing
-                                                                        })
-                                                                    }}
-                                                                >{editing.checklistStarters !== undefined ? "cancel edit" : "edit checklistStarters"}</button>
-                                                            </>
-                                                        )}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachCheckliststarter}
+                                                        />
                                                     </div>
                                                 )
                                             })}
@@ -485,23 +469,21 @@ export default function Page() {
                                     />
 
                                     {clientRequestsSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "300px", overflow: "auto" }} className='snap'>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(400px, 90%)", overflow: "auto" }} className='snap'>
                                             {clientRequestsSearchObj.searchItems.map(eachClientRequest => {
                                                 if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
 
                                                 return (
                                                     <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "rgb(var(--color2))" }}
                                                         eachClientRequest={eachClientRequest}
-                                                        editButtonFunction={(editing.clientRequests === undefined) || (editing.clientRequests !== undefined && editing.clientRequests.id === eachClientRequest.id) ? () => {
-                                                            editingSet(prevEditing => {
-                                                                const newEditing = { ...prevEditing }
-
-                                                                //set / reset editing
-                                                                newEditing.clientRequests = newEditing.clientRequests === undefined ? eachClientRequest : undefined
-
-                                                                return newEditing
-                                                            })
-                                                        } : undefined}
+                                                        editButtonComp={(
+                                                            <EditResourceButton
+                                                                editing={editing}
+                                                                editingSet={editingSet}
+                                                                keyName={activeScreen}
+                                                                eachObj={eachClientRequest}
+                                                            />
+                                                        )}
                                                     />
                                                 )
                                             })}
@@ -646,22 +628,12 @@ export default function Page() {
 
                                                         <h3>{eachTape.company.name}</h3>
 
-                                                        {((editing.tapes !== undefined && editing.tapes.id === eachTape.id) || (editing.tapes === undefined)) && (
-                                                            <>
-                                                                <button className='button1'
-                                                                    onClick={() => {
-                                                                        editingSet(prevEditing => {
-                                                                            const newEditing = { ...prevEditing }
-
-                                                                            //set / reset editing
-                                                                            newEditing.tapes = newEditing.tapes === undefined ? eachTape : undefined
-
-                                                                            return newEditing
-                                                                        })
-                                                                    }}
-                                                                >{editing.tapes !== undefined ? "cancel edit" : "edit tapes"}</button>
-                                                            </>
-                                                        )}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachTape}
+                                                        />
                                                     </div>
                                                 )
                                             })}
@@ -722,22 +694,12 @@ export default function Page() {
 
                                                         <h3>{eachEquipment.company.name}</h3>
 
-                                                        {((editing.equipment !== undefined && editing.equipment.id === eachEquipment.id) || (editing.equipment === undefined)) && (
-                                                            <>
-                                                                <button className='button1'
-                                                                    onClick={() => {
-                                                                        editingSet(prevEditing => {
-                                                                            const newEditing = { ...prevEditing }
-
-                                                                            //set / reset editing
-                                                                            newEditing.equipment = newEditing.equipment === undefined ? eachEquipment : undefined
-
-                                                                            return newEditing
-                                                                        })
-                                                                    }}
-                                                                >{editing.equipment !== undefined ? "cancel edit" : "edit equipment"}</button>
-                                                            </>
-                                                        )}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachEquipment}
+                                                        />
                                                     </div>
                                                 )
                                             })}
@@ -826,22 +788,12 @@ export default function Page() {
                                                     <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
                                                         <h3>{eachUser.name}</h3>
 
-                                                        {((editing.users !== undefined && editing.users.id === eachUser.id) || (editing.users === undefined)) && (
-                                                            <>
-                                                                <button className='button1'
-                                                                    onClick={() => {
-                                                                        editingSet(prevEditing => {
-                                                                            const newEditing = { ...prevEditing }
-
-                                                                            //set / reset editing
-                                                                            newEditing.users = newEditing.users === undefined ? eachUser : undefined
-
-                                                                            return newEditing
-                                                                        })
-                                                                    }}
-                                                                >{editing.users !== undefined ? "cancel edit" : "edit users"}</button>
-                                                            </>
-                                                        )}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachUser}
+                                                        />
                                                     </div>
                                                 )
                                             })}
@@ -957,18 +909,12 @@ export default function Page() {
 
                                                         <h3>{eachUserToDepartment.department.name}</h3>
 
-                                                        <button className='button1'
-                                                            onClick={() => {
-                                                                editingSet(prevEditing => {
-                                                                    const newEditing = { ...prevEditing }
-
-                                                                    //set / reset editing
-                                                                    newEditing.usersToDepartments = newEditing.usersToDepartments === undefined ? eachUserToDepartment : undefined
-
-                                                                    return newEditing
-                                                                })
-                                                            }}
-                                                        >{editing.usersToDepartments !== undefined ? "cancel edit" : "edit userToDepartment"}</button>
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachUserToDepartment}
+                                                        />
                                                     </div>
                                                 )
                                             })}
@@ -1084,18 +1030,12 @@ export default function Page() {
 
                                                         <h3>{eachUserToCompany.company.name}</h3>
 
-                                                        <button className='button1'
-                                                            onClick={() => {
-                                                                editingSet(prevEditing => {
-                                                                    const newEditing = { ...prevEditing }
-
-                                                                    //set / reset editing
-                                                                    newEditing.usersToCompanies = newEditing.usersToCompanies === undefined ? eachUserToCompany : undefined
-
-                                                                    return newEditing
-                                                                })
-                                                            }}
-                                                        >{editing.usersToCompanies !== undefined ? "cancel edit" : "edit usersToCompanies"}</button>
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachUserToCompany}
+                                                        />
                                                     </div>
                                                 )
                                             })}
@@ -1144,5 +1084,32 @@ function AddResourceButton({ keyName, adding, addingSet }: { keyName: activeScre
                 })
             }}
         >{adding[keyName] ? "close" : `add ${keyName}`}</button>
+    )
+}
+
+function EditResourceButton<K extends keyof editingType>({ editing, editingSet, keyName, eachObj }: {
+    editing: editingType,
+    editingSet: React.Dispatch<React.SetStateAction<editingType>>,
+    keyName: K,
+    eachObj: NonNullable<editingType[K]>
+}) {
+
+    const viewingThisItem = editing[keyName] !== undefined && editing[keyName].id === eachObj.id
+
+    return (
+        <>
+            <button className='button1' style={{ backgroundColor: viewingThisItem ? "rgb(var(--color1))" : "" }}
+                onClick={() => {
+                    editingSet(prevEditing => {
+                        const newEditing = { ...prevEditing }
+
+                        //toggle
+                        newEditing[keyName] = newEditing[keyName] === undefined ? eachObj : undefined
+
+                        return newEditing
+                    })
+                }}
+            >{viewingThisItem ? "cancel edit" : `edit ${keyName}`}</button>
+        </>
     )
 }

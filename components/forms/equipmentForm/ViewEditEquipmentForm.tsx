@@ -12,6 +12,7 @@ import { company, equipmentFormNewEquipmentType, equipmentFormSchema, equipmentF
 import { getEquipment } from '@/serverFunctions/handleEquipment'
 import ViewEquipment from '@/components/equipment/ViewEquipment'
 import TextArea from '@/components/textArea/TextArea'
+import { getEquipmentData } from '@/components/equipment/getEquipmentData'
 
 export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }: { seenForm: equipmentFormType, handleFormUpdate: (updatedFormData: equipmentFormType) => void, seenCompanyId: company["id"] }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -436,18 +437,7 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                         //refresh
                         newFormObj.data = { ...newFormObj.data }
 
-                        const newTape: equipmentFormNewEquipmentType = {
-                            companyId: seenCompanyId,
-                            quantity: 0,
-                            makeModel: "",
-                            serialNumber: "",
-                            additionalNotes: "",
-                            powerSupplyCount: 0,
-                            rackUnits: 0,
-                            equipmentLocation: newFormObj.type === "equipmentDeposit" ? "off-site" : "on-site",
-                            amps: null,
-                            weight: null,
-                        }
+                        const newTape: equipmentFormNewEquipmentType = getEquipmentData(seenCompanyId, newFormObj.type === "equipmentDeposit")
 
                         newFormObj.data.equipmentInRequest = [...newFormObj.data.equipmentInRequest, newTape]
                         return newFormObj

@@ -17,9 +17,7 @@ export function updateRefreshObj(prevObj: refreshObjType, key: string) {
     return newRefreshObj
 }
 
-export function formatLocalDateTime(dateInput: Date | string) {
-    const seenDate = new Date(dateInput)
-
+export function formatLocalDateTime(seenDate: Date) {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
 
     //@ts-expect-error type
@@ -27,12 +25,11 @@ export function formatLocalDateTime(dateInput: Date | string) {
     return customDateTime
 }
 
-export function cleanHourTimeRound(timeChange: number) {
-    const etaDate = new Date();
-    etaDate.setHours(etaDate.getHours() + timeChange);
-    etaDate.setMinutes(0, 0, 0);
+export function cleanHourTimeRound(seenDate: Date, timeChange: number) {
+    seenDate.setHours(seenDate.getHours() + timeChange);
+    seenDate.setMinutes(0, 0, 0);
 
-    return etaDate
+    return seenDate
 }
 
 export async function resolveFuncToBool(seenFunc: () => Promise<void>): Promise<boolean> {
@@ -59,12 +56,10 @@ export function interpretAuthResponseAndBool(authResponse: string | authAccessLe
     return true
 }
 
-export function offsetTime(isoString: string, timeInteger: number): string {
-    const date = new Date(isoString);
-
+export function offsetTime(seenDate: Date, timeInteger: number) {
     // Offset
-    date.setHours(date.getHours() + timeInteger);
+    seenDate.setHours(seenDate.getHours() + timeInteger);
 
     // Return the adjusted ISO string
-    return date.toISOString()
+    return seenDate
 }

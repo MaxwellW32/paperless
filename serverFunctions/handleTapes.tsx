@@ -50,6 +50,9 @@ export async function getSpecificTapes(tapeId: tape["id"], resourceAuth: resourc
 
     const result = await db.query.tapes.findFirst({
         where: eq(tapes.id, tapeId),
+        with: {
+            company: true
+        }
     });
 
     return result

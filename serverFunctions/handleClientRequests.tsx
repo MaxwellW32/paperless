@@ -19,7 +19,7 @@ export async function addClientRequests(newClientRequestObj: newClientRequest, r
     const [addedClientRequest] = await db.insert(clientRequests).values({
         userId: session.user.id,
         status: "in-progress",
-        dateSubmitted: `${new Date().toISOString()}`,
+        dateSubmitted: new Date,
         ...newClientRequestObj,
     }).returning()
 

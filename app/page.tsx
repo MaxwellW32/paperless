@@ -12,20 +12,15 @@ import styles from "./page.module.css"
 //one recursive form - view mode, add/edit
 //on array map - add required label
 //checklist form re ordering
-//ws use refresh/update modes for client requests - get all, or run specific update
 //remove manual company id check - just keep it at manual check
-//set checklist to null on complete on older records
-//create tapes/equipment forms
-//complete equipment workflow
-//round off timing on client request
-//make admin model names same as db - make it a zod schema
-//make date string
-//enable saving of form data to storage
-//make tapes/equipment initial items getter function
-//delete button - editing obj proper fix
+//leave only client forms on older saved client requests
+//delete button 
 
 //plan for today
-//
+//one recursive form - view mode, add/edit
+//checklist form re ordering
+//form validation
+//remove manual company id check - just keep it at manual check
 //
 //
 

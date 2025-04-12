@@ -11,22 +11,12 @@ import { company, equipmentSchema, equipmentT, newEquipmentSchema, newEquipmentT
 import { addEquipment, updateEquipment } from '@/serverFunctions/handleEquipment'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 import TextArea from '../textArea/TextArea'
+import { getEquipmentData } from './getEquipmentData'
 
 export default function AddEditEquipment({ sentEquipment, submissionAction }: { sentEquipment?: equipmentT, submissionAction?: () => void }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
-    const initialFormObj: newEquipmentT = {
-        companyId: "",
-        quantity: 0,
-        makeModel: "",
-        serialNumber: "",
-        additionalNotes: "",
-        powerSupplyCount: 0,
-        rackUnits: 0,
-        equipmentLocation: "off-site",
-        amps: null,
-        weight: null,
-    }
+    const initialFormObj: newEquipmentT = getEquipmentData("")
 
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<equipmentT>>(deepClone(sentEquipment === undefined ? initialFormObj : updateEquipmentSchema.parse(sentEquipment)))
