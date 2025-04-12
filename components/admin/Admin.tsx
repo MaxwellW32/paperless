@@ -1,7 +1,7 @@
 "use client"
 import React, { useRef, useState } from 'react'
 import styles from "./admin.module.css"
-import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObj, tape } from '@/types'
+import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObj, tape, equipmentT } from '@/types'
 import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { getDepartments, getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
@@ -28,6 +28,8 @@ import useWebsockets from '../websockets/UseWebsockets'
 import { webSocketStandardMessageType } from '@/types/wsTypes'
 import AddEditTape from '../tapes/AddEditTape'
 import { getSpecificTapes, getTapes } from '@/serverFunctions/handleTapes'
+import { getEquipment, getSpecificEquipment } from '@/serverFunctions/handleEquipment'
+import AddEditEquipment from '../equipment/AddEditEquipment'
 
 type schemaType = typeof schema;
 type schemaTableNamesType = keyof schemaType;
@@ -69,6 +71,9 @@ export default function Page() {
     const [tapesSearchObj, tapesSearchObjSet] = useState<searchObj<tape>>({
         searchItems: [],
     })
+    const [equipmentSearchObj, equipmentSearchObjSet] = useState<searchObj<equipmentT>>({
+        searchItems: [],
+    })
     const [usersToDepartmentsSearchObj, usersToDepartmentsSearchObjSet] = useState<searchObj<userToDepartment>>({
         searchItems: [],
     })
@@ -82,6 +87,7 @@ export default function Page() {
         checklistStarters?: checklistStarter,
         clientRequests?: clientRequest,
         tapes?: tape,
+        equipment?: equipmentT,
         usersToDepartments?: userToDepartment,
         usersToCompanies?: userToCompany,
     }>({})
@@ -239,6 +245,24 @@ export default function Page() {
 
             //update state
             setSearchItemsOnSearchObj(tapesSearchObjSet, results, updateOption)
+
+        } else if (sentActiveScreen === "equipment") {
+            const results = await getResults<equipmentT>(updateOption,
+                async () => {
+                    if (updateOption.type !== "specific") throw new Error("incorrect updateOption sent")
+
+                    return await getSpecificEquipment(updateOption.id, resourceAuth)
+                },
+                async () => {
+                    return await getEquipment({ type: "all" }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                },
+            )
+
+            //general send off
+            respondToResults(results)
+
+            //update state
+            setSearchItemsOnSearchObj(equipmentSearchObjSet, results, updateOption)
 
         } else if (sentActiveScreen === "users") {
             const results = await getResults<user>(updateOption,
@@ -655,6 +679,82 @@ export default function Page() {
                                                         if (editing.tapes === undefined) return
 
                                                         loadStarterValues(activeScreen, { type: "specific", id: editing.tapes.id })
+                                                    }}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
+
+                            {activeScreen === "equipment" && (
+                                <>
+                                    <AddResourceButton
+                                        adding={adding}
+                                        addingSet={addingSet}
+                                        keyName={activeScreen}
+                                    />
+
+                                    {adding.equipment && (
+                                        <AddEditEquipment
+                                            submissionAction={() => {
+                                                loadStarterValues(activeScreen, { type: "all" })
+                                            }}
+                                        />
+                                    )}
+
+                                    <Search
+                                        searchObj={equipmentSearchObj}
+                                        searchObjSet={equipmentSearchObjSet}
+                                        searchFunction={async () => {
+                                            await loadStarterValues(activeScreen, { type: "all" }, false)
+                                        }}
+                                    />
+
+                                    {equipmentSearchObj.searchItems.length > 0 && (
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                            {equipmentSearchObj.searchItems.map(eachEquipment => {
+                                                if (eachEquipment.company === undefined) return null
+
+                                                return (
+                                                    <div key={eachEquipment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                        <h3>{eachEquipment.makeModel}</h3>
+
+                                                        <h3>{eachEquipment.company.name}</h3>
+
+                                                        {((editing.equipment !== undefined && editing.equipment.id === eachEquipment.id) || (editing.equipment === undefined)) && (
+                                                            <>
+                                                                <button className='button1'
+                                                                    onClick={() => {
+                                                                        editingSet(prevEditing => {
+                                                                            const newEditing = { ...prevEditing }
+
+                                                                            //set / reset editing
+                                                                            newEditing.equipment = newEditing.equipment === undefined ? eachEquipment : undefined
+
+                                                                            return newEditing
+                                                                        })
+                                                                    }}
+                                                                >{editing.equipment !== undefined ? "cancel edit" : "edit equipment"}</button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {editing.equipment !== undefined && (
+                                        <>
+                                            <h3>Edit form:</h3>
+
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                <AddEditEquipment
+                                                    sentEquipment={editing.equipment}
+                                                    submissionAction={() => {
+                                                        if (editing.equipment === undefined) return
+
+                                                        loadStarterValues(activeScreen, { type: "specific", id: editing.equipment.id })
                                                     }}
                                                 />
                                             </div>

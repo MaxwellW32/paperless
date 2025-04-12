@@ -270,6 +270,7 @@ export const equipmentSchema = z.object({
     weight: z.string().min(1).nullable(),
 })
 export type equipmentT = z.infer<typeof equipmentSchema> & {
+    company?: company
 }
 
 export const newEquipmentSchema = equipmentSchema.omit({ id: true, dateAdded: true })

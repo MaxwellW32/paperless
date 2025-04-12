@@ -69,7 +69,11 @@ export const equipment = pgTable("equipment", {
     amps: varchar("amps", { length: 255 }),
     weight: varchar("weight", { length: 255 }),
 })
-export const equipmentRelations = relations(equipment, ({ many }) => ({
+export const equipmentRelations = relations(equipment, ({ one }) => ({
+    company: one(companies, {
+        fields: [equipment.companyId],
+        references: [companies.id],
+    }),
 }));
 
 

@@ -21,18 +21,10 @@ import styles from "./page.module.css"
 //make admin model names same as db - make it a zod schema
 //make date string
 //enable saving of form data to storage
-//add equipment to admin page
-//add edit equipment
+//make tapes/equipment initial items getter function
+//delete button - editing obj proper fix
 
 //plan for today
-//department?
-//
-//
-//
-//
-//
-//
-//
 //
 //
 //
