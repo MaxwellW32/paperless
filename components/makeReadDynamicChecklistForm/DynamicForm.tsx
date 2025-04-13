@@ -5,7 +5,7 @@ import ChecklistShowMore from "./checklistShowMore/ChecklistShowMore";
 import styles from "./style.module.css"
 import { baseDynamicFormInputType, baseDynamicFormType } from "@/types";
 
-export function MakeDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenForm: baseDynamicFormType, handleFormUpdate: (updatedForm: baseDynamicFormType) => void }) {
+export function MakeDynamicForm({ seenForm, handleFormUpdate }: { seenForm: baseDynamicFormType, handleFormUpdate: (updatedForm: baseDynamicFormType) => void }) {
     const [formData, formDataSet] = useState<baseDynamicFormType>(deepClone(seenForm));
     const updating = useRef(false)
 
@@ -31,13 +31,13 @@ export function MakeDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenF
 
     return (
         <>
-            <DynamicMakeChecklistForm formData={formData} formDataSet={formDataSet} />
+            <DynamicMakeForm formData={formData} formDataSet={formDataSet} />
 
             {/* <pre>{JSON.stringify(formData, null, 2)}</pre> */}
         </>
     );
 }
-function DynamicMakeChecklistForm({ formData, formDataSet, sentKeys = "", parentArrayName, ...elProps }: { formData: baseDynamicFormType, formDataSet: React.Dispatch<React.SetStateAction<baseDynamicFormType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
+function DynamicMakeForm({ formData, formDataSet, sentKeys = "", parentArrayName, ...elProps }: { formData: baseDynamicFormType, formDataSet: React.Dispatch<React.SetStateAction<baseDynamicFormType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
     const handleChange = (path: string, value: unknown) => {
         formDataSet(prev => {
             const newData = deepClone(prev);
@@ -281,7 +281,7 @@ function DynamicMakeChecklistForm({ formData, formDataSet, sentKeys = "", parent
                                                 )}
                                             />
 
-                                            <DynamicMakeChecklistForm formData={eachFormDataValue.data} formDataSet={formDataSet} sentKeys={`${seenKeys}/data`} style={{ marginTop: "2rem" }} />
+                                            <DynamicMakeForm formData={eachFormDataValue.data} formDataSet={formDataSet} sentKeys={`${seenKeys}/data`} style={{ marginTop: "2rem" }} />
                                         </>
                                     )}
                                 />
@@ -327,7 +327,7 @@ function DynamicMakeChecklistForm({ formData, formDataSet, sentKeys = "", parent
                                                 )}
                                             />
 
-                                            <DynamicMakeChecklistForm style={{ marginTop: "2rem" }} formData={eachFormDataValue.arrayStarter} formDataSet={formDataSet} sentKeys={`${seenKeys}/arrayStarter`} parentArrayName={eachKey} />
+                                            <DynamicMakeForm style={{ marginTop: "2rem" }} formData={eachFormDataValue.arrayStarter} formDataSet={formDataSet} sentKeys={`${seenKeys}/arrayStarter`} parentArrayName={eachKey} />
                                         </>
                                     )}
                                 />
@@ -396,11 +396,7 @@ function ButtonSelectionOptions({ seenKeys, addField }: {
 
 
 
-
-
-
-
-export function ReadDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenForm: baseDynamicFormType, handleFormUpdate?: (updatedForm: baseDynamicFormType) => void }) {
+export function ReadDynamicForm({ seenForm, handleFormUpdate, viewOnly = true }: { seenForm: baseDynamicFormType, handleFormUpdate?: (updatedForm: baseDynamicFormType) => void, viewOnly?: boolean }) {
     const [formData, setFormData] = useState<baseDynamicFormType>(deepClone(seenForm));
     const updating = useRef(false)
 
@@ -426,15 +422,13 @@ export function ReadDynamicChecklistForm({ seenForm, handleFormUpdate }: { seenF
     }, [formData])
 
     return (
-        <>
-            <DynamicReadChecklistForm formData={formData} setFormData={setFormData} />
-
-            {/* <pre>{JSON.stringify(formData, null, 2)}</pre> */}
-        </>
+        <DynamicReadForm formData={formData} setFormData={setFormData} viewOnly={viewOnly} />
     );
 }
-function DynamicReadChecklistForm({ formData, setFormData, sentKeys = "", parentArrayName, ...elProps }: { formData: baseDynamicFormType, setFormData: React.Dispatch<React.SetStateAction<baseDynamicFormType>>, sentKeys?: string, parentArrayName?: string } & React.HTMLAttributes<HTMLDivElement>) {
+function DynamicReadForm({ formData, setFormData, sentKeys = "", parentArrayName, viewOnly, ...elProps }: { formData: baseDynamicFormType, setFormData: React.Dispatch<React.SetStateAction<baseDynamicFormType>>, sentKeys?: string, parentArrayName?: string, viewOnly?: boolean } & React.HTMLAttributes<HTMLDivElement>) {
     const handleChange = (path: string, value: unknown) => {
+        if (viewOnly) return
+
         setFormData(prev => {
             const newData = deepClone(prev);
 
@@ -553,7 +547,7 @@ function DynamicReadChecklistForm({ formData, setFormData, sentKeys = "", parent
                                     )}
                                     content={(
                                         <>
-                                            <DynamicReadChecklistForm key={eachKey} formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} style={{ marginLeft: "2rem" }} />
+                                            <DynamicReadForm key={eachKey} formData={eachFormDataValue.data} setFormData={setFormData} sentKeys={`${seenKeys}/data`} style={{ marginLeft: "2rem" }} />
                                         </>
                                     )}
                                 />
@@ -571,7 +565,7 @@ function DynamicReadChecklistForm({ formData, setFormData, sentKeys = "", parent
                                             <div className="snap" style={{ display: "grid", gridAutoColumns: "min(400px, 90%)", gridAutoFlow: "column", gap: "1rem", overflow: "auto", paddingBlock: "1rem" }} >
                                                 {eachFormDataValue.data.map((eachFormData, eachFormDataIndex) => {
                                                     return (
-                                                        <DynamicReadChecklistForm key={eachFormDataIndex} formData={eachFormData} setFormData={setFormData} sentKeys={`${seenKeys}/data/${eachFormDataIndex}`} parentArrayName={eachKey} />
+                                                        <DynamicReadForm key={eachFormDataIndex} formData={eachFormData} setFormData={setFormData} sentKeys={`${seenKeys}/data/${eachFormDataIndex}`} parentArrayName={eachKey} />
                                                     )
                                                 })}
                                             </div>

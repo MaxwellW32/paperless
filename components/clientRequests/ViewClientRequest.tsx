@@ -5,7 +5,7 @@ import { clientRequest, company, department, resourceAuthType, user, userDepartm
 import { getSpecificCompany } from '@/serverFunctions/handleCompanies'
 import Moment from 'react-moment';
 import { getSpecificUsers } from '@/serverFunctions/handleUser'
-import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
+import { ReadDynamicForm } from '../makeReadDynamicChecklistForm/DynamicForm'
 import { formatLocalDateTime } from '@/utility/utility'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
@@ -112,7 +112,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                     return (
                         <div key={eachChecklistItemIndex}>
                             {eachChecklistItem.form.type === "dynamic" && (
-                                <ReadDynamicChecklistForm seenForm={eachChecklistItem.form.data} />
+                                <ReadDynamicForm seenForm={eachChecklistItem.form.data} />
                             )}
 
                             {((eachChecklistItem.form.type === "tapeDeposit") || (eachChecklistItem.form.type === "tapeWithdraw")) && (

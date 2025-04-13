@@ -12,7 +12,7 @@ import { getCompanies } from '@/serverFunctions/handleCompanies'
 import { useSession } from 'next-auth/react'
 import { getUsersToCompaniesWithVisitAccess } from '@/serverFunctions/handleUsersToCompanies'
 import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
-import { ReadDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
+import { ReadDynamicForm } from '../makeReadDynamicChecklistForm/DynamicForm'
 import { EditTapeForm } from '../forms/tapeForm/ViewEditTapeForm'
 import TextInput from '../textInput/TextInput'
 import { EditEquipmentForm } from '../forms/equipmentForm/ViewEditEquipmentForm'
@@ -26,12 +26,13 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
     const [, refreshWSObjSet] = useAtom<refreshObjType>(refreshWSObjGlobal)
 
+    const newDate = cleanHourTimeRound(new Date, 1)
     const [initialFormObj, initialFormObjSet] = useState<Partial<newClientRequest>>({
         companyId: undefined,
         checklist: undefined,
         checklistStarterId: undefined,
         clientsAccessingSite: [],
-        eta: cleanHourTimeRound(new Date, 1),
+        eta: newDate,
     })
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<clientRequest>>(deepClone(sentClientRequest === undefined ? initialFormObj : updateClientRequestSchema.parse(sentClientRequest)))
@@ -504,7 +505,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                     {eachChecklistItem.type === "form" && (
                                         <>
                                             {eachChecklistItem.form.type === "dynamic" && (
-                                                <ReadDynamicChecklistForm seenForm={eachChecklistItem.form.data}
+                                                <ReadDynamicForm seenForm={eachChecklistItem.form.data} viewOnly={false}
                                                     handleFormUpdate={(seenLatestForm) => {
                                                         formObjSet(prevFormObj => {
                                                             const newFormObj = { ...prevFormObj }

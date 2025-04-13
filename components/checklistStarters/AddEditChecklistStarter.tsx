@@ -10,7 +10,7 @@ import ConfirmationBox from '../confirmationBox/ConfirmationBox'
 import { getDepartments } from '@/serverFunctions/handleDepartments'
 import { getCompanies } from '@/serverFunctions/handleCompanies'
 import ShowMore from '../showMore/ShowMore'
-import { MakeDynamicChecklistForm } from '../makeReadDynamicChecklistForm/DynamicChecklistForm'
+import { MakeDynamicForm } from '../makeReadDynamicChecklistForm/DynamicForm'
 import TextInput from '../textInput/TextInput'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
@@ -284,7 +284,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                 <label>{eachChecklistItem.form.type} form selected</label>
 
                                                 {eachChecklistItem.form.type === "dynamic" && (
-                                                    <MakeDynamicChecklistForm seenForm={eachChecklistItem.form.data}
+                                                    <MakeDynamicForm seenForm={eachChecklistItem.form.data}
                                                         handleFormUpdate={(seenLatestForm) => {
                                                             if (formObj.checklist === undefined) return
 

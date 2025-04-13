@@ -173,7 +173,10 @@ export const baseDynamicFormInputArrSchema = z.object({
 
 
 
-
+export const dateSchma = z.preprocess((val) => {
+    if (typeof val === "string" || typeof val === "number") return new Date(val);
+    return val;
+}, z.date())
 
 //keep synced with db schema
 export const userAccessSchema = z.enum(["admin"])
@@ -187,7 +190,7 @@ export const userSchema = z.object({
     name: z.string().min(1).nullable(),
     image: z.string().min(1).nullable(),
     email: z.string().min(1).email().nullable(),
-    emailVerified: z.date().nullable(),
+    emailVerified: dateSchma.nullable(),
 })
 export type user = z.infer<typeof userSchema> & {
     usersToDepartments?: userToDepartment[],
@@ -264,7 +267,7 @@ export const equipmentSchema = z.object({
     rackUnits: z.number(),
     companyId: companySchema.shape.id,
     equipmentLocation: z.string().min(1),
-    dateAdded: z.date(),
+    dateAdded: dateSchma,
 
     amps: z.string().min(1).nullable(),
     weight: z.string().min(1).nullable(),
@@ -290,7 +293,7 @@ export const tapeSchema = z.object({
     mediaLabel: z.string().min(1),
     initial: z.string().min(1),
     companyId: companySchema.shape.id,
-    dateAdded: z.date(),
+    dateAdded: dateSchma,
     tapeLocation: tapeLocationSchema,
 })
 export type tape = z.infer<typeof tapeSchema> & {
@@ -436,12 +439,12 @@ export const clientRequestSchema = z.object({
     id: z.string().min(1),
     userId: userSchema.shape.id, //who sent the request
     companyId: companySchema.shape.id, //what company is it on behalf of
-    dateSubmitted: z.date(),
+    dateSubmitted: dateSchma,
     status: clientRequestStatusSchema,
     checklist: z.array(checklistItemSchema).min(1),
     checklistStarterId: checklistStarterSchema.shape.id,
     clientsAccessingSite: z.array(userSchema.shape.id),
-    eta: z.date(),
+    eta: dateSchma,
 })
 export type clientRequest = z.infer<typeof clientRequestSchema> & {
     user?: user,
