@@ -1,7 +1,7 @@
 "use client"
 import React, { HTMLAttributes, useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { deepClone } from '@/utility/utility'
+import { deepClone, moveItemInArray } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import { checklistItemType, checklistStarter, company, department, newChecklistStarter, newChecklistStarterSchema, formTypesType, updateChecklistStarterSchema, dynamicFormType, checklistStarterSchema, resourceAuthType } from '@/types'
@@ -217,7 +217,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                 }
 
                                 return (
-                                    <div key={eachChecklistItemIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--shade4))", padding: "1rem" }}>
+                                    <div key={eachChecklistItemIndex} className={styles.eachchecklistStarter}>
                                         <ConfirmationBox text='remove' confirmationText='are you sure you want to remove?' successMessage='removed!'
                                             buttonProps={{
                                                 style: {
@@ -692,6 +692,38 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                 />
                                             </>
                                         )}
+
+                                        <div className={styles.moveButtonCont}>
+                                            <button className='button2'
+                                                onClick={() => {
+                                                    if (formObj.checklist === undefined) return
+
+                                                    let nextIndex = eachChecklistItemIndex + 1
+                                                    if (nextIndex > formObj.checklist.length - 1) {
+                                                        nextIndex = 0
+                                                    }
+
+                                                    const updatedChecklist = moveItemInArray(formObj.checklist, eachChecklistItemIndex, nextIndex)
+
+                                                    updateChecklist(updatedChecklist)
+                                                }}
+                                            >down</button>
+
+                                            <button className='button2'
+                                                onClick={() => {
+                                                    if (formObj.checklist === undefined) return
+
+                                                    let prevIndex = eachChecklistItemIndex - 1
+                                                    if (prevIndex < 0) {
+                                                        prevIndex = formObj.checklist.length - 1
+                                                    }
+
+                                                    const updatedChecklist = moveItemInArray(formObj.checklist, eachChecklistItemIndex, prevIndex)
+
+                                                    updateChecklist(updatedChecklist)
+                                                }}
+                                            >up</button>
+                                        </div>
                                     </div>
                                 )
                             })}

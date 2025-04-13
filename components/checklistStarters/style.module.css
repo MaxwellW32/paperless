@@ -3,3 +3,24 @@
     align-content: flex-start;
     gap: 1rem;
 }
+
+.eachchecklistStarter {
+    display: grid;
+    align-content: flex-start;
+    gap: 1rem;
+    background-color: rgb(var(--shade4));
+    padding: 1rem;
+}
+
+.moveButtonCont {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+    opacity: 0;
+    transition: opacity 200ms;
+}
+
+.eachchecklistStarter:hover>.moveButtonCont {
+    opacity: 1;
+}

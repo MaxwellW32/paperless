@@ -63,3 +63,13 @@ export function offsetTime(seenDate: Date, timeInteger: number) {
     // Return the adjusted ISO string
     return seenDate
 }
+
+export function moveItemInArray<T>(arr: T[], fromIndex: number, toIndex: number): T[] {
+    const newArr = [...arr]; // Clone to avoid mutation
+
+    const [movedItem] = newArr.splice(fromIndex, 1); // Remove item
+
+    newArr.splice(toIndex, 0, movedItem); // Insert at new position
+
+    return newArr;
+}
