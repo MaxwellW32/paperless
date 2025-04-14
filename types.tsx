@@ -397,8 +397,7 @@ export const checklistItemManualSchema = z.object({
             departmenId: z.string().min(1)
         }),
         z.object({
-            type: z.literal("company"),
-            companyId: z.string().min(1)
+            type: z.literal("client"),
         }),
     ]),
     prompt: z.string().min(1),

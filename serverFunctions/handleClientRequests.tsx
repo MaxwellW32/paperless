@@ -2,7 +2,7 @@
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
 import { checklistItemType, clientRequest, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, resourceAuthType, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
-import { eq, and, ne } from "drizzle-orm"
+import { eq, and, ne, desc } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
 import { ensureCanAccessResource } from "./handleAuth"
 import { interpretAuthResponseAndError } from "@/utility/utility"
@@ -122,6 +122,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
             with: {
                 checklistStarter: true
             },
+            orderBy: [desc(clientRequests.dateSubmitted)],
         });
 
         return results
@@ -136,6 +137,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
             with: {
                 checklistStarter: true
             },
+            orderBy: [desc(clientRequests.dateSubmitted)],
         });
 
         return results
@@ -152,6 +154,7 @@ export async function getClientRequests(option: { type: "user", userId: user["id
                 checklistStarter: true,
                 company: true
             },
+            orderBy: [desc(clientRequests.dateSubmitted)],
         });
 
         return results

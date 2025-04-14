@@ -1,6 +1,6 @@
 "use server"
 import { db } from "@/db";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { ensureCanAccessResource } from "./handleAuth";
 import { interpretAuthResponseAndError } from "@/utility/utility";
 import { equipmentT, newEquipmentT, newEquipmentSchema, resourceAuthType, equipmentSchema, company } from "@/types";
@@ -89,7 +89,8 @@ export async function getEquipment(option: { type: "makeModel", makeModel: strin
         const results = await db.query.equipment.findMany({
             limit: limit,
             offset: offset,
-            where: eq(equipment.companyId, option.companyId)
+            where: eq(equipment.companyId, option.companyId),
+            orderBy: [desc(equipment.dateAdded)],
         });
 
         return results

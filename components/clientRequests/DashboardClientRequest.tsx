@@ -40,11 +40,11 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
 
         } else if (userDepartmentCompanySelection !== null) {
             //if user from company check if they can edit manual check
-            if (activeChecklistItem.for.type === "company" && userDepartmentCompanySelection.type === "userCompany" && activeChecklistItem.for.companyId === userDepartmentCompanySelection.seenUserToCompany.companyId) {
+            if (activeChecklistItem.for.type === "client" && userDepartmentCompanySelection.type === "userCompany" && userDepartmentCompanySelection.seenUserToCompany.companyId === eachClientRequest.companyId) {
                 canAccessManualCheck = true
             }
 
-            //if user from department check if they can edit manual check
+            //if user from department check if their department needd to sign off on manual check
             if (activeChecklistItem.for.type === "department" && userDepartmentCompanySelection.type === "userDepartment" && activeChecklistItem.for.departmenId === userDepartmentCompanySelection.seenUserToDepartment.departmentId) {
                 canAccessManualCheck = true
             }

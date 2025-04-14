@@ -471,10 +471,10 @@ function DynamicReadForm({ formData, setFormData, sentKeys = "", parentArrayName
 
                 return (
                     <div key={eachKey} style={{ display: "grid", alignContent: "flex-start", }}>
+                        <label className={styles.labelCont}>{eachFormDataValue.label} {eachFormDataValue.required ? <p className={styles.required}>required</p> : ""}</label>
+
                         {eachFormDataValue.type === "input" && (
                             <>
-                                <label className={styles.labelCont}>{eachFormDataValue.label} {eachFormDataValue.required ? <p className={styles.required}>required</p> : ""}</label>
-
                                 {eachFormDataValue.data.type === "string" ? (
                                     <>
                                         {eachFormDataValue.data.useTextArea ? (

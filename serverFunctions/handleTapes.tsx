@@ -1,6 +1,6 @@
 "use server"
 import { db } from "@/db";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { ensureCanAccessResource } from "./handleAuth";
 import { newTape, newTapeSchema, tape, tapeSchema, tapeLocation, updateTape, resourceAuthType, company } from "@/types";
 import { tapes } from "@/db/schema";
@@ -89,7 +89,8 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string,
         const results = await db.query.tapes.findMany({
             limit: limit,
             offset: offset,
-            where: and(eq(tapes.companyId, option.companyId), option.getOppositeOfStatus ? ne(tapes.tapeLocation, option.tapeLocation) : eq(tapes.tapeLocation, option.tapeLocation))
+            where: and(eq(tapes.companyId, option.companyId), option.getOppositeOfStatus ? ne(tapes.tapeLocation, option.tapeLocation) : eq(tapes.tapeLocation, option.tapeLocation)),
+            orderBy: [desc(tapes.dateAdded)],
         });
 
         return results
