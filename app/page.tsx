@@ -15,6 +15,7 @@ import styles from "./page.module.css"
 //remove manual company id check - just keep it at manual check
 //leave only client forms on older saved client requests
 //delete button 
+//find a way to validate multiple forms together
 
 //plan for today
 //remove manual company id check - just keep it at manual check

@@ -217,7 +217,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
             } else if (prevItem !== undefined) {
                 if (prevItem.type === "form" || prevItem.completed) {
-                    //mark continous forms as complete
+                    //mark continous forms as complete, or forms with previous item completed
                     eachChecklist.completed = true
                 }
             }
@@ -259,7 +259,6 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
                 //mark as complete
                 validatedNewClientRequest.checklist = markLatestFormAsComplete(validatedNewClientRequest.checklist)
-                console.log(`$validatedNewClientRequest.checklist`, validatedNewClientRequest.checklist);
 
                 //form validation on complete forms 
                 validateForms(validatedNewClientRequest.checklist)
@@ -268,8 +267,6 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 await addClientRequests(validatedNewClientRequest, resourceAuth)
 
                 toast.success("submitted")
-
-                console.log(`$initialFormObj`, initialFormObj);
 
                 //reset
                 formObjSet(deepClone(initialFormObj))
@@ -532,49 +529,28 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         {formObj.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
                             if (session === null || formObj.checklist === undefined) return null
 
-                            let canShowCheckListItem = false
+                            //expected behaviour
+                            //client should see nothin - cause 1st is a manual check
+                            //then client should see 2 forms
+                            //then client should still have access to those forms while manual is completed
+                            //then client should have access to dynamic form
+
+                            //can only show forms if
+                            //if checklist form is completed...
+                            //if incomplete form is first in checklist...
+                            //if incomplete form has previous items completed...
+                            //if incomplete form has previous item that is incomplete form
+
+                            let canShowChecklistItem = false;
 
                             if (session.user.accessLevel === "admin") {
-                                canShowCheckListItem = true
+                                canShowChecklistItem = true;
 
-                                //limit to only form view on client
                             } else if (eachChecklistItem.type === "form") {
-                                //can only show forms if
-                                //if form is completed...
-                                //if incomplete form is first in checklist...
-                                //if incomplete form has previous items completed...
-                                //if incomplete form has previouse item that is incomplete form
-
-                                //if form complete show
-                                if (eachChecklistItem.completed) {
-                                    canShowCheckListItem = true
-
-                                } else {
-                                    //form not completed
-
-                                    //can show if form is the first item in checklist
-                                    if (eachChecklistItemIndex === 0) {
-                                        canShowCheckListItem = true
-
-                                    } else {
-                                        //not the first item - so check if previous checklist item is completed
-                                        const previousChecklistItem = formObj.checklist[eachChecklistItemIndex - 1]
-
-                                        //show continous forms - and forms where the previous item has been completed
-                                        if (previousChecklistItem.completed) {
-                                            canShowCheckListItem = true
-
-                                        } else if (previousChecklistItem.type === "form" && !previousChecklistItem.completed) {
-                                            //only run this when first item is a form
-                                            //why
-                                            //because right now first item is not a form and this still shows
-
-                                        }
-                                    }
-                                }
+                                canShowChecklistItem = true;
                             }
 
-                            if (!canShowCheckListItem) return null
+                            if (!canShowChecklistItem) return null;
 
                             return (
                                 <div key={eachChecklistItemIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
