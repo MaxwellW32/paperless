@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import styles from "./style.module.css"
-import { cleanHourTimeRound, deepClone, offsetTime, updateRefreshObj } from '@/utility/utility'
+import { cleanHourTimeRound, deepClone, offsetTime, updateRefreshObj, validateDynamicForm } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import { checklistStarter, clientRequest, company, department, userDepartmentCompanySelection, newClientRequest, newClientRequestSchema, refreshObjType, updateClientRequestSchema, userToCompany, checklistItemType, clientRequestStatusType, clientRequestSchema, resourceAuthType } from '@/types'
@@ -39,7 +39,6 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
     const [chosenChecklistStarterType, chosenChecklistStarterTypeSet] = useState<checklistStarter["type"] | undefined>(seenChecklistStarterType)
 
-    // const [activeCompanyId, activeCompanyIdSet] = useState<company["id"] | undefined>()
     const [companies, companiesSet] = useState<company[]>([])
 
     const [usersToCompaniesWithAccess, usersToCompaniesWithAccessSet] = useState<userToCompany[] | undefined>(undefined)
@@ -67,6 +66,15 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
     }, [sentClientRequest])
 
+    //listen to changes in seenChecklistStarterType
+    useEffect(() => {
+        if (seenChecklistStarterType === undefined) return
+
+        //set the value
+        chosenChecklistStarterTypeSet(seenChecklistStarterType)
+
+    }, [seenChecklistStarterType])
+
     //load checklist starters if one was not provided
     useEffect(() => {
         //dont search if it was provided
@@ -93,7 +101,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                     initialFormObjSet(prevInitialFormObj => {
                         const newInitialFormObj = { ...prevInitialFormObj }
 
-                        newInitialFormObj.checklist = seenChecklistStarter.checklist
+                        //ensure fresh copy
+                        newInitialFormObj.checklist = deepClone(seenChecklistStarter.checklist)
                         newInitialFormObj.checklistStarterId = seenChecklistStarter.id
 
                         return newInitialFormObj
@@ -124,8 +133,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     //for clients only set active companyId
     useEffect(() => {
         const search = async () => {
-            //only run for clients accounts
-            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userCompany") return
+            //only run for clients accounts when company id undefined
+            if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type !== "userCompany" || formObj.companyId !== undefined) return
 
             //set the active company id
             formObjSet((prevFormObj) => {
@@ -136,7 +145,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         }
         search()
 
-    }, [userDepartmentCompanySelection])
+    }, [userDepartmentCompanySelection, formObj.companyId])
 
     //get company users with site access
     useEffect(() => {
@@ -184,24 +193,54 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     }
 
     function markLatestFormAsComplete(checklist: checklistItemType[]) {
-        const latestChecklistItemIndex = checklist.findIndex(eachChecklistItem => !eachChecklistItem.completed)
-        if (latestChecklistItemIndex === -1) return checklist
+        let firstFormIndex: number | undefined = undefined
 
-        //update in checklist
-        checklist = checklist.map((eachChecklist, eachChecklistIndex) => {
-            if (eachChecklistIndex === latestChecklistItemIndex) {
-                //complete the forms sent
-                if (eachChecklist.type !== "form") return eachChecklist
+        return checklist.map((eachChecklist, eachChecklistIndex) => {
+            //complete the forms sent
+            if (eachChecklist.type !== "form") return eachChecklist
 
+            //assign first form
+            if (firstFormIndex === undefined) {
+                firstFormIndex = eachChecklistIndex
+            }
+
+            const prevIndex = eachChecklistIndex - 1
+            const prevItem: checklistItemType | undefined = checklist[prevIndex]
+
+            //scan each item
+            //set the form to completed - only if first - or if prev was a form as well
+            //return checklist with changed values
+
+            //mark first seen form as complete
+            if (eachChecklistIndex === firstFormIndex) {
                 eachChecklist.completed = true
 
-                return eachChecklist
+            } else if (prevItem !== undefined) {
+                if (prevItem.type === "form" || prevItem.completed) {
+                    //mark continous forms as complete
+                    eachChecklist.completed = true
+                }
             }
 
             return eachChecklist
         })
+    }
 
-        return checklist
+    function validateForms(checklist: checklistItemType[]) {
+        //ensure forms not null
+        checklist.map(eachChecklist => {
+            //only handle complete forms
+            if (eachChecklist.type !== "form" || !eachChecklist.completed) return
+
+            if (eachChecklist.form.type === "dynamic") {
+                //dynamic form validation
+                validateDynamicForm(eachChecklist.form.data)
+
+            } else if (eachChecklist.form.type === "tapeDeposit" || eachChecklist.form.type === "tapeWithdraw" || eachChecklist.form.type === "equipmentDeposit" || eachChecklist.form.type !== "equipmentWithdraw") {
+                //run for other forms
+                if (eachChecklist.form.data === null) throw new Error("need to add to form")
+            }
+        })
     }
 
     async function handleSubmit() {
@@ -220,11 +259,17 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
                 //mark as complete
                 validatedNewClientRequest.checklist = markLatestFormAsComplete(validatedNewClientRequest.checklist)
+                console.log(`$validatedNewClientRequest.checklist`, validatedNewClientRequest.checklist);
+
+                //form validation on complete forms 
+                validateForms(validatedNewClientRequest.checklist)
 
                 //send up to server
                 await addClientRequests(validatedNewClientRequest, resourceAuth)
 
                 toast.success("submitted")
+
+                console.log(`$initialFormObj`, initialFormObj);
 
                 //reset
                 formObjSet(deepClone(initialFormObj))
@@ -235,6 +280,9 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
                 //mark as complete
                 validatedUpdatedClientRequest.checklist = markLatestFormAsComplete(validatedUpdatedClientRequest.checklist)
+
+                //form validation on complete forms 
+                validateForms(validatedUpdatedClientRequest.checklist)
 
                 //update
                 await updateClientRequests(sentClientRequest.id, validatedUpdatedClientRequest, resourceAuth)
@@ -312,7 +360,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 </>
             )}
 
-            {((session.user.accessLevel === "admin") || (department !== undefined && department.canManageRequests)) && (//if admin or can manage requests show the pair company display
+            {((session.user.accessLevel === "admin") || (userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userDepartment" && department !== undefined && department.canManageRequests)) && (//if admin or can manage requests show the pair company display
                 <>
                     <label>company for request</label>
 
@@ -482,7 +530,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                         {formObj.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
-                            if (session === null) return null
+                            if (session === null || formObj.checklist === undefined) return null
 
                             let canShowCheckListItem = false
 
@@ -491,7 +539,39 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
                                 //limit to only form view on client
                             } else if (eachChecklistItem.type === "form") {
-                                canShowCheckListItem = true
+                                //can only show forms if
+                                //if form is completed...
+                                //if incomplete form is first in checklist...
+                                //if incomplete form has previous items completed...
+                                //if incomplete form has previouse item that is incomplete form
+
+                                //if form complete show
+                                if (eachChecklistItem.completed) {
+                                    canShowCheckListItem = true
+
+                                } else {
+                                    //form not completed
+
+                                    //can show if form is the first item in checklist
+                                    if (eachChecklistItemIndex === 0) {
+                                        canShowCheckListItem = true
+
+                                    } else {
+                                        //not the first item - so check if previous checklist item is completed
+                                        const previousChecklistItem = formObj.checklist[eachChecklistItemIndex - 1]
+
+                                        //show continous forms - and forms where the previous item has been completed
+                                        if (previousChecklistItem.completed) {
+                                            canShowCheckListItem = true
+
+                                        } else if (previousChecklistItem.type === "form" && !previousChecklistItem.completed) {
+                                            //only run this when first item is a form
+                                            //why
+                                            //because right now first item is not a form and this still shows
+
+                                        }
+                                    }
+                                }
                             }
 
                             if (!canShowCheckListItem) return null
@@ -502,8 +582,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                         <label>{eachChecklistItem.type}</label>
                                     )}
 
-                                    {eachChecklistItem.type === "form" && (
-                                        <>
+                                    {eachChecklistItem.type === "form" && (//refresh all forms when a new checklist type is loaded
+                                        <React.Fragment key={formObj.checklistStarterId}>
                                             {eachChecklistItem.form.type === "dynamic" && (
                                                 <ReadDynamicForm seenForm={eachChecklistItem.form.data} viewOnly={false}
                                                     handleFormUpdate={(seenLatestForm) => {
@@ -574,7 +654,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                                     )}
                                                 </>
                                             )}
-                                        </>
+                                        </React.Fragment>
                                     )}
 
                                     {eachChecklistItem.type === "email" && (

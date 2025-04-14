@@ -17,7 +17,6 @@ import styles from "./page.module.css"
 //delete button 
 
 //plan for today
-//form validation
 //remove manual company id check - just keep it at manual check
 //
 //

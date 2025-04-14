@@ -1,4 +1,4 @@
-import { deepClone } from "@/utility/utility";
+import { spaceCamelCase, deepClone } from "@/utility/utility";
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ChecklistShowMore from "./checklistShowMore/ChecklistShowMore";
@@ -118,11 +118,11 @@ function DynamicMakeForm({ formData, formDataSet, sentKeys = "", parentArrayName
                 const seenKeys = sentKeys === "" ? eachKey : `${sentKeys}/${eachKey}`
 
                 //replace camelcase key names with spaces and capitalize first letter
-                let niceKeyName = eachKey.replace(/([A-Z])/g, ' $1').replace(/^./, function (str) { return str.toUpperCase(); })
+                let niceKeyName = spaceCamelCase(eachKey)
 
                 const parsedNumberKey = parseInt(eachKey)
                 if (!isNaN(parsedNumberKey) && parentArrayName !== undefined) {
-                    niceKeyName = `${parentArrayName.replace(/([A-Z])/g, ' $1').replace(/^./, function (str) { return str.toUpperCase(); })} ${parsedNumberKey + 1}`
+                    niceKeyName = `${spaceCamelCase(parentArrayName)} ${parsedNumberKey + 1}`
                 }
 
                 return (

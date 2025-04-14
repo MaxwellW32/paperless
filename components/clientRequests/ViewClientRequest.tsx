@@ -86,7 +86,8 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
 
             <div style={{ display: "grid", alignContent: "flex-start", gap: "2rem" }}>
                 {sentClientRequest.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
-                    if (eachChecklistItem.type !== "form" || session === null) return null
+                    //only show completed forms
+                    if (eachChecklistItem.type !== "form" || !eachChecklistItem.completed || session === null) return null
 
                     let canShowForm = false
 

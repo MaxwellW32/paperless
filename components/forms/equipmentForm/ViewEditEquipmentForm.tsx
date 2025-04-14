@@ -1,5 +1,5 @@
 "use client"
-import { deepClone } from '@/utility/utility'
+import { spaceCamelCase, deepClone } from '@/utility/utility'
 import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '@/components/textInput/TextInput'
@@ -102,7 +102,7 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
 
     return (
         <div className={styles.form}>
-            <label>{formObj.type === "equipmentDeposit" ? "equipment deposit" : "equipment withdraw"}</label>
+            <label>{spaceCamelCase(formObj.type)}</label>
 
             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
                 <button className='button3'
@@ -453,7 +453,7 @@ export function ViewEquipmentForm({ seenForm }: { seenForm: equipmentFormType })
 
     return (
         <div className={styles.form}>
-            <label>equipment</label>
+            <label>{spaceCamelCase(seenForm.type)} equipment</label>
 
             {seenForm.data.equipmentInRequest.length > 0 && (
                 <>

@@ -1,5 +1,5 @@
 "use client"
-import { deepClone } from '@/utility/utility'
+import { spaceCamelCase, deepClone } from '@/utility/utility'
 import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '@/components/textInput/TextInput'
@@ -101,7 +101,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
 
     return (
         <div className={styles.form}>
-            <label>{formObj.type === "tapeDeposit" ? "Tape deposit" : "tape withdraw"}</label>
+            <label>{spaceCamelCase(formObj.type)}</label>
 
             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
                 <button className='button3'
@@ -280,7 +280,7 @@ export function ViewTapeForm({ seenForm }: { seenForm: tapeFormType }) {
 
     return (
         <div className={styles.form}>
-            <label>tapes</label>
+            <label>{spaceCamelCase(seenForm.type)} tapes</label>
 
             {seenForm.data.tapesInRequest.length > 0 && (
                 <>
