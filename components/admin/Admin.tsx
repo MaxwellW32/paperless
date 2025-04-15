@@ -49,8 +49,8 @@ export default function Page() {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
     const { sendWebsocketUpdate, } = useWebsockets(handleMessageFromWebsocket, [resourceAuth])
 
-    const allTablesKeys = Object.keys(schema) as schemaTableNamesType[];
-    const allTables = allTablesKeys.filter(key => !key.endsWith("Relations") && !key.endsWith("Enum") && key !== "accounts" && key !== "sessions" && key !== "verificationTokens").sort((a, b) => a.localeCompare(b)) //get all tables defined in the schema, sort it alphabetically
+    const allTableNames = Object.keys(schema) as schemaTableNamesType[];
+    const allTables = allTableNames.filter(key => !key.endsWith("Relations") && !key.endsWith("Enum") && key !== "accounts" && key !== "sessions" && key !== "verificationTokens").sort((a, b) => a.localeCompare(b)) //get all tables defined in the schema, sort it alphabetically
 
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>(undefined)
     const [showingSideBar, showingSideBarSet] = useState(true)
