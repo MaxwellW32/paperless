@@ -21,7 +21,7 @@ export default function AddEditUser({ sentUser, submissionAction }: { sentUser?:
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<user>>(deepClone(sentUser === undefined ? initialFormObj : updateUserSchema.parse(sentUser)))
 
-    type userKeys = keyof Partial<user>
+    type userKeys = keyof user
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in userKeys]: string }>>({})
     const [defaultImages, defaultImagesSet] = useState<string[]>([])
 

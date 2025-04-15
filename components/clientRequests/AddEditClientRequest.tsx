@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./style.module.css"
 import { cleanHourTimeRound, deepClone, offsetTime, updateRefreshObj, validateDynamicForm } from '@/utility/utility'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
@@ -46,8 +46,38 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
     const clientRequestStatusOptions: clientRequestStatusType[] = ["in-progress", "completed", "cancelled", "on-hold"]
 
-    type clientRequestKeys = keyof Partial<clientRequest>
+    type clientRequestKeys = keyof clientRequest
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in clientRequestKeys]: string }>>({})
+
+    const editableFormIndexes = useMemo<number[]>(() => {
+        if (formObj.checklist === undefined) return []
+
+        const newIndexes: number[] = []
+
+        sequentialCheckItem(0, formObj.checklist)
+
+        function sequentialCheckItem(index: number, checklist: checklistItemType[]) {
+            const checklistItem: checklistItemType | undefined = checklist[index]
+            if (checklistItem === undefined) return
+
+            const nextIndex = index + 1
+
+            if (checklistItem.type === "form") {
+                newIndexes.push(index)
+
+                //call next item
+                sequentialCheckItem(nextIndex, checklist)
+
+            } else if (checklistItem.completed) {
+                //checklist item is not a form, but it's complete, so can call next item
+
+                sequentialCheckItem(nextIndex, checklist)
+            }
+        }
+
+        return newIndexes
+
+    }, [formObj.checklist])
 
     //handle changes from above
     useEffect(() => {
@@ -88,39 +118,34 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     useEffect(() => {
         try {
             const search = async () => {
-                try {
-                    if (chosenChecklistStarterType === undefined) return
+                if (chosenChecklistStarterType === undefined) return
 
-                    //ensure cant change checklist if updating a client request
-                    if (sentClientRequest !== undefined) return
+                //ensure cant change checklist if updating a client request
+                if (sentClientRequest !== undefined) return
 
-                    const seenChecklistStarter = await getSpecificChecklistStarters({ type: "type", checklistType: chosenChecklistStarterType })
-                    if (seenChecklistStarter === undefined) throw new Error("not seeing checklist")
+                const seenChecklistStarter = await getSpecificChecklistStarters({ type: "type", checklistType: chosenChecklistStarterType })
+                if (seenChecklistStarter === undefined) throw new Error("not seeing checklist")
 
-                    //set the checklist and checklist id in the inital form obj - for when its time to reset
-                    initialFormObjSet(prevInitialFormObj => {
-                        const newInitialFormObj = { ...prevInitialFormObj }
+                //set the checklist and checklist id in the inital form obj - for when its time to reset
+                initialFormObjSet(prevInitialFormObj => {
+                    const newInitialFormObj = { ...prevInitialFormObj }
 
-                        //ensure fresh copy
-                        newInitialFormObj.checklist = deepClone(seenChecklistStarter.checklist)
-                        newInitialFormObj.checklistStarterId = seenChecklistStarter.id
+                    //ensure fresh copy
+                    newInitialFormObj.checklist = deepClone(seenChecklistStarter.checklist)
+                    newInitialFormObj.checklistStarterId = seenChecklistStarter.id
 
-                        return newInitialFormObj
-                    })
+                    return newInitialFormObj
+                })
 
-                    //set the checklist and checklist id
-                    formObjSet(prevFormObj => {
-                        const newFormObj = { ...prevFormObj }
+                //set the checklist and checklist id
+                formObjSet(prevFormObj => {
+                    const newFormObj = { ...prevFormObj }
 
-                        newFormObj.checklist = seenChecklistStarter.checklist
-                        newFormObj.checklistStarterId = seenChecklistStarter.id
+                    newFormObj.checklist = seenChecklistStarter.checklist
+                    newFormObj.checklistStarterId = seenChecklistStarter.id
 
-                        return newFormObj
-                    })
-
-                } catch (error) {
-                    consoleAndToastError(error)
-                }
+                    return newFormObj
+                })
             }
             search()
 
@@ -163,7 +188,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         }
     }, [formObj?.companyId])
 
-    function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof Partial<clientRequest>, schema: typeof clientRequestSchema) {
+    function checkIfValid(seenFormObj: Partial<clientRequest>, seenName: keyof clientRequest, schema: typeof clientRequestSchema) {
         // @ts-expect-error type
         const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
 
@@ -193,33 +218,12 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     }
 
     function markLatestFormAsComplete(checklist: checklistItemType[]) {
-        let firstFormIndex: number | undefined = undefined
-
         return checklist.map((eachChecklist, eachChecklistIndex) => {
             //complete the forms sent
             if (eachChecklist.type !== "form") return eachChecklist
 
-            //assign first form
-            if (firstFormIndex === undefined) {
-                firstFormIndex = eachChecklistIndex
-            }
-
-            const prevIndex = eachChecklistIndex - 1
-            const prevItem: checklistItemType | undefined = checklist[prevIndex]
-
-            //scan each item
-            //set the form to completed - only if first - or if prev was a form as well
-            //return checklist with changed values
-
-            //mark first seen form as complete
-            if (eachChecklistIndex === firstFormIndex) {
+            if (editableFormIndexes.includes(eachChecklistIndex)) {
                 eachChecklist.completed = true
-
-            } else if (prevItem !== undefined) {
-                if (prevItem.type === "form" || prevItem.completed) {
-                    //mark continous forms as complete, or forms with previous item completed
-                    eachChecklist.completed = true
-                }
             }
 
             return eachChecklist
@@ -228,7 +232,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
 
     function validateForms(checklist: checklistItemType[]) {
         //ensure forms not null
-        checklist.map(eachChecklist => {
+        checklist.forEach(eachChecklist => {
             //only handle complete forms
             if (eachChecklist.type !== "form" || !eachChecklist.completed) return
 
@@ -529,25 +533,15 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         {formObj.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
                             if (session === null || formObj.checklist === undefined) return null
 
-                            //expected behaviour
-                            //client should see nothin - cause 1st is a manual check
-                            //then client should see 2 forms
-                            //then client should still have access to those forms while manual is completed
-                            //then client should have access to dynamic form
-
-                            //can only show forms if
-                            //if checklist form is completed...
-                            //if incomplete form is first in checklist...
-                            //if incomplete form has previous items completed...
-                            //if incomplete form has previous item that is incomplete form
-
                             let canShowChecklistItem = false;
 
                             if (session.user.accessLevel === "admin") {
                                 canShowChecklistItem = true;
 
                             } else if (eachChecklistItem.type === "form") {
-                                canShowChecklistItem = true;
+                                if (editableFormIndexes.includes(eachChecklistItemIndex)) {
+                                    canShowChecklistItem = true;
+                                }
                             }
 
                             if (!canShowChecklistItem) return null;

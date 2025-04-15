@@ -8,7 +8,7 @@ import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
-import { company, equipmentFormNewEquipmentType, equipmentFormSchema, equipmentFormType, equipmentT, resourceAuthType } from '@/types'
+import { company, equipmentFormNewEquipmentSchema, equipmentFormNewEquipmentType, equipmentFormType, equipmentT, resourceAuthType } from '@/types'
 import { getEquipment } from '@/serverFunctions/handleEquipment'
 import ViewEquipment from '@/components/equipment/ViewEquipment'
 import TextArea from '@/components/textArea/TextArea'
@@ -25,8 +25,8 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
     }
     const [formObj, formObjSet] = useState<equipmentFormType>(deepClone(seenForm.data !== null ? seenForm : initialFormObj))
 
-    // type tapeDepositFormTypeNonNullKeys = keyof tapeDepositFormNonNullDataType
-    const [formErrors, formErrorsSet] = useState<Partial<{ [key: string]: string }>>({})
+    type equipmentFormNewEquipmentKeys = keyof equipmentFormNewEquipmentType
+    const [equipmentInRequestErrors, equipmentInRequestErrorsSet] = useState<{ [key: string]: Partial<{ [key in equipmentFormNewEquipmentKeys]: string }> }>({})
 
     const userInteracting = useRef(false)
     const [equipment, equipmentSet] = useState<equipmentT[]>([])
@@ -41,17 +41,20 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
 
     //send changes up
     useEffect(() => {
-        const formIsValid = Object.entries(formErrors).length < 1
+        const formIsValid = Object.entries(equipmentInRequestErrors).length < 1
+        console.log(`$equipmentInRequestErrors`, equipmentInRequestErrors);
 
-        if (!userInteracting.current || formObj === null || !formIsValid) return
+        if (!userInteracting.current || formObj.data === null || !formIsValid) return
 
         //reset so no loop
         userInteracting.current = false
 
+        console.log(`$sent up`, formObj);
+
         //send up the update
         handleFormUpdate(formObj)
 
-    }, [formObj, formErrors])
+    }, [formObj, equipmentInRequestErrors])
 
     //search equipment
     useEffect(() => {
@@ -62,24 +65,47 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
 
     }, [seenCompanyId, resourceAuth])
 
-    function checkIfValid(seenFormObj: equipmentFormType): boolean {
-        const testSchema = equipmentFormSchema.safeParse(seenFormObj);
-        formErrorsSet({})
+    function checkIfEquipmentInRequestValid(seenFormObj: Partial<equipmentFormNewEquipmentType>, seenName: keyof equipmentFormNewEquipmentType, index: number) {
+        //@ts-expect-error type
+        const testSchema = equipmentFormNewEquipmentSchema.pick({ [seenName]: true }).safeParse(seenFormObj);
 
-        if (testSchema.error === undefined) return true
+        if (testSchema.success) {//worked
+            equipmentInRequestErrorsSet(prevObj => {
+                const newObj = { ...prevObj }
 
-        formErrorsSet(prevFormErrors => {
-            const newFormErrors = { ...prevFormErrors }
+                if (newObj[index] === undefined) {
+                    newObj[index] = {}
+                }
 
-            testSchema.error.errors.forEach(eachError => {
-                const errorKey = eachError.path.join('/')
-                newFormErrors[errorKey] = eachError.message
+                delete newObj[index][seenName]
+
+                //delete parent obj
+                if (Object.entries(newObj[index]).length === 0) {
+                    delete newObj[index]
+                }
+
+                return newObj
             })
 
-            return newFormErrors
-        })
+        } else {
+            equipmentInRequestErrorsSet(prevObj => {
+                const newObj = { ...prevObj }
 
-        return false
+                let errorMessage = ""
+
+                JSON.parse(testSchema.error.message).forEach((eachErrorObj: Error) => {
+                    errorMessage += ` ${eachErrorObj.message}`
+                })
+
+                if (newObj[index] === undefined) {
+                    newObj[index] = {}
+                }
+
+                newObj[index][seenName] = errorMessage
+
+                return newObj
+            })
+        }
     }
 
     function runSameOnAllFormObjUpdates() {
@@ -202,7 +228,7 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                         name={`${eachEquipmentIndex}/makeModel`}
                                         value={eachEquipment.makeModel}
                                         type={"text"}
-                                        label={"media label"}
+                                        label={"make / model"}
                                         placeHolder={"enter the equipment make / model"}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                             runSameOnAllFormObjUpdates()
@@ -219,8 +245,8 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/equipmentInRequest/${eachEquipmentIndex}/makeModel`]}
+                                        onBlur={() => { checkIfEquipmentInRequestValid(eachEquipment, "makeModel", eachEquipmentIndex) }}
+                                        errors={equipmentInRequestErrors[eachEquipmentIndex]?.["makeModel"]}
                                     />
 
                                     <TextInput
@@ -249,8 +275,8 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/equipmentInRequest/${eachEquipmentIndex}/quantity`]}
+                                        onBlur={() => { checkIfEquipmentInRequestValid(eachEquipment, "quantity", eachEquipmentIndex) }}
+                                        errors={equipmentInRequestErrors[eachEquipmentIndex]?.["quantity"]}
                                     />
 
                                     <TextInput
@@ -279,8 +305,8 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/equipmentInRequest/${eachEquipmentIndex}/powerSupplyCount`]}
+                                        onBlur={() => { checkIfEquipmentInRequestValid(eachEquipment, "powerSupplyCount", eachEquipmentIndex) }}
+                                        errors={equipmentInRequestErrors[eachEquipmentIndex]?.["powerSupplyCount"]}
                                     />
 
                                     <TextInput
@@ -309,8 +335,8 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/equipmentInRequest/${eachEquipmentIndex}/rackUnits`]}
+                                        onBlur={() => { checkIfEquipmentInRequestValid(eachEquipment, "rackUnits", eachEquipmentIndex) }}
+                                        errors={equipmentInRequestErrors[eachEquipmentIndex]?.["rackUnits"]}
                                     />
 
                                     <TextInput
@@ -334,8 +360,8 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/equipmentInRequest/${eachEquipmentIndex}/serialNumber`]}
+                                        onBlur={() => { checkIfEquipmentInRequestValid(eachEquipment, "serialNumber", eachEquipmentIndex) }}
+                                        errors={equipmentInRequestErrors[eachEquipmentIndex]?.["serialNumber"]}
                                     />
 
                                     <TextInput
@@ -363,8 +389,8 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/equipmentInRequest/${eachEquipmentIndex}/amps`]}
+                                        onBlur={() => { checkIfEquipmentInRequestValid(eachEquipment, "amps", eachEquipmentIndex) }}
+                                        errors={equipmentInRequestErrors[eachEquipmentIndex]?.["amps"]}
                                     />
 
                                     <TextInput
@@ -392,8 +418,8 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/equipmentInRequest/${eachEquipmentIndex}/weight`]}
+                                        onBlur={() => { checkIfEquipmentInRequestValid(eachEquipment, "weight", eachEquipmentIndex) }}
+                                        errors={equipmentInRequestErrors[eachEquipmentIndex]?.["weight"]}
                                     />
 
                                     <TextArea
@@ -416,8 +442,8 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/equipmentInRequest/${eachEquipmentIndex}/additionalNotes`]}
+                                        onBlur={() => { checkIfEquipmentInRequestValid(eachEquipment, "additionalNotes", eachEquipmentIndex) }}
+                                        errors={equipmentInRequestErrors[eachEquipmentIndex]?.["additionalNotes"]}
                                     />
                                 </div>
                             )
@@ -437,9 +463,9 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                         //refresh
                         newFormObj.data = { ...newFormObj.data }
 
-                        const newTape: equipmentFormNewEquipmentType = getEquipmentData(seenCompanyId, newFormObj.type === "equipmentDeposit")
+                        const newEquipment: equipmentFormNewEquipmentType = getEquipmentData(seenCompanyId, newFormObj.type === "equipmentDeposit")
 
-                        newFormObj.data.equipmentInRequest = [...newFormObj.data.equipmentInRequest, newTape]
+                        newFormObj.data.equipmentInRequest = [...newFormObj.data.equipmentInRequest, newEquipment]
                         return newFormObj
                     })
                 }}

@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 import ViewTape from '@/components/tapes/ViewTape'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
-import { company, resourceAuthType, tape, tapeFormNewTapeType, tapeFormSchema, tapeFormType } from '@/types'
+import { company, resourceAuthType, tape, tapeFormNewTapeSchema, tapeFormNewTapeType, tapeFormType } from '@/types'
 import { getInitialTapeData } from '@/components/tapes/getTapeData'
 
 export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { seenForm: tapeFormType, handleFormUpdate: (updatedFormData: tapeFormType) => void, seenCompanyId: company["id"] }) {
@@ -24,10 +24,10 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
     }
     const [formObj, formObjSet] = useState<tapeFormType>(deepClone(seenForm.data !== null ? seenForm : initialFormObj))
 
-    // type tapeDepositFormTypeNonNullKeys = keyof tapeDepositFormNonNullDataType
-    const [formErrors, formErrorsSet] = useState<Partial<{ [key: string]: string }>>({})
+    type tapeFormNewTapeKeys = keyof tapeFormNewTapeType
+    const [tapeInRequestErrors, tapeInRequestErrorsSet] = useState<{ [key: string]: Partial<{ [key in tapeFormNewTapeKeys]: string }> }>({})
 
-    const userInteracting = useRef(false)
+    const userInteracting = useRef(true) //set to true so sends up once
     const [tapes, tapesSet] = useState<tape[]>([])
 
     //handle changes from above
@@ -40,9 +40,10 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
 
     //send changes up
     useEffect(() => {
-        const formIsValid = Object.entries(formErrors).length < 1
+        const formIsValid = Object.entries(tapeInRequestErrors).length < 1
 
-        if (!userInteracting.current || formObj === null || !formIsValid) return
+        //if user not interacting, or form has errors don't send up
+        if (!userInteracting.current || formObj.data === null || !formIsValid) return
 
         //reset so no loop
         userInteracting.current = false
@@ -50,9 +51,9 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
         //send up the update
         handleFormUpdate(formObj)
 
-    }, [formObj, formErrors])
+    }, [formObj, tapeInRequestErrors])
 
-    //search tapes
+    // search tapes
     useEffect(() => {
         const search = async () => {
             handleSearchTapes()
@@ -61,24 +62,47 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
 
     }, [seenCompanyId, resourceAuth])
 
-    function checkIfValid(seenFormObj: tapeFormType): boolean {
-        const testSchema = tapeFormSchema.safeParse(seenFormObj);
-        formErrorsSet({})
+    function checkIfTapeInRequestValid(seenFormObj: Partial<tapeFormNewTapeType>, seenName: keyof tapeFormNewTapeType, index: number) {
+        //@ts-expect-error type
+        const testSchema = tapeFormNewTapeSchema.pick({ [seenName]: true }).safeParse(seenFormObj);
 
-        if (testSchema.error === undefined) return true
+        if (testSchema.success) {//worked
+            tapeInRequestErrorsSet(prevObj => {
+                const newObj = { ...prevObj }
 
-        formErrorsSet(prevFormErrors => {
-            const newFormErrors = { ...prevFormErrors }
+                if (newObj[index] === undefined) {
+                    newObj[index] = {}
+                }
 
-            testSchema.error.errors.forEach(eachError => {
-                const errorKey = eachError.path.join('/')
-                newFormErrors[errorKey] = eachError.message
+                delete newObj[index][seenName]
+
+                //delete parent obj
+                if (Object.entries(newObj[index]).length === 0) {
+                    delete newObj[index]
+                }
+
+                return newObj
             })
 
-            return newFormErrors
-        })
+        } else {
+            tapeInRequestErrorsSet(prevObj => {
+                const newObj = { ...prevObj }
 
-        return false
+                let errorMessage = ""
+
+                JSON.parse(testSchema.error.message).forEach((eachErrorObj: Error) => {
+                    errorMessage += ` ${eachErrorObj.message}`
+                })
+
+                if (newObj[index] === undefined) {
+                    newObj[index] = {}
+                }
+
+                newObj[index][seenName] = errorMessage
+
+                return newObj
+            })
+        }
     }
 
     function runSameOnAllFormObjUpdates() {
@@ -218,8 +242,8 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/tapesInRequest/${eachTapeIndex}/mediaLabel`]}
+                                        onBlur={() => { checkIfTapeInRequestValid(eachTape, "mediaLabel", eachTapeIndex) }}
+                                        errors={tapeInRequestErrors[eachTapeIndex]?.["mediaLabel"]}
                                     />
 
                                     <TextInput
@@ -243,8 +267,8 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
                                                 return newFormObj
                                             })
                                         }}
-                                        onBlur={() => { checkIfValid(formObj) }}
-                                        errors={formErrors[`data/tapesInRequest/${eachTapeIndex}/initial`]}
+                                        onBlur={() => { checkIfTapeInRequestValid(eachTape, "initial", eachTapeIndex) }}
+                                        errors={tapeInRequestErrors[eachTapeIndex]?.["initial"]}
                                     />
                                 </div>
                             )

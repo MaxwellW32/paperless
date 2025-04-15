@@ -258,19 +258,19 @@ export type newCompany = z.infer<typeof newCompanySchema>
 
 
 export const equipmentSchema = z.object({
-    id: z.string().min(1),
+    id: z.string().min(1, "Equipment ID is required"),
     quantity: z.number(),
-    makeModel: z.string().min(1),
-    serialNumber: z.string().min(1),
+    makeModel: z.string().min(1, "Make and model is required"),
+    serialNumber: z.string().min(1, "Serial number is required"),
     additionalNotes: z.string(),
     powerSupplyCount: z.number(),
     rackUnits: z.number(),
     companyId: companySchema.shape.id,
-    equipmentLocation: z.string().min(1),
+    equipmentLocation: z.string().min(1, "Equipment location is required"),
     dateAdded: dateSchma,
 
-    amps: z.string().min(1).nullable(),
-    weight: z.string().min(1).nullable(),
+    amps: z.string().min(1, "Amps info is required").nullable(),
+    weight: z.string().min(1, "Weight info is required").nullable(),
 })
 export type equipmentT = z.infer<typeof equipmentSchema> & {
     company?: company
@@ -289,9 +289,9 @@ export const tapeLocationSchema = z.enum(["in-vault", "with-client"])
 export type tapeLocation = z.infer<typeof tapeLocationSchema>
 
 export const tapeSchema = z.object({
-    id: z.string().min(1),
-    mediaLabel: z.string().min(1),
-    initial: z.string().min(1),
+    id: z.string().min(1, "Tape ID is required"),
+    mediaLabel: z.string().min(1, "Media label is required"),
+    initial: z.string().min(1, "Initial is required"),
     companyId: companySchema.shape.id,
     dateAdded: dateSchma,
     tapeLocation: tapeLocationSchema,
@@ -341,7 +341,7 @@ export type tapeFormNewTapeType = z.infer<typeof tapeFormNewTapeSchema>;
 export const tapeFormSchema = z.object({
     type: z.union([z.literal(formTypesSchema.Values.tapeDeposit), z.literal(formTypesSchema.Values.tapeWithdraw)]),
     data: z.object({
-        tapesInRequest: z.array(tapeFormNewTapeSchema).min(1, "need at least one tape for request"),
+        tapesInRequest: z.array(tapeFormNewTapeSchema).min(1, "You must include at least one tape in the request"),
     }).nullable(),
 });
 export type tapeFormType = z.infer<typeof tapeFormSchema>
@@ -353,7 +353,7 @@ export type equipmentFormNewEquipmentType = z.infer<typeof equipmentFormNewEquip
 export const equipmentFormSchema = z.object({
     type: z.union([z.literal(formTypesSchema.Values.equipmentDeposit), z.literal(formTypesSchema.Values.equipmentWithdraw)]),
     data: z.object({
-        equipmentInRequest: z.array(equipmentFormNewEquipmentSchema).min(1, "need at least one item for request"),
+        equipmentInRequest: z.array(equipmentFormNewEquipmentSchema).min(1, "You must include at least one equipment item in the request"),
     }).nullable(),
 });
 export type equipmentFormType = z.infer<typeof equipmentFormSchema>
@@ -419,7 +419,9 @@ export const checklistStarterSchema = z.object({
     type: z.string().min(1),
     checklist: z.array(checklistItemSchema),
 })
-export type checklistStarter = z.infer<typeof checklistStarterSchema>
+export type checklistStarter = z.infer<typeof checklistStarterSchema> & {
+    clientRequests?: clientRequest[]
+}
 
 export const newChecklistStarterSchema = checklistStarterSchema.omit({ id: true })
 export type newChecklistStarter = z.infer<typeof newChecklistStarterSchema>

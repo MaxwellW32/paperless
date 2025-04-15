@@ -28,7 +28,7 @@ export default function AddEditDepartment({ sentDepartment, submissionAction }: 
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<department>>(deepClone(sentDepartment === undefined ? initialFormObj : {}))
 
-    type departmentKeys = keyof Partial<department>
+    type departmentKeys = keyof department
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in departmentKeys]: string }>>({})
 
     //get updateSchema on load
@@ -65,7 +65,7 @@ export default function AddEditDepartment({ sentDepartment, submissionAction }: 
 
     }, [sentDepartment, localUpdateSchema])
 
-    function checkIfValid(seenFormObj: Partial<department>, seenName: keyof Partial<department>, schema: typeof departmentSchema) {
+    function checkIfValid(seenFormObj: Partial<department>, seenName: keyof department, schema: typeof departmentSchema) {
         // @ts-expect-error type
         const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
 

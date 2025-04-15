@@ -29,7 +29,7 @@ export default function AddEditCompany({ sentCompany, submissionAction }: { sent
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<company>>(deepClone(sentCompany === undefined ? initialFormObj : {}))
 
-    type companyKeys = keyof Partial<company>
+    type companyKeys = keyof company
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in companyKeys]: string }>>({})
 
     //get updateSchema on load
@@ -66,7 +66,7 @@ export default function AddEditCompany({ sentCompany, submissionAction }: { sent
 
     }, [sentCompany, localUpdateSchema])
 
-    function checkIfValid(seenFormObj: Partial<company>, seenName: keyof Partial<company>, schema: typeof companySchema) {
+    function checkIfValid(seenFormObj: Partial<company>, seenName: keyof company, schema: typeof companySchema) {
         // @ts-expect-error type
         const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
 

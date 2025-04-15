@@ -23,7 +23,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 
 
 
-//egov departments
+//our company departments
 export const departments = pgTable("departments", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     name: varchar("name", { length: 255 }).notNull().unique(),
@@ -34,6 +34,7 @@ export const departments = pgTable("departments", {
 export const departmentsRelations = relations(departments, ({ many }) => ({
     usersToDepartments: many(usersToDepartments),
 }));
+
 
 
 
@@ -78,6 +79,7 @@ export const equipmentRelations = relations(equipment, ({ one }) => ({
 
 
 
+
 export const tapeLocationEnum = pgEnum("tapeLocation", ["in-vault", "with-client"]);
 
 export const tapes = pgTable("tapes", {
@@ -98,16 +100,15 @@ export const tapesRelations = relations(tapes, ({ one }) => ({
 
 
 
-
-// export const clientRequestTypeEnum = pgEnum("type", ["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "equipmentOther"]);
-
 export const checklistStarters = pgTable("checklistStarters", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     type: varchar("type", { length: 255 }).notNull().unique(),
     checklist: json("checklist").$type<checklistItemType[]>().notNull(),
 })
-export const checklistStartersRelations = relations(checklistStarters, ({ one }) => ({
+export const checklistStartersRelations = relations(checklistStarters, ({ many }) => ({
+    clientRequests: many(clientRequests),
 }));
+
 
 
 
@@ -149,11 +150,6 @@ export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
 
 
 
-
-
-
-
-// export const userDepartmentRoleEnum = pgEnum("departmentRole", ["head", "elevated", "regular"]);
 export const departmentAccessLevelEnum = pgEnum("departmentAccessLevel", ["admin", "elevated", "regular"]);
 
 export const usersToDepartments = pgTable("usersToDepartments", {
@@ -183,9 +179,7 @@ export const usersToDepartmentsRelations = relations(usersToDepartments, ({ one 
 
 
 
-
 export const companyAccessLevelEnum = pgEnum("companyAccessLevel", ["admin", "elevated", "regular"]);
-// export const userCompanyRoleEnum = pgEnum("companyRole", ["head", "elevated", "regular"]);
 
 export const usersToCompanies = pgTable("usersToCompanies", {
     id: varchar("id", { length: 255 }).notNull().$defaultFn(() => crypto.randomUUID()),
@@ -211,8 +205,6 @@ export const usersToCompaniesRelations = relations(usersToCompanies, ({ one }) =
         references: [companies.id],
     }),
 }));
-
-
 
 
 

@@ -20,7 +20,7 @@ export default function AddEditTape({ sentTape, submissionAction }: { sentTape?:
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<tape>>(deepClone(sentTape === undefined ? initialFormObj : updateTapeSchema.parse(sentTape)))
 
-    type tapeKeys = keyof Partial<tape>
+    type tapeKeys = keyof tape
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in tapeKeys]: string }>>({})
 
     const tapeLocationOptions: tapeLocation[] = ["in-vault", "with-client"]
@@ -34,7 +34,7 @@ export default function AddEditTape({ sentTape, submissionAction }: { sentTape?:
 
     }, [sentTape])
 
-    function checkIfValid(seenFormObj: Partial<tape>, seenName: keyof Partial<tape>, schema: typeof tapeSchema) {
+    function checkIfValid(seenFormObj: Partial<tape>, seenName: keyof tape, schema: typeof tapeSchema) {
         // @ts-expect-error type
         const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
 

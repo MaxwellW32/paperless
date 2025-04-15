@@ -28,7 +28,7 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<userToCompany>>(deepClone(sentUserCompany === undefined ? initialFormObj : updateUserToCompanySchema.parse(sentUserCompany)))
 
-    type userCompanyKeys = keyof Partial<userToCompany>
+    type userCompanyKeys = keyof userToCompany
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in userCompanyKeys]: string }>>({})
 
     const companyAccessLevelOptions: companyAccessLevel[] = ["admin", "elevated", "regular"]
@@ -49,7 +49,7 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
 
     }, [sentUserCompany])
 
-    function checkIfValid(seenFormObj: Partial<userToCompany>, seenName: keyof Partial<userToCompany>, schema: typeof userToCompanySchema) {
+    function checkIfValid(seenFormObj: Partial<userToCompany>, seenName: keyof userToCompany, schema: typeof userToCompanySchema) {
         // @ts-expect-error type
         const testSchema = schema.pick({ [seenName]: true }).safeParse(seenFormObj);
 

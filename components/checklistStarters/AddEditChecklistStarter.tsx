@@ -26,7 +26,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
     //assign either a new form, or the safe values on an update form
     const [formObj, formObjSet] = useState<Partial<checklistStarter>>(deepClone(sentChecklistStarter !== undefined ? updateChecklistStarterSchema.parse(sentChecklistStarter) : initialFormObj))
 
-    type checklistStarterKeys = keyof Partial<checklistStarter>
+    type checklistStarterKeys = keyof checklistStarter
     const [formErrors, formErrorsSet] = useState<Partial<{ [key in checklistStarterKeys]: string }>>({})
 
     const premadeFormTypeOptions: formTypesType[] = ["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "dynamic"]
