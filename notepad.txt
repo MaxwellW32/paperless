@@ -1,0 +1,30 @@
+Not logged in - Home page 
+show login form
+
+
+dashboard
+side menu
+    new request - tapes / equipment
+    previous requests
+    overview
+
+middle
+top nav - global - dco text (client portal) -  profile button/icon
+
+Forms
+multi select for clients visiting
+
+To Do
+refresh button - icon
+expected arrival float left
+
+
+Fonts
+Open sans
+Montseratte
+Roboto
+
+buttons - rounded corners, capitalized
+
+colors - 
+blue and white
