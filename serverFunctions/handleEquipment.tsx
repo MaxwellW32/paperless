@@ -99,9 +99,10 @@ export async function getEquipment(option: { type: "makeModel", makeModel: strin
         const results = await db.query.equipment.findMany({
             limit: limit,
             offset: offset,
+            orderBy: [desc(equipment.dateAdded)],
             with: {
                 company: true
-            }
+            },
         });
 
         return results

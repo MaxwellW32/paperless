@@ -231,6 +231,13 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
     }
 
     function validateForms(checklist: checklistItemType[]) {
+        let bothEmpty = false
+
+        let tapeDepositFormEmpty = false
+        let tapeWithdrawFormEmpty = false
+        let equipmentDepositFormEmpty = false
+        let equipmentWithdrawFormEmpty = false
+
         //ensure forms not null
         checklist.forEach(eachChecklist => {
             //only handle complete forms
@@ -240,11 +247,32 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 //dynamic form validation
                 validateDynamicForm(eachChecklist.form.data)
 
-            } else if (eachChecklist.form.type === "tapeDeposit" || eachChecklist.form.type === "tapeWithdraw" || eachChecklist.form.type === "equipmentDeposit" || eachChecklist.form.type !== "equipmentWithdraw") {
-                //run for other forms
-                if (eachChecklist.form.data === null) throw new Error("need to add to form")
+            } else {
+                //check if non dynamic form seen as null
+                if (eachChecklist.form.data === null) {
+                    if (eachChecklist.form.type === "tapeDeposit") {
+                        tapeDepositFormEmpty = true
+
+                    } else if (eachChecklist.form.type === "tapeWithdraw") {
+                        tapeWithdrawFormEmpty = true
+
+                    } else if (eachChecklist.form.type === "equipmentDeposit") {
+                        equipmentDepositFormEmpty = true
+
+                    } else if (eachChecklist.form.type === "equipmentWithdraw") {
+                        equipmentWithdrawFormEmpty = true
+                    }
+                }
             }
+
         })
+
+        if ((tapeDepositFormEmpty && tapeWithdrawFormEmpty) || (equipmentDepositFormEmpty && equipmentWithdrawFormEmpty)) {
+            bothEmpty = true
+        }
+
+        //run for other forms
+        if (bothEmpty) throw new Error("need to add to a form")
     }
 
     async function handleSubmit() {

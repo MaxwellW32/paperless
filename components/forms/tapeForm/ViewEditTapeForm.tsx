@@ -113,7 +113,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
         try {
             if (resourceAuth === undefined) return
 
-            const seenTapes = await getTapes({ type: "status", tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", getOppositeOfStatus: false, companyId: seenCompanyId }, resourceAuth)
+            const seenTapes = await getTapes({ type: "location", tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", getOppositeOfLocation: false, companyId: seenCompanyId }, resourceAuth)
             tapesSet(seenTapes)
 
         } catch (error) {

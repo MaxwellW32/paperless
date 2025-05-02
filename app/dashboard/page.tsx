@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, refreshWSObjType, expectedResourceType, resourceAuthType } from '@/types'
+import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, refreshWSObjType, expectedResourceType, resourceAuthType, user, tape, equipmentT } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal } from '@/utility/globalState'
@@ -16,6 +16,12 @@ import DashboardClientRequest from '@/components/clientRequests/DashboardClientR
 import useResourceAuth from '@/components/resourceAuth/UseLoad'
 import useWebsockets from '@/components/websockets/UseWebsockets'
 import { webSocketStandardMessageType } from '@/types/wsTypes'
+import CompanyDepartmentSelection from '@/components/CompanyDepartmentSelection'
+import { getSpecificUsers } from '@/serverFunctions/handleUser'
+import { getTapes } from '@/serverFunctions/handleTapes'
+import { getEquipment } from '@/serverFunctions/handleEquipment'
+import ViewTape from '@/components/tapes/ViewTape'
+import ViewEquipment from '@/components/equipment/ViewEquipment'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -28,7 +34,6 @@ export default function Page() {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
     const [showingSideBar, showingSideBarSet] = useState(true)
-    const [makingNewRequest, makingNewRequestSet] = useState(false)
     const [checklistStarterTypes, checklistStarterTypesSet] = useState<checklistStarter["type"][] | undefined>()
 
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>()
@@ -50,6 +55,18 @@ export default function Page() {
 
     }, [activeScreen, activeClientRequests, clientRequestsHistory])
 
+    const [seenUser, seenUserSet] = useState<user | undefined>()
+
+    type overViewItemsType = {
+        tapes: tape[],
+        equipment: equipmentT[],
+    }
+
+    const [overViewItems, overViewItemsSet] = useState<overViewItemsType>({
+        tapes: [],
+        equipment: []
+    })
+
     //get checklist starters
     useEffect(() => {
         const search = async () => {
@@ -57,6 +74,16 @@ export default function Page() {
         }
         search()
     }, [])
+
+    //get user
+    useEffect(() => {
+        const search = async () => {
+            if (session === null) return
+
+            seenUserSet(await getSpecificUsers(session.user.id))
+        }
+        search()
+    }, [session])
 
     //search active client requests - update locally
     useEffect(() => {
@@ -108,6 +135,63 @@ export default function Page() {
 
     }, [session, userDepartmentCompanySelection, refreshObj["clientRequests"], resourceAuth])
 
+    //search overview items - update locally
+    useEffect(() => {
+        const search = async () => {
+            try {
+                if (session === null || resourceAuth === undefined) return
+
+                let localNewTapes: tape[] | undefined = undefined
+                let localNewEquipment: equipmentT[] | undefined = undefined
+
+                //if admin get latest tapes and equipment in general
+                if (session.user.accessLevel === "admin") {
+                    await Promise.all([1, 2].map(async each => {
+                        if (each === 1) {
+                            localNewTapes = await getTapes({ type: "all" }, resourceAuth)
+
+                        } else if (each === 2) {
+                            localNewEquipment = await getEquipment({ type: "all" }, resourceAuth)
+                        }
+                    }))
+
+                } else {
+                    //get tapes, equipment from company
+                    if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type === "userDepartment") return
+
+                    await Promise.all([1, 2].map(async each => {
+                        if (each === 1) {
+                            localNewTapes = await getTapes({ type: "allFromCompany", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth)
+
+                        } else if (each === 2) {
+                            localNewEquipment = await getEquipment({ type: "allFromCompany", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth)
+                        }
+                    }))
+                }
+
+                if ((localNewTapes !== undefined) || (localNewEquipment !== undefined)) {
+                    overViewItemsSet(prevOverviewItems => {
+                        const newOverviewItems = { ...prevOverviewItems }
+                        if (localNewTapes !== undefined) {
+                            newOverviewItems.tapes = localNewTapes
+                        }
+
+                        if (localNewEquipment !== undefined) {
+                            newOverviewItems.equipment = localNewEquipment
+                        }
+
+                        return newOverviewItems
+                    })
+                }
+
+            } catch (error) {
+                consoleAndToastError(error)
+            }
+        }
+        search()
+
+    }, [session, userDepartmentCompanySelection, resourceAuth])
+
     //send ws update
     useEffect(() => {
         const search = async () => {
@@ -155,62 +239,71 @@ export default function Page() {
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
             <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
-                <button className='button1'
+                <button style={{ justifySelf: "flex-end" }}
                     onClick={() => {
                         showingSideBarSet(false)
                     }}
-                >close</button>
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+                </button>
 
-                {clientRequestsAuthResponse["c"] && (
-                    <div className={styles.newRequest}>
-                        <button className='button1'
-                            onClick={() => {
-                                makingNewRequestSet(prev => {
-                                    const newBool = !prev
+                <ul className={styles.dashboardMenu}>
+                    {clientRequestsAuthResponse["c"] && (
+                        <>
+                            {activeScreen !== undefined && activeScreen.type === "newRequest" ? (
+                                <>
+                                    {checklistStarterTypes !== undefined && checklistStarterTypes.map(eachStarterType => {
 
-                                    if (newBool) {
-                                        //making a new request
+                                        return (
+                                            <li key={eachStarterType} className={`${activeScreen !== undefined && activeScreen.type === "newRequest" && activeScreen.activeChecklistStarterType === eachStarterType ? styles.highlighted : ""}`}>
+                                                <button
+                                                    onClick={() => {
+                                                        activeScreenSet({
+                                                            type: "newRequest",
+                                                            activeChecklistStarterType: eachStarterType
+                                                        })
+                                                    }}
+
+                                                >{eachStarterType}</button>
+                                            </li>
+                                        )
+                                    })}
+
+                                    <li>
+                                        <button onClick={() => {
+                                            activeScreenSet(undefined)
+                                        }}>cancel</button>
+                                    </li>
+                                </>
+                            ) : (
+                                <li>
+                                    <button onClick={() => {
                                         activeScreenSet({
                                             type: "newRequest",
                                             activeChecklistStarterType: undefined
                                         })
-                                    } else {
-                                        activeScreenSet(undefined)
-                                    }
+                                    }}>new request</button>
+                                </li>
+                            )}
+                        </>
+                    )}
 
-                                    return newBool
-                                })
-                            }}
-                        >{makingNewRequest ? "cancel" : "new request"}</button>
+                    <li className={`${activeScreen !== undefined && activeScreen.type === "pastRequests" ? styles.highlighted : ""}`}>
+                        <button onClick={() => {
+                            activeScreenSet({
+                                type: "pastRequests",
+                            })
+                        }}>requests</button>
+                    </li>
 
-                        {makingNewRequest && activeScreen !== undefined && activeScreen.type === "newRequest" && (
-                            <select value={activeScreen.activeChecklistStarterType}
-                                onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
-                                    if (event.target.value === "") return
-
-                                    const eachStarterType = event.target.value
-
-                                    activeScreenSet({
-                                        type: "newRequest",
-                                        activeChecklistStarterType: eachStarterType
-                                    })
-                                }}
-                            >
-                                <option value={''}
-                                >select a request</option>
-
-                                {checklistStarterTypes !== undefined && checklistStarterTypes.map(eachStarterType => {
-
-                                    return (
-                                        <option key={eachStarterType} value={eachStarterType}
-
-                                        >{eachStarterType}</option>
-                                    )
-                                })}
-                            </select>
-                        )}
-                    </div>
-                )}
+                    <li className={`${activeScreen !== undefined && activeScreen.type === "overview" ? styles.highlighted : ""}`}>
+                        <button onClick={() => {
+                            activeScreenSet({
+                                type: "overview",
+                            })
+                        }}>overview</button>
+                    </li>
+                </ul>
 
                 {activeClientRequests.length > 0 && (
                     <div className={styles.clientRequests}>
@@ -237,38 +330,88 @@ export default function Page() {
                         })}
                     </div>
                 )}
-
-                {clientRequestsHistory.length > 0 && (
-                    <div className={styles.clientRequests}>
-                        <h3>request history</h3>
-
-                        {clientRequestsHistory.map(eachHistoryCientRequest => {
-                            return (
-                                <DashboardClientRequest key={eachHistoryCientRequest.id}
-                                    eachClientRequest={eachHistoryCientRequest} seenDepartment={seenDepartment}
-                                    viewButtonFunction={() => {
-                                        activeScreenSet({
-                                            type: "viewRequest",
-                                            clientRequestId: eachHistoryCientRequest.id
-                                        })
-                                    }}
-                                />
-                            )
-                        })}
-                    </div>
-                )}
             </div>
 
             <div className={styles.mainContent}>
-                {!showingSideBar && (
-                    <button className='button1' style={{ alignSelf: "flex-start" }}
-                        onClick={() => {
-                            showingSideBarSet(true)
-                        }}
-                    >open</button>
-                )}
+                {activeScreen === undefined ? (
+                    <>
+                        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+                            {!showingSideBar && (
+                                <button
+                                    onClick={() => {
+                                        showingSideBarSet(true)
+                                    }}
+                                >
+                                    <svg style={{ fill: "rgb(var(--shade1))", width: "1.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" /></svg>
+                                </button>
+                            )}
 
-                {activeScreen !== undefined ? (
+                            <h1 className='noMargin'>dashboard</h1>
+
+                            {seenUser !== undefined && (
+                                <CompanyDepartmentSelection seenUser={seenUser} />
+                            )}
+                        </div>
+
+                        <div className={styles.overviewCont}>
+                            {clientRequestsHistory.length > 0 && (
+                                <div>
+                                    <h2 className='noMargin'>past requests</h2>
+
+                                    <div className={styles.clientRequests}>
+                                        {clientRequestsHistory.map(eachHistoryCientRequest => {
+                                            return (
+                                                <DashboardClientRequest key={eachHistoryCientRequest.id}
+                                                    eachClientRequest={eachHistoryCientRequest} seenDepartment={seenDepartment}
+                                                    viewButtonFunction={() => {
+                                                        activeScreenSet({
+                                                            type: "viewRequest",
+                                                            clientRequestId: eachHistoryCientRequest.id
+                                                        })
+                                                    }}
+                                                />
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {((overViewItems.tapes.length > 0) || (overViewItems.equipment.length > 0)) && (
+                                <div>
+                                    <h2 className='noMargin'>overview</h2>
+
+                                    {overViewItems.tapes.length > 0 && (
+                                        <div style={{ display: "grid", alignContent: "flex-start" }}>
+                                            <h2>tapes</h2>
+
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
+                                                {overViewItems.tapes.map((eachTape, eachTapeIndex) => {
+                                                    return (
+                                                        <ViewTape key={eachTapeIndex} seenTape={eachTape} />
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {overViewItems.equipment.length > 0 && (
+                                        <div style={{ display: "grid", alignContent: "flex-start" }}>
+                                            <h2>equipment</h2>
+
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
+                                                {overViewItems.equipment.map((eachEquipment, eachEquipmentIndex) => {
+                                                    return (
+                                                        <ViewEquipment key={eachEquipmentIndex} seenEquipment={eachEquipment} />
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                ) : (
                     <>
                         {activeScreen.type === "newRequest" && activeScreen.activeChecklistStarterType !== undefined && (
                             <AddEditClientRequest seenChecklistStarterType={activeScreen.activeChecklistStarterType} department={seenDepartment} />
@@ -282,9 +425,6 @@ export default function Page() {
                             <AddEditClientRequest sentClientRequest={activeScreen.oldClientRequest} department={seenDepartment} />
                         )}
                     </>
-
-                ) : (
-                    <h3>Choose a screen</h3>
                 )}
             </div>
         </main>

@@ -4,12 +4,9 @@ import styles from "./styles.module.css"
 import Image from "next/image"
 import logo from "@/public/logo.png"
 import MoreNavOptions from "../moreNavOptions/MoreNavOptions"
-import CompanyDepartmentSelection from "../CompanyDepartmentSelection"
-import { getSpecificUsers } from "@/serverFunctions/handleUser"
 
 export default async function Nav() {
     const session = await auth()
-    const seenUser = session !== null ? await getSpecificUsers(session.user.id) : undefined
 
     return (
         <nav className={styles.nav}>
@@ -17,17 +14,13 @@ export default async function Nav() {
                 <Image alt="logo" src={logo} width={30} height={30} priority={true} style={{ objectFit: "contain" }} />
             </Link>
 
-            {seenUser !== undefined && (
-                <CompanyDepartmentSelection seenUser={seenUser} />
-            )}
+            <p>client portal</p>
 
             <ul className={styles.menu}>
                 {session === null ? (
-                    <li className={styles.menuItem}><Link href={"/login"}><button className="button1">Login</button></Link></li>
+                    <div></div>
                 ) : (
-                    <>
-                        <MoreNavOptions session={session} />
-                    </>
+                    <MoreNavOptions session={session} />
                 )}
             </ul>
         </nav>

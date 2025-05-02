@@ -54,6 +54,10 @@ export type activeScreenType = {
 } | {
     type: "viewRequest",
     clientRequestId: clientRequest["id"]
+} | {
+    type: "pastRequests",
+} | {
+    type: "overview",
 }
 
 

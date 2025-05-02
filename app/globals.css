@@ -8,36 +8,34 @@
     /* border: 1px solid red !important; */
 }
 
-
 :root {
-    --viewColor1: rgb(33, 112, 186);
-    --viewColor2: rgb(245, 245, 220);
-    --viewColor3: rgb(240, 248, 255);
-    --viewColor4: rgb(152, 0, 0);
-    --viewColor5: rgb(207, 147, 27);
+    --viewColor1: rgb(46, 125, 50);
+    --viewColor2: rgb(40, 53, 147);
+    --viewColor3: rgb(241, 248, 246);
+    --viewColor4: rgb(21, 51, 52);
+    --viewColor5: rgb(240, 44, 0);
 
-    --viewShade1: #171717;
-    --viewShade2: #ffffff;
-    --viewShade3: #fafafa;
-    --viewShade4: #eeeeee;
+    --viewShade1: rgb(33, 33, 33);
+    --viewShade2: rgb(255, 255, 255);
+    --viewShade3: rgb(189, 189, 189);
+    --viewShade4: rgb(97, 97, 97);
 
-    --color1: 33, 112, 186;
-    --color2: 245, 245, 220;
-    --color3: 240, 248, 255;
-    --color4: 152, 0, 0;
-    --color5: 207, 147, 27;
+    --color1: 46, 125, 50;
+    --color2: 40, 53, 147;
+    --color3: 241, 248, 246;
+    --color4: 21, 51, 52;
+    --color5: 240, 44, 0;
 
-    --shade1: 23, 23, 23;
+    --shade1: 33, 33, 33;
     --shade2: 255, 255, 255;
-    --shade3: 250, 250, 250;
-    --shade4: 238, 238, 238;
+    --shade3: 189, 189, 189;
+    --shade4: 97, 97, 97;
 
     --fontSizeS: .7rem;
     --fontSizeR: 1rem;
     --fontSizeM: 1.5rem;
     --fontSizeL: 2rem;
 }
-
 
 body {
     height: 100vh;
@@ -47,8 +45,8 @@ body {
     overflow-y: clip;
 
     color: rgb(var(--shade1));
-    background-color: rgb(var(--shade2));
     font-size: var(--fontSizeR);
+    font-family: var(--openSans);
 }
 
 label {
@@ -65,7 +63,6 @@ textarea {
 
 input:focus,
 textarea:focus {
-    background-color: rgb(var(--shade2));
     outline: none;
 }
 
@@ -77,26 +74,31 @@ textarea:focus {
 }
 
 h1 {
-    font-weight: bold;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+    font-family: var(--montserrat);
     text-transform: capitalize;
-    font-size: var(--fontSizeL);
 }
 
 h2 {
-    font-weight: bold;
-    font-size: var(--fontSizeM);
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
     text-transform: capitalize;
 }
 
 h3 {
-    font-weight: bold;
-    text-transform: capitalize;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
 }
 
 svg {
     width: 1rem;
     aspect-ratio: 1/1;
     transition: scale 400ms;
+    fill: rgb(var(--shade2));
 }
 
 svg:hover {
@@ -121,12 +123,18 @@ section {
 }
 
 .button1 {
-    background-color: rgb(var(--shade1));
-    color: rgb(var(--shade2));
-    padding: .5rem 1rem;
-    text-transform: capitalize;
-    font-weight: bold;
-    justify-self: flex-start;
+    background-color: #2E7D32;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.button1:hover {
+    background-color: #00796B;
 }
 
 .button1>* {
@@ -139,7 +147,6 @@ section {
 
 .button2 {
     background-color: rgb(var(--shade1));
-    color: rgb(var(--shade2));
     padding: .2rem;
     font-size: var(--fontSizeS);
     text-transform: capitalize;
@@ -156,7 +163,6 @@ section {
 
 .button3 {
     background-color: rgb(var(--color5));
-    color: rgb(var(--shade2));
     padding: .5rem;
     font-size: var(--fontSizeS);
     border-radius: .5rem;
@@ -166,7 +172,6 @@ section {
 
 .tag {
     background-color: rgb(var(--shade1));
-    color: rgb(var(--shade2));
     padding: .5rem;
     font-size: var(--fontSizeS);
     text-transform: uppercase;
@@ -186,7 +191,6 @@ section {
 .toolTip::before {
     content: attr(data-tooltip);
     color: rgb(var(--shade1));
-    background-color: rgb(var(--shade2));
     border: 1px solid rgb(var(--shade1));
     padding: .5rem;
     position: fixed;
@@ -216,4 +220,8 @@ section {
 .errorText {
     color: rgb(var(--color4));
     font-size: var(--smallFontSize);
+}
+
+.noMargin {
+    margin: 0;
 }

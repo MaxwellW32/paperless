@@ -1,11 +1,11 @@
-Not logged in - Home page 
-show login form
+Not logged in - Home page...
+show login form...
 
 
 dashboard
 side menu
     new request - tapes / equipment
-    previous requests
+    requests
     overview
 
 middle
@@ -15,6 +15,8 @@ Forms
 multi select for clients visiting
 
 To Do
+get colors 
+get h1, h2, h3
 refresh button - icon
 expected arrival float left
 
@@ -28,3 +30,16 @@ buttons - rounded corners, capitalized
 
 colors - 
 blue and white
+
+todo irl:
+check desmond email
+fix veeam excalibur 3 job
+
+agent itself might not be installed on the machine
+so how to install the agent - check if a file can be used to install it
+install sage staging license - try first
+check which port is utilized
+
+
+zoom
+michael somers

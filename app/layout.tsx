@@ -7,9 +7,14 @@ import { auth } from "@/auth/auth";
 import SessionProviderComponent from "@/components/SessionProviderComponent";
 import LoadResourceAuth from "@/components/resourceAuth/Load";
 
-const geist = localFont({
-  src: "./fonts/Geist.ttf",
-  variable: "--geist",
+const montserrat = localFont({
+  src: "./fonts/Montserrat.ttf",
+  variable: "--montserrat",
+});
+
+const openSans = localFont({
+  src: "./fonts/OpenSans.ttf",
+  variable: "--openSans",
 });
 
 const metadataInfo = {
@@ -37,14 +42,16 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geist.variable} antialiased`}
+        className={`${montserrat.variable} ${openSans.variable} antialiased`}
       >
         <SessionProviderComponent seenSession={seenSession}>
           <Toaster position="top-center" reverseOrder={false} />
-          <Nav />
           <LoadResourceAuth />
 
+          <Nav />
+
           {children}
+
         </SessionProviderComponent>
       </body>
     </html>

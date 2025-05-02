@@ -22,5 +22,5 @@
 
 .moreIntemsItem:hover {
     background-color: rgb(var(--shade1));
-    color: rgb(var(--shade4));
+    /* color: rgb(var(--shade4)); */
 }

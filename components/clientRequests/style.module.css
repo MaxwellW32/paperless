@@ -17,7 +17,7 @@
     display: grid;
     align-content: flex-start;
     gap: 1rem;
-    background-color: rgb(var(--shade2));
+    background-color: rgb(var(--color3));
     padding: 1rem;
 }
 

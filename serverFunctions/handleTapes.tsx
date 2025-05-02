@@ -58,7 +58,7 @@ export async function getSpecificTapes(tapeId: tape["id"], resourceAuth: resourc
     return result
 }
 
-export async function getTapes(option: { type: "mediaLabel", mediaLabel: string, companyId: company["id"], } | { type: "status", tapeLocation: tapeLocation, getOppositeOfStatus: boolean, companyId: company["id"] } | { type: "all" }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<tape[]> {
+export async function getTapes(option: { type: "mediaLabel", mediaLabel: string, companyId: company["id"], } | { type: "location", tapeLocation: tapeLocation, getOppositeOfLocation: boolean, companyId: company["id"] } | { type: "all" } | { type: "allFromCompany", companyId: company["id"] }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<tape[]> {
     //security check  
     const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: "" }, resourceAuth, "ra")
     interpretAuthResponseAndError(authResponse)
@@ -74,10 +74,21 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string,
 
         return results
 
+    } else if (option.type === "allFromCompany") {
+        const results = await db.query.tapes.findMany({
+            limit: limit,
+            offset: offset,
+            where: eq(tapes.companyId, option.companyId),
+            orderBy: [desc(tapes.dateAdded)],
+        });
+
+        return results
+
     } else if (option.type === "all") {
         const results = await db.query.tapes.findMany({
             limit: limit,
             offset: offset,
+            orderBy: [desc(tapes.dateAdded)],
             with: {
                 company: true
             }
@@ -85,11 +96,11 @@ export async function getTapes(option: { type: "mediaLabel", mediaLabel: string,
 
         return results
 
-    } else if (option.type === "status") {
+    } else if (option.type === "location") {
         const results = await db.query.tapes.findMany({
             limit: limit,
             offset: offset,
-            where: and(eq(tapes.companyId, option.companyId), option.getOppositeOfStatus ? ne(tapes.tapeLocation, option.tapeLocation) : eq(tapes.tapeLocation, option.tapeLocation)),
+            where: and(eq(tapes.companyId, option.companyId), option.getOppositeOfLocation ? ne(tapes.tapeLocation, option.tapeLocation) : eq(tapes.tapeLocation, option.tapeLocation)),
             orderBy: [desc(tapes.dateAdded)],
         });
 
