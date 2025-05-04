@@ -111,7 +111,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                     if (!canShowForm) return null
 
                     return (
-                        <div key={eachChecklistItemIndex}>
+                        <div key={eachChecklistItemIndex} style={{ backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
                             {eachChecklistItem.form.type === "dynamic" && (
                                 <ReadDynamicForm seenForm={eachChecklistItem.form.data} />
                             )}

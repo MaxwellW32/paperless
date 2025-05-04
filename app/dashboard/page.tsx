@@ -270,19 +270,23 @@ export default function Page() {
                                     })}
 
                                     <li>
-                                        <button onClick={() => {
-                                            activeScreenSet(undefined)
-                                        }}>cancel</button>
+                                        <button
+                                            onClick={() => {
+                                                activeScreenSet(undefined)
+                                            }}
+                                        >cancel</button>
                                     </li>
                                 </>
                             ) : (
                                 <li>
-                                    <button onClick={() => {
-                                        activeScreenSet({
-                                            type: "newRequest",
-                                            activeChecklistStarterType: undefined
-                                        })
-                                    }}>new request</button>
+                                    <button
+                                        onClick={() => {
+                                            activeScreenSet({
+                                                type: "newRequest",
+                                                activeChecklistStarterType: undefined
+                                            })
+                                        }}
+                                    >new request</button>
                                 </li>
                             )}
                         </>

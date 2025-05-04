@@ -337,7 +337,7 @@ export default function Page() {
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
             <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
-                <button className='button1'
+                <button className='button2'
                     onClick={() => {
                         showingSideBarSet(false)
                     }}
@@ -408,7 +408,7 @@ export default function Page() {
                                             {checklistStartersSearchObj.searchItems.map(eachCheckliststarter => {
 
                                                 return (
-                                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                                         <h3>{eachCheckliststarter.type}</h3>
 
                                                         <EditResourceButton
@@ -474,7 +474,7 @@ export default function Page() {
                                                 if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
 
                                                 return (
-                                                    <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "rgb(var(--color2))" }}
+                                                    <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "rgb(var(--color3))" }}
                                                         eachClientRequest={eachClientRequest}
                                                         editButtonComp={(
                                                             <EditResourceButton
@@ -623,7 +623,7 @@ export default function Page() {
                                                 if (eachTape.company === undefined) return null
 
                                                 return (
-                                                    <div key={eachTape.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                    <div key={eachTape.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                                         <h3>{eachTape.mediaLabel}</h3>
 
                                                         <h3>{eachTape.company.name}</h3>
@@ -689,7 +689,7 @@ export default function Page() {
                                                 if (eachEquipment.company === undefined) return null
 
                                                 return (
-                                                    <div key={eachEquipment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                    <div key={eachEquipment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                                         <h3>{eachEquipment.makeModel}</h3>
 
                                                         <h3>{eachEquipment.company.name}</h3>
@@ -785,7 +785,7 @@ export default function Page() {
                                             {usersSearchObj.searchItems.map(eachUser => {
 
                                                 return (
-                                                    <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                    <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                                         <h3>{eachUser.name}</h3>
 
                                                         <EditResourceButton
@@ -904,7 +904,7 @@ export default function Page() {
                                                 if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
 
                                                 return (
-                                                    <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                    <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                                         <h3>{eachUserToDepartment.user.name}</h3>
 
                                                         <h3>{eachUserToDepartment.department.name}</h3>
@@ -1025,7 +1025,7 @@ export default function Page() {
                                                 if (eachUserToCompany.user === undefined || eachUserToCompany.company === undefined) return null
 
                                                 return (
-                                                    <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                    <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                                         <h3>{eachUserToCompany.user.name}</h3>
 
                                                         <h3>{eachUserToCompany.company.name}</h3>

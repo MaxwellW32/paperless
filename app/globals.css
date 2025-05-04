@@ -14,6 +14,7 @@
     --viewColor3: rgb(241, 248, 246);
     --viewColor4: rgb(21, 51, 52);
     --viewColor5: rgb(240, 44, 0);
+    --viewColor6: rgb(0, 121, 107);
 
     --viewShade1: rgb(33, 33, 33);
     --viewShade2: rgb(255, 255, 255);
@@ -25,6 +26,7 @@
     --color3: 241, 248, 246;
     --color4: 21, 51, 52;
     --color5: 240, 44, 0;
+    --color6: 0, 121, 107;
 
     --shade1: 33, 33, 33;
     --shade2: 255, 255, 255;
@@ -123,7 +125,7 @@ section {
 }
 
 .button1 {
-    background-color: #2E7D32;
+    background-color: rgb(var(--color1));
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -131,10 +133,11 @@ section {
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    justify-self: flex-start;
 }
 
 .button1:hover {
-    background-color: #00796B;
+    background-color: rgb(var(--color6));
 }
 
 .button1>* {
@@ -147,22 +150,22 @@ section {
 
 .button2 {
     background-color: rgb(var(--shade1));
-    padding: .2rem;
+    color: rgb(var(--shade2));
+    padding: .5rem;
     font-size: var(--fontSizeS);
     text-transform: capitalize;
     font-weight: bold;
-}
-
-.button2>* {
+    border-radius: .5rem;
     transition: scale 400ms;
 }
 
-.button2>*:hover {
-    scale: 1.01;
+.button2:hover {
+    scale: 1.05;
 }
 
 .button3 {
-    background-color: rgb(var(--color5));
+    background-color: rgb(var(--color2));
+    color: rgb(var(--shade2));
     padding: .5rem;
     font-size: var(--fontSizeS);
     border-radius: .5rem;
@@ -172,6 +175,7 @@ section {
 
 .tag {
     background-color: rgb(var(--shade1));
+    color: rgb(var(--shade2));
     padding: .5rem;
     font-size: var(--fontSizeS);
     text-transform: uppercase;

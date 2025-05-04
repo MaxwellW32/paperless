@@ -80,7 +80,7 @@ export default function CompanyDepartmentSelection({ seenUser }: { seenUser: use
                 </>
             ) : (
                 <>
-                    <button className='button1' style={{ backgroundColor: "rgb(var(--color1))" }}
+                    <button className='button1'
                         onClick={() => {
                             userDepartmentCompanySelectionSet(null)
                         }}
