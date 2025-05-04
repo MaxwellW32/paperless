@@ -2,7 +2,7 @@
 import React from 'react'
 
 export default function Markup() {
-    let currentScreen = 1
+    // let currentScreen = 1
 
     return (
         <div style={{ display: "grid", alignContent: "flex-start", justifyItems: "flex-start" }}>
@@ -18,7 +18,7 @@ export default function Markup() {
             <label>label: my title</label>
             <p className='tag'>tag: title</p>
 
-            <div>
+            {/* <div>
                 {currentScreen === 1 && (
                     <>
 
@@ -42,7 +42,7 @@ export default function Markup() {
 
                     </>
                 )}
-            </div>
+            </div> */}
         </div>
     )
 }

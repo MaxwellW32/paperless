@@ -6,7 +6,6 @@ import { checkIfUserEmailInUse } from "@/serverFunctions/handleUser"
 import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast"
 import { signIn } from "next-auth/react"
 import toast from "react-hot-toast"
-// import Markup from "@/components/markup/Markup"
 
 //roles
 //admin - admin - maxwellwedderburn@outlook.com
@@ -57,8 +56,6 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <h1>Paperless</h1>
-
-      {/* <Markup /> */}
 
       {session === null && (
         <div style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", justifyItems: "center" }}>
