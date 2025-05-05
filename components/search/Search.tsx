@@ -9,7 +9,7 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
 }) {
     const wantsToSearchAgain = useRef(false)
 
-    const [pageNum, pageNumSet] = useState<number | undefined>()
+    const [pageIndex, pageIndexSet] = useState<number | undefined>()
     const pageDebounce = useRef<NodeJS.Timeout>()
 
     //respond to next/prev incrementers
@@ -73,13 +73,13 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
             }
 
             //update the page count
-            pageNumSet(newSearchObj.offset / newSearchObj.incrementOffsetBy)
+            pageIndexSet(newSearchObj.offset / newSearchObj.incrementOffsetBy)
 
             return newSearchObj
         })
     }
 
-    function changePage(newPageNum: number) {
+    function changePage(newPageIndex: number) {
         searchObjSet(prevSearchObj => {
             const newSearchObj = { ...prevSearchObj }
 
@@ -87,12 +87,12 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
             if (newSearchObj.offset === undefined) return prevSearchObj
             if (newSearchObj.incrementOffsetBy === undefined) return prevSearchObj
 
-            //current offset value / incrementOffsetby = page num
+            //current offset value / incrementOffsetby = page index
             //e.g 100 / 50 = 2
             //e.g 50 / 50 = 1
 
             //increase the offset
-            newSearchObj.offset = newPageNum * newSearchObj.incrementOffsetBy
+            newSearchObj.offset = newPageIndex * newSearchObj.incrementOffsetBy
 
             return newSearchObj
         })
@@ -128,18 +128,26 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
                     }}
                 >next</button>
 
-                {showPage && pageNum !== undefined && searchObj.offset !== undefined && searchObj.incrementOffsetBy !== undefined && (
+                {showPage && pageIndex !== undefined && searchObj.offset !== undefined && searchObj.incrementOffsetBy !== undefined && (
                     <>
                         <p>page</p>
 
-                        <input type='text' value={`${pageNum}`} style={{ width: "4ch", padding: "0 .5rem", textAlign: "center" }}
+                        <input type='text' value={`${pageIndex + 1}`} style={{ width: "4ch", padding: "0 .5rem", textAlign: "center" }}
                             onChange={(e) => {
                                 //validate entered num
                                 let seenNum = parseInt(e.target.value)
-                                if (isNaN(seenNum)) seenNum = 0
-                                if (seenNum < 1) seenNum = 1
+                                if (isNaN(seenNum)) {
+                                    seenNum = 0
 
-                                pageNumSet(seenNum)
+                                } else {
+                                    //user value valid
+                                    //decrement whatever the user sent in
+                                    seenNum -= 1
+                                }
+
+                                if (seenNum < 0) seenNum = 0
+
+                                pageIndexSet(seenNum)
 
                                 //set the offset to that page
                                 if (pageDebounce.current) clearTimeout(pageDebounce.current)
