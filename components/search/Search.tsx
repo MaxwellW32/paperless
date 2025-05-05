@@ -1,13 +1,16 @@
 "use client"
 import { searchObj } from '@/types'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 
-export default function Search<T>({ searchObj, searchObjSet, searchFunction, searchLabel = "search" }: {
-    searchObj: searchObj<T>, searchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchFunction: () => void, searchLabel?: string,
+export default function Search<T>({ searchObj, searchObjSet, searchFunction, searchLabel = "search", showPage }: {
+    searchObj: searchObj<T>, searchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchFunction: () => void, searchLabel?: string, showPage?: boolean
 }) {
     const wantsToSearchAgain = useRef(false)
+
+    const [pageNum, pageNumSet] = useState<number | undefined>()
+    const pageDebounce = useRef<NodeJS.Timeout>()
 
     //respond to next/prev incrementers
     useEffect(() => {
@@ -69,8 +72,33 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
                 newSearchObj.offset = 0
             }
 
+            //update the page count
+            pageNumSet(newSearchObj.offset / newSearchObj.incrementOffsetBy)
+
             return newSearchObj
         })
+    }
+
+    function changePage(newPageNum: number) {
+        searchObjSet(prevSearchObj => {
+            const newSearchObj = { ...prevSearchObj }
+
+            //set default values
+            if (newSearchObj.offset === undefined) return prevSearchObj
+            if (newSearchObj.incrementOffsetBy === undefined) return prevSearchObj
+
+            //current offset value / incrementOffsetby = page num
+            //e.g 100 / 50 = 2
+            //e.g 50 / 50 = 1
+
+            //increase the offset
+            newSearchObj.offset = newPageNum * newSearchObj.incrementOffsetBy
+
+            return newSearchObj
+        })
+
+        //allow new search
+        wantsToSearchAgain.current = true
     }
 
     return (
@@ -99,6 +127,30 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
                         wantsToSearchAgain.current = true
                     }}
                 >next</button>
+
+                {showPage && pageNum !== undefined && searchObj.offset !== undefined && searchObj.incrementOffsetBy !== undefined && (
+                    <>
+                        <p>page</p>
+
+                        <input type='text' value={`${pageNum}`} style={{ width: "4ch", padding: "0 .5rem", textAlign: "center" }}
+                            onChange={(e) => {
+                                //validate entered num
+                                let seenNum = parseInt(e.target.value)
+                                if (isNaN(seenNum)) seenNum = 0
+                                if (seenNum < 1) seenNum = 1
+
+                                pageNumSet(seenNum)
+
+                                //set the offset to that page
+                                if (pageDebounce.current) clearTimeout(pageDebounce.current)
+
+                                pageDebounce.current = setTimeout(() => {
+                                    changePage(seenNum)
+                                }, 1000);
+                            }}
+                        />
+                    </>
+                )}
             </div>
         </div>
     )

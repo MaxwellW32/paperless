@@ -90,7 +90,6 @@ export default function Page() {
 
     type updateOption = { type: "all" } | { type: "specific", id: string }
 
-
     async function loadStarterValues(sentActiveScreen: activeScreenType, updateOption: updateOption, runWebsocketUpdate = true) {
         if (resourceAuth === undefined) throw new Error("no auth seen")
 

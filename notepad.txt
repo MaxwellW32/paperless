@@ -4,42 +4,33 @@ show login form...
 
 dashboard
 side menu
-    new request - tapes / equipment
+    new request - tapes / equipment...
     requests
     overview
 
 middle
-top nav - global - dco text (client portal) -  profile button/icon
+top nav - global - dco text (client portal) -  profile button/icon...
 
 Forms
 multi select for clients visiting
 
 To Do
-get colors 
-get h1, h2, h3
+get colors... 
+get h1, h2, h3...
 refresh button - icon
+more nav options only called by client accounts
 expected arrival float left
+loading screen before displaying dashboard
+search more pagination on requests/overview
+fix dashboard auth not loading - no longer global 
 
 
 Fonts
-Open sans
+Open sans...
 Montseratte
-Roboto
+Roboto...
 
-buttons - rounded corners, capitalized
+buttons - rounded corners, capitalized...
 
 colors - 
-blue and white
-
-todo irl:
-check desmond email
-fix veeam excalibur 3 job
-
-agent itself might not be installed on the machine
-so how to install the agent - check if a file can be used to install it
-install sage staging license - try first
-check which port is utilized
-
-
-zoom
-michael somers
+green...

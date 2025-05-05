@@ -134,6 +134,10 @@ section {
     cursor: pointer;
     transition: background-color 0.3s ease;
     justify-self: flex-start;
+
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
 }
 
 .button1:hover {
