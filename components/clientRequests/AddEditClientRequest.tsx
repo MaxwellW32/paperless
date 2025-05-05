@@ -466,10 +466,10 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                     const seenInFormObj = formObj.clientsAccessingSite !== undefined && formObj.clientsAccessingSite.includes(eachUserToCompany.userId)
 
                                     return (
-                                        <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: seenInFormObj ? "rgb(var(--color3))" : "rgb(var(--color2))", padding: "1rem" }}>
+                                        <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                             <h3>{eachUserToCompany.user.name}</h3>
 
-                                            <button className='button3'
+                                            <button className='button1' style={{ backgroundColor: seenInFormObj ? "" : "rgb(var(--color2))" }}
                                                 onClick={() => {
                                                     toast.success(`selected`)
 

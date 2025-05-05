@@ -87,9 +87,7 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
             if (newSearchObj.offset === undefined) return prevSearchObj
             if (newSearchObj.incrementOffsetBy === undefined) return prevSearchObj
 
-            //current offset value / incrementOffsetby = page index
-            //e.g 100 / 50 = 2
-            //e.g 50 / 50 = 1
+            //current offset value / incrementOffsetby = page index - e.g 100 / 50 = 2
 
             //increase the offset
             newSearchObj.offset = newPageIndex * newSearchObj.incrementOffsetBy
@@ -135,25 +133,25 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunction, sea
                         <input type='text' value={`${pageIndex + 1}`} style={{ width: "4ch", padding: "0 .5rem", textAlign: "center" }}
                             onChange={(e) => {
                                 //validate entered num
-                                let seenNum = parseInt(e.target.value)
-                                if (isNaN(seenNum)) {
-                                    seenNum = 0
+                                let seenIndex = parseInt(e.target.value)
+                                if (isNaN(seenIndex)) {
+                                    seenIndex = 0
 
                                 } else {
                                     //user value valid
                                     //decrement whatever the user sent in
-                                    seenNum -= 1
+                                    seenIndex -= 1
                                 }
 
-                                if (seenNum < 0) seenNum = 0
+                                if (seenIndex < 0) seenIndex = 0
 
-                                pageIndexSet(seenNum)
+                                pageIndexSet(seenIndex)
 
                                 //set the offset to that page
                                 if (pageDebounce.current) clearTimeout(pageDebounce.current)
 
                                 pageDebounce.current = setTimeout(() => {
-                                    changePage(seenNum)
+                                    changePage(seenIndex)
                                 }, 1000);
                             }}
                         />

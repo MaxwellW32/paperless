@@ -5,8 +5,8 @@ show login form...
 dashboard
 side menu
     new request - tapes / equipment...
-    requests
-    overview
+    requests...
+    overview...
 
 middle
 top nav - global - dco text (client portal) -  profile button/icon...
@@ -23,6 +23,8 @@ expected arrival float left
 loading screen before displaying dashboard
 search more pagination on requests/overview
 fix dashboard auth not loading - no longer global 
+remove buttin clients visiting - client request
+tape and equipment specific search by string
 
 
 Fonts

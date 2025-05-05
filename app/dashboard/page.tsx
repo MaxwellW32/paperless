@@ -45,17 +45,6 @@ export default function Page() {
 
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
     const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
-    // const [clientRequestsHistory, clientRequestsHistorySet] = useState<clientRequest[]>([])
-
-    // type overViewItemsType = {
-    //     tapes: tape[],
-    //     equipment: equipmentT[],
-    // }
-
-    // const [overViewItems, overViewItemsSet] = useState<overViewItemsType>({
-    //     tapes: [],
-    //     equipment: []
-    // })
 
     const [pastRequestsSearchObj, pastRequestsSearchObjSet] = useState<searchObj<clientRequest>>({
         searchItems: [],
@@ -91,7 +80,7 @@ export default function Page() {
             serialNumber: equipmentT["serialNumber"]
         },
     }
-    const [specificResourceSearch, specificResourceSearchSet] = useState<specificResourceSearchType>({
+    const [specificResourceSearch,] = useState<specificResourceSearchType>({
         tapeSearch: "",
         equipmentSearch: {
             type: "model",
@@ -577,6 +566,7 @@ export default function Page() {
                                             return newSearchObj
                                         })
                                     }}
+                                    showPage={true}
                                 />
 
                                 <div className={styles.clientRequests}>
@@ -634,6 +624,7 @@ export default function Page() {
                                     searchFunction={() => {
                                         loadResourceValues("equipment", "all")
                                     }}
+                                    showPage={true}
                                 />
 
                                 {equipmentSearchObj.searchItems.length > 0 && (
