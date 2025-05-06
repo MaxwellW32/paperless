@@ -1,3 +1,9 @@
+.main {
+    display: grid;
+    align-content: flex-start;
+    gap: 1rem;
+}
+
 .animateIn {
     animation: animateIn 600ms both;
 }

@@ -1,7 +1,7 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, refreshWSObjType, expectedResourceType, resourceAuthType, user, tape, equipmentT, searchObj } from '@/types'
+import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, refreshWSObjType, expectedResourceType, resourceAuthType, tape, equipmentT, searchObj } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal } from '@/utility/globalState'
@@ -16,14 +16,14 @@ import DashboardClientRequest from '@/components/clientRequests/DashboardClientR
 import useResourceAuth from '@/components/resourceAuth/UseLoad'
 import useWebsockets from '@/components/websockets/UseWebsockets'
 import { webSocketStandardMessageType } from '@/types/wsTypes'
-import CompanyDepartmentSelection from '@/components/CompanyDepartmentSelection'
-import { getSpecificUsers } from '@/serverFunctions/handleUser'
+import CompanyDepartmentSelection from '@/components/companyDepartmentSelection/CompanyDepartmentSelection'
 import { getTapes } from '@/serverFunctions/handleTapes'
 import { getEquipment } from '@/serverFunctions/handleEquipment'
 import ViewTape from '@/components/tapes/ViewTape'
 import ViewEquipment from '@/components/equipment/ViewEquipment'
 import Search from '@/components/search/Search'
 import toast from 'react-hot-toast'
+import SearchWithInput from '@/components/tapes/SearchWithInput'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -68,25 +68,24 @@ export default function Page() {
 
     }, [activeScreen, activeClientRequests, pastRequestsSearchObj.searchItems])
 
-    const [seenUser, seenUserSet] = useState<user | undefined>()
-
     type specificResourceSearchType = {
         tapeSearch: tape["mediaLabel"],
         equipmentSearch: {
-            type: "model",
-            makeModel: equipmentT["makeModel"]
-        } | {
-            type: "serial",
-            serialNumber: equipmentT["serialNumber"]
+            type: "model" | "serial",
+            text: equipmentT["makeModel"] | equipmentT["serialNumber"]
         },
+        searchDebounce: NodeJS.Timeout | undefined
     }
-    const [specificResourceSearch,] = useState<specificResourceSearchType>({
+    const specificResourceSearch = useRef<specificResourceSearchType>({
         tapeSearch: "",
         equipmentSearch: {
             type: "model",
-            makeModel: ""
-        }
+            text: ""
+        },
+        searchDebounce: undefined
     })
+
+    const [, refresherSet] = useState(false)
 
     //get checklist starters
     useEffect(() => {
@@ -95,16 +94,6 @@ export default function Page() {
         }
         search()
     }, [])
-
-    //get user
-    useEffect(() => {
-        const search = async () => {
-            if (session === null) return
-
-            seenUserSet(await getSpecificUsers(session.user.id))
-        }
-        search()
-    }, [session])
 
     //search active client requests - update locally
     useEffect(() => {
@@ -259,6 +248,10 @@ export default function Page() {
         }
     }
 
+    function refresh() {
+        refresherSet(prev => !prev)
+    }
+
     type optionType = "tape" | "equipment"
     type updateOptionType = "all" | "specific"
 
@@ -306,8 +299,7 @@ export default function Page() {
             const results = await getResults<tape>(updateOption,
                 async () => {
                     if (updateOption !== "specific") throw new Error("incorrect updateOption sent")
-
-                    return await getTapes({ type: "mediaLabel", mediaLabel: specificResourceSearch.tapeSearch, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                    return await getTapes({ type: "mediaLabel", mediaLabel: specificResourceSearch.current.tapeSearch, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
                 },
                 async () => {
                     return await getTapes({ type: "allFromCompany", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
@@ -325,13 +317,12 @@ export default function Page() {
                 async () => {
                     if (updateOption !== "specific") throw new Error("incorrect updateOption sent")
 
-                    if (specificResourceSearch.equipmentSearch.type === "model") {
-                        return await getEquipment({ type: "makeModel", makeModel: specificResourceSearch.equipmentSearch.makeModel, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
+                    if (specificResourceSearch.current.equipmentSearch.type === "model") {
+                        return await getEquipment({ type: "makeModel", makeModel: specificResourceSearch.current.equipmentSearch.text, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
 
                     } else {//handle serial number search
-                        return await getEquipment({ type: "serialNumber", serialNumber: specificResourceSearch.equipmentSearch.serialNumber, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
+                        return await getEquipment({ type: "serialNumber", serialNumber: specificResourceSearch.current.equipmentSearch.text, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
                     }
-
                 },
                 async () => {
                     return await getEquipment({ type: "allFromCompany", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
@@ -345,6 +336,16 @@ export default function Page() {
             setSearchItemsOnSearchObj(equipmentSearchObjSet, results)
         }
     }
+
+    const ShowSidebarButton = !showingSideBar ? (
+        <button style={{ display: "inline" }}
+            onClick={() => {
+                showingSideBarSet(true)
+            }}
+        >
+            <svg style={{ fill: "rgb(var(--shade1))", width: "1.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" /></svg>
+        </button>
+    ) : null
 
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
@@ -402,21 +403,25 @@ export default function Page() {
                         </>
                     )}
 
-                    <li className={`${activeScreen !== undefined && activeScreen.type === "pastRequests" ? styles.highlighted : ""}`}>
-                        <button onClick={() => {
-                            activeScreenSet({
-                                type: "pastRequests",
-                            })
-                        }}>requests</button>
-                    </li>
+                    {userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type === "userCompany" && (//ensure only client accounts see extra options
+                        <>
+                            <li className={`${activeScreen !== undefined && activeScreen.type === "pastRequests" ? styles.highlighted : ""}`}>
+                                <button onClick={() => {
+                                    activeScreenSet({
+                                        type: "pastRequests",
+                                    })
+                                }}>requests</button>
+                            </li>
 
-                    <li className={`${activeScreen !== undefined && activeScreen.type === "overview" ? styles.highlighted : ""}`}>
-                        <button onClick={() => {
-                            activeScreenSet({
-                                type: "overview",
-                            })
-                        }}>overview</button>
-                    </li>
+                            <li className={`${activeScreen !== undefined && activeScreen.type === "overview" ? styles.highlighted : ""}`}>
+                                <button onClick={() => {
+                                    activeScreenSet({
+                                        type: "overview",
+                                    })
+                                }}>overview</button>
+                            </li>
+                        </>
+                    )}
                 </ul>
 
                 {activeClientRequests.length > 0 && (
@@ -450,26 +455,16 @@ export default function Page() {
                 {activeScreen === undefined ? (
                     <>
                         <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-                            {!showingSideBar && (
-                                <button
-                                    onClick={() => {
-                                        showingSideBarSet(true)
-                                    }}
-                                >
-                                    <svg style={{ fill: "rgb(var(--shade1))", width: "1.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" /></svg>
-                                </button>
-                            )}
+                            {ShowSidebarButton}
 
                             <h1 className='noMargin'>dashboard</h1>
 
-                            {seenUser !== undefined && (
-                                <CompanyDepartmentSelection seenUser={seenUser} />
-                            )}
+                            <CompanyDepartmentSelection />
                         </div>
 
                         <div className={styles.overviewCont}>
                             {pastRequestsSearchObj.searchItems.length > 0 && (
-                                <div>
+                                <div style={{ gridArea: "a" }}>
                                     <h2 className='noMargin'>past requests</h2>
 
                                     <div className={styles.clientRequests}>
@@ -491,7 +486,7 @@ export default function Page() {
                             )}
 
                             {((tapesSearchObj.searchItems.length > 0) || (equipmentSearchObj.searchItems.length > 0)) && (
-                                <div>
+                                <div style={{ gridArea: "b" }}>
                                     <h2 className='noMargin'>overview</h2>
 
                                     {tapesSearchObj.searchItems.length > 0 && (
@@ -526,7 +521,9 @@ export default function Page() {
                         </div>
                     </>
                 ) : (
-                    <>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                        {ShowSidebarButton}
+
                         {activeScreen.type === "newRequest" && activeScreen.activeChecklistStarterType !== undefined && (
                             <AddEditClientRequest seenChecklistStarterType={activeScreen.activeChecklistStarterType} department={seenDepartment} />
                         )}
@@ -593,13 +590,22 @@ export default function Page() {
 
                                 <h2>tapes</h2>
 
-                                <Search
+                                <SearchWithInput
                                     searchObj={tapesSearchObj}
                                     searchObjSet={tapesSearchObjSet}
-                                    searchFunction={() => {
+                                    allSearchFunc={() => {
                                         loadResourceValues("tape", "all")
                                     }}
-                                    showPage={true}
+                                    specificSearchFunc={(seenText) => {
+                                        //show update
+                                        refresh()
+
+                                        specificResourceSearch.current.tapeSearch = seenText
+
+                                        loadResourceValues("tape", "specific")
+                                    }}
+                                    label={<h3>filter by media label</h3>}
+                                    placeHolder={"enter tape media label"}
                                 />
 
                                 {tapesSearchObj.searchItems.length > 0 && (
@@ -618,13 +624,35 @@ export default function Page() {
 
                                 <h2>equipment</h2>
 
-                                <Search
+                                <SearchWithInput
                                     searchObj={equipmentSearchObj}
                                     searchObjSet={equipmentSearchObjSet}
-                                    searchFunction={() => {
+                                    allSearchFunc={() => {
                                         loadResourceValues("equipment", "all")
                                     }}
-                                    showPage={true}
+                                    specificSearchFunc={(seenText) => {
+                                        //show update
+                                        refresh()
+
+                                        specificResourceSearch.current.equipmentSearch.text = seenText
+
+                                        loadResourceValues("equipment", "specific")
+                                    }}
+                                    label={(
+                                        <div>
+                                            <h3>filter by</h3>
+
+                                            <button className='button2'
+                                                onClick={() => {
+                                                    //swap
+                                                    specificResourceSearch.current.equipmentSearch.type = specificResourceSearch.current.equipmentSearch.type === "model" ? "serial" : "model"
+
+                                                    refresh()
+                                                }}
+                                            >{specificResourceSearch.current.equipmentSearch.type}</button>
+                                        </div>
+                                    )}
+                                    placeHolder={`enter equipment ${specificResourceSearch.current.equipmentSearch.type === "model" ? "model" : "serial number"}`}
                                 />
 
                                 {equipmentSearchObj.searchItems.length > 0 && (
@@ -642,7 +670,7 @@ export default function Page() {
                                 )}
                             </>
                         )}
-                    </>
+                    </div>
                 )}
             </div>
         </main>

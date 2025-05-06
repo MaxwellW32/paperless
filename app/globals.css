@@ -91,9 +91,10 @@ h2 {
 }
 
 h3 {
-    font-size: 1.5rem;
+    font-size: 1rem;
     margin-bottom: 0.5rem;
-    font-weight: 500;
+    font-weight: bold;
+    text-transform: capitalize;
 }
 
 svg {
@@ -226,7 +227,7 @@ section {
 }
 
 .errorText {
-    color: rgb(var(--color4));
+    color: rgb(var(--color5));
     font-size: var(--smallFontSize);
 }
 

@@ -18,7 +18,9 @@
     align-content: flex-start;
     gap: 1rem;
     background-color: rgb(var(--color3));
+    color: rgb(var(--shade1));
     padding: 1rem;
+    border-radius: 1rem;
 }
 
 .eachClientRequest>label {
@@ -34,4 +36,13 @@
     gap: .5rem;
     font-size: var(--fontSizeS);
     justify-self: flex-end;
+}
+
+.island {
+    display: grid;
+    align-content: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: rgb(var(--color3));
+    border-radius: 1rem;
 }

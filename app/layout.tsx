@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 import { auth } from "@/auth/auth";
 import SessionProviderComponent from "@/components/SessionProviderComponent";
 import LoadResourceAuth from "@/components/resourceAuth/Load";
+import LoadCompanyDepartment from "@/components/companyDepartmentSelection/loadCompanyDepartment";
 
 const montserrat = localFont({
   src: "./fonts/Montserrat.ttf",
@@ -47,6 +48,7 @@ export default async function RootLayout({
         <SessionProviderComponent seenSession={seenSession}>
           <Toaster position="top-center" reverseOrder={false} />
           <LoadResourceAuth />
+          {seenSession !== null && <LoadCompanyDepartment session={seenSession} />}
 
           <Nav />
 

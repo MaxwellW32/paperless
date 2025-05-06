@@ -1,42 +1,49 @@
 "use client"
+import { getSpecificUsers } from '@/serverFunctions/handleUser'
 import { userDepartmentCompanySelection, user, } from '@/types'
+import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
 import { useAtom } from 'jotai'
+import { useSession } from 'next-auth/react'
 import React, { useEffect, useState } from 'react'
 
-export default function CompanyDepartmentSelection({ seenUser }: { seenUser: user }) {
+export default function CompanyDepartmentSelection() {
+    const { data: session } = useSession()
     const [userDepartmentCompanySelection, userDepartmentCompanySelectionSet] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
-    const [ranCheck, ranCheckSet] = useState(false)
 
-    //set first result as active
+    const [seenSelectionOnce, seenSelectionOnceSet] = useState(false)
+
+    const [seenUser, seenUserSet] = useState<user | undefined>()
+
+    //get user
     useEffect(() => {
-        if (seenUser.accessLevel === "admin") return
+        const search = async () => {
+            try {
+                if (session === null) return
 
-        if (seenUser.fromDepartment) {
-            //empolyee
-            if (seenUser.usersToDepartments !== undefined && seenUser.usersToDepartments.length > 0) {
-                userDepartmentCompanySelectionSet({ type: "userDepartment", seenUserToDepartment: seenUser.usersToDepartments[0] })
-            }
+                seenUserSet(await getSpecificUsers(session.user.id))
 
-        } else {
-            //company
-            if (seenUser.usersToCompanies !== undefined && seenUser.usersToCompanies.length > 0) {
-                userDepartmentCompanySelectionSet({ type: "userCompany", seenUserToCompany: seenUser.usersToCompanies[0] })
+            } catch (error) {
+                consoleAndToastError(error)
             }
         }
+        search()
+    }, [session])
 
-        //notify checked for active selection
-        ranCheckSet(true)
+    //check to ensure an initial value was loaded on userDepartmentCompanySelection once
+    useEffect(() => {
+        if (userDepartmentCompanySelection !== null) {
+            seenSelectionOnceSet(true)
+        }
+    }, [userDepartmentCompanySelection])
 
-    }, [])
-
-    if (seenUser.accessLevel === "admin") return null
+    if (seenUser === undefined || seenUser.accessLevel === "admin") return null
 
     return (
-        <div style={{ position: "relative", display: ranCheck ? "" : "none" }}>
+        <div style={{ position: "relative", display: seenSelectionOnce ? "" : "none", whiteSpace: "nowrap" }}>
             {userDepartmentCompanySelection === null ? (
                 <>
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", position: "absolute", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", position: "absolute", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
                         {seenUser.fromDepartment ? (
                             <>
                                 <label>department selection</label>

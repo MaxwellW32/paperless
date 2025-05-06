@@ -97,7 +97,9 @@
     align-content: flex-start;
     gap: 1rem;
     padding: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 1fr));
+    /* grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 1fr)); */
+    grid-template-areas: "a b";
+    grid-auto-columns: 1fr;
     overflow: auto;
 }
 
@@ -120,8 +122,14 @@
         width: 100%
     }
 
-
     .overviewCont>div {
         overflow: initial;
     }
+
+    .overviewCont {
+        grid-template-areas:
+            "a"
+            "b";
+    }
+
 }

@@ -16,6 +16,7 @@ import { ReadDynamicForm } from '../makeReadDynamicChecklistForm/DynamicForm'
 import { EditTapeForm } from '../forms/tapeForm/ViewEditTapeForm'
 import TextInput from '../textInput/TextInput'
 import { EditEquipmentForm } from '../forms/equipmentForm/ViewEditEquipmentForm'
+import Select from 'react-select';
 
 export default function AddEditClientRequest({ seenChecklistStarterType, sentClientRequest, department, submissionAction }: { seenChecklistStarterType?: checklistStarter["type"], sentClientRequest?: clientRequest, department?: department, submissionAction?: () => void }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -78,6 +79,23 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
         return newIndexes
 
     }, [formObj.checklist])
+
+    type userCompanyReactSelectType = { label: string, value: string }
+    const userCompanyOptions = useMemo<userCompanyReactSelectType[] | undefined>(() => {
+        if (usersToCompaniesWithAccess === undefined) return undefined
+
+        const preOptions: (userCompanyReactSelectType | null)[] = usersToCompaniesWithAccess.map(eachUserToCompany => {
+            if (eachUserToCompany.user === undefined) return null
+
+            return {
+                value: eachUserToCompany.user.id,
+                label: `${eachUserToCompany.user.name}`,
+            }
+        })
+
+        return preOptions.filter(each => each !== null)
+
+    }, [usersToCompaniesWithAccess])
 
     //handle changes from above
     useEffect(() => {
@@ -412,10 +430,10 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(250px, 90%)", overflow: "auto" }} className='snap'>
                             {companies.map(eachCompany => {
                                 return (
-                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: eachCompany.id === formObj.companyId ? "rgb(var(--color3))" : "rgb(var(--color2))", padding: "1rem" }}>
+                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", padding: "1rem" }}>
                                         <h3>{eachCompany.name}</h3>
 
-                                        <button className='button3'
+                                        <button className='button1' style={{ backgroundColor: eachCompany.id === formObj.companyId ? "" : "rgb(var(--color2))" }}
                                             onClick={() => {
                                                 toast.success(`selected`)
 
@@ -436,61 +454,56 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 </>
             )}
 
-            {formObj.companyId !== undefined && (
-                <button className='button3'
-                    onClick={async () => {
-                        try {
-                            if (formObj.companyId === undefined) throw new Error("not seeing company id")
-                            toast.success("searching")
-
-                            //search 
-                            handleSearchUsersToCompaniesWithAccess(formObj.companyId)
-
-                        } catch (error) {
-                            consoleAndToastError(error)
-                        }
-                    }}
-                >refresh clients</button>
-            )}
-
             {formObj.clientsAccessingSite !== undefined && usersToCompaniesWithAccess !== undefined && (
                 <>
                     {usersToCompaniesWithAccess.length > 0 ? (
                         <>
-                            <label>Clients visiting</label>
+                            <label style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                                <p>Clients visiting</p>
 
-                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(250px, 90%)", overflow: "auto" }} className='snap'>
-                                {usersToCompaniesWithAccess.map(eachUserToCompany => {
-                                    if (eachUserToCompany.user === undefined) return null
+                                {formObj.companyId !== undefined && (
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                if (formObj.companyId === undefined) throw new Error("not seeing company id")
+                                                toast.success("searching")
 
-                                    const seenInFormObj = formObj.clientsAccessingSite !== undefined && formObj.clientsAccessingSite.includes(eachUserToCompany.userId)
+                                                //search 
+                                                handleSearchUsersToCompaniesWithAccess(formObj.companyId)
 
-                                    return (
-                                        <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                            <h3>{eachUserToCompany.user.name}</h3>
+                                            } catch (error) {
+                                                consoleAndToastError(error)
+                                            }
+                                        }}
+                                    >
+                                        <svg style={{ fill: "rgb(var(--shade1))", transform: "rotateX(180deg)" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M463.5 224l8.5 0c13.3 0 24-10.7 24-24l0-128c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1c-87.5 87.5-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8l119.5 0z" /></svg>
+                                    </button>
+                                )}
+                            </label>
 
-                                            <button className='button1' style={{ backgroundColor: seenInFormObj ? "" : "rgb(var(--color2))" }}
-                                                onClick={() => {
-                                                    toast.success(`selected`)
+                            {userCompanyOptions !== undefined && (
+                                <div style={{ display: "grid", alignContent: "flex-start", textTransform: "capitalize" }}>
+                                    <Select
+                                        closeMenuOnSelect={false}
+                                        isMulti
+                                        options={userCompanyOptions}
+                                        defaultValue={userCompanyOptions.filter(option => formObj.clientsAccessingSite !== undefined && formObj.clientsAccessingSite.includes(option.value))}
+                                        onChange={(selectedOptions) => {
+                                            const selectedIds: userToCompany["id"][] = selectedOptions.map(opt => opt.value)
 
-                                                    //set the client accessing site
-                                                    formObjSet(prevFormObj => {
-                                                        const newFormObj = { ...prevFormObj }
-                                                        if (newFormObj.clientsAccessingSite === undefined) return prevFormObj
+                                            //set the client accessing site
+                                            formObjSet(prevFormObj => {
+                                                const newFormObj = { ...prevFormObj }
+                                                if (newFormObj.clientsAccessingSite === undefined) return prevFormObj
 
-                                                        //add user to list
-                                                        if (!newFormObj.clientsAccessingSite.includes(eachUserToCompany.userId)) {
-                                                            newFormObj.clientsAccessingSite = [...newFormObj.clientsAccessingSite, eachUserToCompany.userId]
-                                                        }
+                                                newFormObj.clientsAccessingSite = selectedIds
 
-                                                        return newFormObj
-                                                    })
-                                                }}
-                                            >add</button>
-                                        </div>
-                                    )
-                                })}
-                            </div>
+                                                return newFormObj
+                                            })
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </>
                     ) : (
                         <>
@@ -531,7 +544,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
             )}
 
             {formObj.eta !== undefined && (
-                <TextInput
+                <TextInput style={{ justifySelf: "flex-start", width: "min(400px, 100%)" }}
                     name={`eta`}
                     value={offsetTime(new Date(formObj.eta), -5).toISOString().slice(0, 16)}
                     type={"datetime-local"}

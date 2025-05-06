@@ -345,7 +345,7 @@ export type tapeFormNewTapeType = z.infer<typeof tapeFormNewTapeSchema>;
 export const tapeFormSchema = z.object({
     type: z.union([z.literal(formTypesSchema.Values.tapeDeposit), z.literal(formTypesSchema.Values.tapeWithdraw)]),
     data: z.object({
-        tapesInRequest: z.array(tapeFormNewTapeSchema).min(1, "You must include at least one tape in the request"),
+        tapesInRequest: z.array(tapeFormNewTapeSchema),
     }).nullable(),
 });
 export type tapeFormType = z.infer<typeof tapeFormSchema>
@@ -357,7 +357,7 @@ export type equipmentFormNewEquipmentType = z.infer<typeof equipmentFormNewEquip
 export const equipmentFormSchema = z.object({
     type: z.union([z.literal(formTypesSchema.Values.equipmentDeposit), z.literal(formTypesSchema.Values.equipmentWithdraw)]),
     data: z.object({
-        equipmentInRequest: z.array(equipmentFormNewEquipmentSchema).min(1, "You must include at least one equipment item in the request"),
+        equipmentInRequest: z.array(equipmentFormNewEquipmentSchema),
     }).nullable(),
 });
 export type equipmentFormType = z.infer<typeof equipmentFormSchema>

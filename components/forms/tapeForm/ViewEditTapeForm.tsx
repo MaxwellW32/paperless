@@ -9,9 +9,11 @@ import { getTapes } from '@/serverFunctions/handleTapes'
 import toast from 'react-hot-toast'
 import ViewTape from '@/components/tapes/ViewTape'
 import { useAtom } from 'jotai'
-import { resourceAuthGlobal } from '@/utility/globalState'
-import { company, resourceAuthType, tape, tapeFormNewTapeSchema, tapeFormNewTapeType, tapeFormType } from '@/types'
+import { resourceAuthGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
+import { company, resourceAuthType, searchObj, tape, tapeFormNewTapeSchema, tapeFormNewTapeType, tapeFormType, userDepartmentCompanySelection } from '@/types'
 import { getInitialTapeData } from '@/components/tapes/getTapeData'
+import ShowMore from '@/components/showMore/ShowMore'
+import SearchWithInput from '@/components/tapes/SearchWithInput'
 
 export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { seenForm: tapeFormType, handleFormUpdate: (updatedFormData: tapeFormType) => void, seenCompanyId: company["id"] }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -28,7 +30,12 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
     const [tapeInRequestErrors, tapeInRequestErrorsSet] = useState<{ [key: string]: Partial<{ [key in tapeFormNewTapeKeys]: string }> }>({})
 
     const userInteracting = useRef(true) //set to true so sends up once
-    const [tapes, tapesSet] = useState<tape[]>([])
+
+    const [tapesSearchObj, tapesSearchObjSet] = useState<searchObj<tape>>({
+        searchItems: [],
+    })
+
+    const tapeSearch = useRef("")
 
     //handle changes from above
     useEffect(() => {
@@ -56,7 +63,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
     // search tapes
     useEffect(() => {
         const search = async () => {
-            handleSearchTapes()
+            loadTapes("all")
         }
         search()
 
@@ -109,75 +116,132 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
         userInteracting.current = true
     }
 
-    async function handleSearchTapes() {
-        try {
-            if (resourceAuth === undefined) return
+    type updateOptionType = "all" | "specific"
 
-            const seenTapes = await getTapes({ type: "location", tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", getOppositeOfLocation: false, companyId: seenCompanyId }, resourceAuth)
-            tapesSet(seenTapes)
+    //handle tapes and equipment for clients only
+    async function loadTapes(updateOption: updateOptionType) {
+        if (resourceAuth === undefined) throw new Error("no auth seen")
 
-        } catch (error) {
-            consoleAndToastError(error)
+        async function getResults<T>(updateOption: updateOptionType, specificFunction: () => Promise<T[]>, getAllFunction: () => Promise<T[]>): Promise<T[]> {
+            let results: T[] = []
+
+            if (updateOption === "specific") {
+                const seenSpecificResults = await specificFunction()
+
+                if (seenSpecificResults.length > 0) {
+                    results = seenSpecificResults
+                }
+
+            } else if (updateOption === "all") {
+                results = await getAllFunction()
+            }
+
+            return results
         }
-    }
 
+        //perform update or new array
+        function setSearchItemsOnSearchObj<T>(sentSearchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchItems: T[]) {
+            sentSearchObjSet(prevSearchObj => {
+                const newSearchObj = { ...prevSearchObj }
+
+                newSearchObj.searchItems = searchItems
+
+                return newSearchObj
+            })
+        }
+
+        function respondToResults(sentResults: unknown[]) {
+            //tell of results
+            if (sentResults.length === 0) {
+                toast.error("not seeing anything")
+            }
+        }
+
+        const results = await getResults<tape>(updateOption,
+            async () => {
+                if (updateOption !== "specific") throw new Error("incorrect updateOption sent")
+                return await getTapes({ type: "mediaLabel", mediaLabel: tapeSearch.current, companyId: seenCompanyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+            },
+            async () => {
+                return await getTapes({ type: "allFromCompany", companyId: seenCompanyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+            },
+        )
+
+        //general send off
+        respondToResults(results)
+
+        //update state
+        setSearchItemsOnSearchObj(tapesSearchObjSet, results)
+    }
     if (formObj.data === null) return null
 
     return (
         <div className={styles.form}>
             <label>{spaceCamelCase(formObj.type)}</label>
 
-            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                <button className='button3'
-                    onClick={() => {
-                        toast.success("searching")
+            <ShowMore
+                label='search tapes'
+                content={
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                        <SearchWithInput
+                            searchObj={tapesSearchObj}
+                            searchObjSet={tapesSearchObjSet}
+                            allSearchFunc={() => {
+                                loadTapes("all")
+                            }}
+                            specificSearchFunc={(seenText) => {
+                                tapeSearch.current = seenText
 
-                        handleSearchTapes()
-                    }}
-                >search tapes</button>
+                                loadTapes("specific")
+                            }}
+                            label={<h3>filter by media label</h3>}
+                            placeHolder={"enter tape media label"}
+                        />
 
-                {tapes.length > 0 && (
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
-                        {tapes.map((eachTape, eachTapeIndex) => {
-                            return (
-                                <ViewTape key={eachTapeIndex} seenTape={eachTape}
-                                    addFunction={() => {
-                                        runSameOnAllFormObjUpdates()
+                        {tapesSearchObj.searchItems.length > 0 && (
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
+                                {tapesSearchObj.searchItems.map((eachTape, eachTapeIndex) => {
+                                    return (
+                                        <ViewTape key={eachTapeIndex} seenTape={eachTape}
+                                            addFunction={() => {
+                                                runSameOnAllFormObjUpdates()
 
-                                        formObjSet(prevFormObj => {
-                                            const newFormObj = { ...prevFormObj }
-                                            if (newFormObj.data === null) return prevFormObj
+                                                formObjSet(prevFormObj => {
+                                                    const newFormObj = { ...prevFormObj }
+                                                    if (newFormObj.data === null) return prevFormObj
 
-                                            //refresh
-                                            newFormObj.data = { ...newFormObj.data }
+                                                    //refresh
+                                                    newFormObj.data = { ...newFormObj.data }
 
-                                            //if id check if in array already - update that record
-                                            const foundInNewTapes = newFormObj.data.tapesInRequest.find(eachTapeFind => eachTapeFind.id === eachTape.id) !== undefined
+                                                    //if id check if in array already - update that record
+                                                    const foundInNewTapes = newFormObj.data.tapesInRequest.find(eachTapeFind => eachTapeFind.id === eachTape.id) !== undefined
 
-                                            if (foundInNewTapes) {
-                                                newFormObj.data.tapesInRequest = newFormObj.data.tapesInRequest.map(eachTapeInRequestMap => {
-                                                    if (eachTapeInRequestMap.id === eachTape.id) {
-                                                        return eachTape
+                                                    if (foundInNewTapes) {
+                                                        newFormObj.data.tapesInRequest = newFormObj.data.tapesInRequest.map(eachTapeInRequestMap => {
+                                                            if (eachTapeInRequestMap.id === eachTape.id) {
+                                                                return eachTape
+                                                            }
+
+                                                            return eachTapeInRequestMap
+                                                        })
+
+                                                    } else {
+                                                        newFormObj.data.tapesInRequest = [...newFormObj.data.tapesInRequest, eachTape]
                                                     }
 
-                                                    return eachTapeInRequestMap
+                                                    return newFormObj
                                                 })
 
-                                            } else {
-                                                newFormObj.data.tapesInRequest = [...newFormObj.data.tapesInRequest, eachTape]
-                                            }
-
-                                            return newFormObj
-                                        })
-
-                                        toast.success(`added ${eachTape.mediaLabel}`)
-                                    }}
-                                />
-                            )
-                        })}
+                                                toast.success(`added ${eachTape.mediaLabel}`)
+                                            }}
+                                        />
+                                    )
+                                })}
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
+                }
+            />
 
             {formObj.data.tapesInRequest.length > 0 && (
                 <>

@@ -56,33 +56,42 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                 </>
             )}
 
-            <h3>{formatLocalDateTime(new Date(sentClientRequest.dateSubmitted))}</h3>
-
-            <p><Moment fromNow>{sentClientRequest.dateSubmitted}</Moment></p>
-
             <label className='tag'>{sentClientRequest.status}</label>
 
-            {seenCompanyUsers.length > 0 && (
-                <>
-                    <h3>Clients visiting: </h3>
+            <div className={styles.island}>
+                <h3>time:</h3>
 
-                    <div style={{ display: "grid", gap: "1rem" }}>
-                        {seenCompanyUsers.map((eachUser) => {
-                            return (
-                                <div key={eachUser.id}>
-                                    <p>{eachUser.name}</p>
-                                </div>
-                            )
-                        })}
-                    </div>
-                </>
-            )}
+                <p><Moment fromNow>{sentClientRequest.dateSubmitted}</Moment></p>
 
-            <h3>ETA</h3>
+                <h3>{formatLocalDateTime(new Date(sentClientRequest.dateSubmitted))}</h3>
+            </div>
 
-            <Moment utc-5="true" format="MMM D, YYYY, h:mm A">
-                {sentClientRequest.eta}
-            </Moment>
+
+            <div className={styles.island}>
+                {seenCompanyUsers.length > 0 && (
+                    <>
+                        <h3>Clients visiting: </h3>
+
+                        <ul style={{ display: "grid", gap: "1rem" }}>
+                            {seenCompanyUsers.map((eachUser) => {
+                                return (
+                                    <li key={eachUser.id} className='tag' style={{ backgroundColor: "rgb(var(--color1))" }}>
+                                        <p>{eachUser.name}</p>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </>
+                )}
+            </div>
+
+            <div className={styles.island}>
+                <h3>ETA:</h3>
+
+                <Moment utc-5="true" format="MMM D, YYYY, h:mm A">
+                    {sentClientRequest.eta}
+                </Moment>
+            </div>
 
             <div style={{ display: "grid", alignContent: "flex-start", gap: "2rem" }}>
                 {sentClientRequest.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
