@@ -229,7 +229,7 @@ export default function Page() {
                     return await getSpecificTapes(updateOption.id, resourceAuth)
                 },
                 async () => {
-                    return await getTapes({ type: "all" }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                    return await getTapes({}, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset, { company: true })
                 },
             )
 
@@ -247,7 +247,7 @@ export default function Page() {
                     return await getSpecificEquipment(updateOption.id, resourceAuth)
                 },
                 async () => {
-                    return await getEquipment({ type: "all" }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                    return await getEquipment({}, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset, { company: true })
                 },
             )
 

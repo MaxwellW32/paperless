@@ -35,8 +35,6 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
         searchItems: [],
     })
 
-    const tapeSearch = useRef("")
-
     //handle changes from above
     useEffect(() => {
         if (seenForm.data === null) return
@@ -59,15 +57,6 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
         handleFormUpdate(formObj)
 
     }, [formObj, tapeInRequestErrors])
-
-    // search tapes
-    useEffect(() => {
-        const search = async () => {
-            loadTapes("all")
-        }
-        search()
-
-    }, [seenCompanyId, resourceAuth])
 
     function checkIfTapeInRequestValid(seenFormObj: Partial<tapeFormNewTapeType>, seenName: keyof tapeFormNewTapeType, index: number) {
         //@ts-expect-error type
@@ -116,63 +105,6 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
         userInteracting.current = true
     }
 
-    type updateOptionType = "all" | "specific"
-
-    //handle tapes and equipment for clients only
-    async function loadTapes(updateOption: updateOptionType) {
-        if (resourceAuth === undefined) throw new Error("no auth seen")
-
-        async function getResults<T>(updateOption: updateOptionType, specificFunction: () => Promise<T[]>, getAllFunction: () => Promise<T[]>): Promise<T[]> {
-            let results: T[] = []
-
-            if (updateOption === "specific") {
-                const seenSpecificResults = await specificFunction()
-
-                if (seenSpecificResults.length > 0) {
-                    results = seenSpecificResults
-                }
-
-            } else if (updateOption === "all") {
-                results = await getAllFunction()
-            }
-
-            return results
-        }
-
-        //perform update or new array
-        function setSearchItemsOnSearchObj<T>(sentSearchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchItems: T[]) {
-            sentSearchObjSet(prevSearchObj => {
-                const newSearchObj = { ...prevSearchObj }
-
-                newSearchObj.searchItems = searchItems
-
-                return newSearchObj
-            })
-        }
-
-        function respondToResults(sentResults: unknown[]) {
-            //tell of results
-            if (sentResults.length === 0) {
-                toast.error("not seeing anything")
-            }
-        }
-
-        const results = await getResults<tape>(updateOption,
-            async () => {
-                if (updateOption !== "specific") throw new Error("incorrect updateOption sent")
-                return await getTapes({ type: "mediaLabel", mediaLabel: tapeSearch.current, companyId: seenCompanyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
-            },
-            async () => {
-                return await getTapes({ type: "allFromCompany", companyId: seenCompanyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
-            },
-        )
-
-        //general send off
-        respondToResults(results)
-
-        //update state
-        setSearchItemsOnSearchObj(tapesSearchObjSet, results)
-    }
     if (formObj.data === null) return null
 
     return (
@@ -186,13 +118,15 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
                         <SearchWithInput
                             searchObj={tapesSearchObj}
                             searchObjSet={tapesSearchObjSet}
-                            allSearchFunc={() => {
-                                loadTapes("all")
-                            }}
-                            specificSearchFunc={(seenText) => {
-                                tapeSearch.current = seenText
+                            allSearchFunc={async () => {
+                                if (resourceAuth === undefined) throw new Error("no auth seen")
 
-                                loadTapes("specific")
+                                return await getTapes({ tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", companyId: seenCompanyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                            }}
+                            specificSearchFunc={async seenText => {
+                                if (resourceAuth === undefined) throw new Error("no auth seen")
+
+                                return await getTapes({ tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", companyId: seenCompanyId, mediaLabel: seenText }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
                             }}
                             label={<h3>filter by media label</h3>}
                             placeHolder={"enter tape media label"}

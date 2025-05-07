@@ -8,11 +8,13 @@ import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
-import { company, equipmentFormNewEquipmentSchema, equipmentFormNewEquipmentType, equipmentFormType, equipmentT, resourceAuthType } from '@/types'
+import { company, equipmentFormNewEquipmentSchema, equipmentFormNewEquipmentType, equipmentFormType, equipmentT, resourceAuthType, searchObj } from '@/types'
 import { getEquipment } from '@/serverFunctions/handleEquipment'
 import ViewEquipment from '@/components/equipment/ViewEquipment'
 import TextArea from '@/components/textArea/TextArea'
 import { getEquipmentData } from '@/components/equipment/getEquipmentData'
+import ShowMore from '@/components/showMore/ShowMore'
+import SearchWithInput from '@/components/tapes/SearchWithInput'
 
 export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }: { seenForm: equipmentFormType, handleFormUpdate: (updatedFormData: equipmentFormType) => void, seenCompanyId: company["id"] }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -29,7 +31,10 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
     const [equipmentInRequestErrors, equipmentInRequestErrorsSet] = useState<{ [key: string]: Partial<{ [key in equipmentFormNewEquipmentKeys]: string }> }>({})
 
     const userInteracting = useRef(false)
-    const [equipment, equipmentSet] = useState<equipmentT[]>([])
+
+    const [equipmentSearchObj, equipmentSearchObjSet] = useState<searchObj<equipmentT>>({
+        searchItems: [],
+    })
 
     //handle changes from above
     useEffect(() => {
@@ -55,15 +60,6 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
         handleFormUpdate(formObj)
 
     }, [formObj, equipmentInRequestErrors])
-
-    //search equipment
-    useEffect(() => {
-        const search = async () => {
-            handleSearchEquipment()
-        }
-        search()
-
-    }, [seenCompanyId, resourceAuth])
 
     function checkIfEquipmentInRequestValid(seenFormObj: Partial<equipmentFormNewEquipmentType>, seenName: keyof equipmentFormNewEquipmentType, index: number) {
         //@ts-expect-error type
@@ -112,75 +108,77 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
         userInteracting.current = true
     }
 
-    async function handleSearchEquipment() {
-        try {
-            if (resourceAuth === undefined) return
-
-            const seenEquipment = await getEquipment({ type: "allFromCompany", companyId: seenCompanyId }, resourceAuth)
-            equipmentSet(seenEquipment)
-
-        } catch (error) {
-            consoleAndToastError(error)
-        }
-    }
-
     if (formObj.data === null) return null
 
     return (
         <div className={styles.form}>
             <label>{spaceCamelCase(formObj.type)}</label>
 
-            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                <button className='button3'
-                    onClick={() => {
-                        toast.success("searching")
+            <ShowMore
+                label='search equipment'
+                content={
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                        <SearchWithInput
+                            searchObj={equipmentSearchObj}
+                            searchObjSet={equipmentSearchObjSet}
+                            allSearchFunc={async () => {
+                                if (resourceAuth === undefined) throw new Error("no auth seen")
 
-                        handleSearchEquipment()
-                    }}
-                >search equipment</button>
+                                return await getEquipment({ companyId: seenCompanyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
+                            }}
+                            specificSearchFunc={async seenText => {
+                                if (resourceAuth === undefined) throw new Error("no auth seen")
 
-                {equipment.length > 0 && (
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
-                        {equipment.map((eachEquipment, eachEquipmentIndex) => {
-                            return (
-                                <ViewEquipment key={eachEquipmentIndex} seenEquipment={eachEquipment}
-                                    addFunction={() => {
-                                        runSameOnAllFormObjUpdates()
+                                return await getEquipment({ companyId: seenCompanyId, makeModel: seenText }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
+                            }}
+                            label={<h3>filter by media label</h3>}
+                            placeHolder={"enter equipment model"}
+                        />
 
-                                        formObjSet(prevFormObj => {
-                                            const newFormObj = { ...prevFormObj }
-                                            if (newFormObj.data === null) return prevFormObj
+                        {equipmentSearchObj.searchItems.length > 0 && (
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
+                                {equipmentSearchObj.searchItems.map((eachEquipment, eachEquipmentIndex) => {
+                                    return (
+                                        <ViewEquipment key={eachEquipmentIndex} seenEquipment={eachEquipment}
+                                            addFunction={() => {
+                                                runSameOnAllFormObjUpdates()
 
-                                            //refresh
-                                            newFormObj.data = { ...newFormObj.data }
+                                                formObjSet(prevFormObj => {
+                                                    const newFormObj = { ...prevFormObj }
+                                                    if (newFormObj.data === null) return prevFormObj
 
-                                            //if id check if in array already - update that record
-                                            const foundInEquipmentArr = newFormObj.data.equipmentInRequest.find(eachTapeFind => eachTapeFind.id === eachEquipment.id) !== undefined
+                                                    //refresh
+                                                    newFormObj.data = { ...newFormObj.data }
 
-                                            if (foundInEquipmentArr) {
-                                                newFormObj.data.equipmentInRequest = newFormObj.data.equipmentInRequest.map(eachTapeInRequestMap => {
-                                                    if (eachTapeInRequestMap.id === eachEquipment.id) {
-                                                        return eachEquipment
+                                                    //if id check if in array already - update that record
+                                                    const foundInEquipmentArr = newFormObj.data.equipmentInRequest.find(eachTapeFind => eachTapeFind.id === eachEquipment.id) !== undefined
+
+                                                    if (foundInEquipmentArr) {
+                                                        newFormObj.data.equipmentInRequest = newFormObj.data.equipmentInRequest.map(eachTapeInRequestMap => {
+                                                            if (eachTapeInRequestMap.id === eachEquipment.id) {
+                                                                return eachEquipment
+                                                            }
+
+                                                            return eachTapeInRequestMap
+                                                        })
+
+                                                    } else {
+                                                        newFormObj.data.equipmentInRequest = [...newFormObj.data.equipmentInRequest, eachEquipment]
                                                     }
 
-                                                    return eachTapeInRequestMap
+                                                    return newFormObj
                                                 })
 
-                                            } else {
-                                                newFormObj.data.equipmentInRequest = [...newFormObj.data.equipmentInRequest, eachEquipment]
-                                            }
-
-                                            return newFormObj
-                                        })
-
-                                        toast.success(`added ${eachEquipment.makeModel}`)
-                                    }}
-                                />
-                            )
-                        })}
+                                                toast.success(`added ${eachEquipment.makeModel}`)
+                                            }}
+                                        />
+                                    )
+                                })}
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
+                }
+            />
 
             {formObj.data.equipmentInRequest.length > 0 && (
                 <>

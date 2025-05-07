@@ -1,8 +1,8 @@
 "use server"
 import { db } from "@/db";
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql, SQLWrapper } from "drizzle-orm";
 import { ensureCanAccessResource } from "./handleAuth";
-import { newTape, newTapeSchema, tape, tapeSchema, tapeLocation, updateTape, resourceAuthType, company } from "@/types";
+import { newTape, newTapeSchema, tape, tapeSchema, updateTape, resourceAuthType, company, tapeFilterType } from "@/types";
 import { tapes } from "@/db/schema";
 import { interpretAuthResponseAndError } from "@/utility/utility";
 
@@ -20,6 +20,46 @@ export async function addTapes(newTapeObj: newTape, resourceAuth: resourceAuthTy
     }).returning()
 
     return addedTape
+}
+
+export async function getTapes(filter: tapeFilterType, resourceAuth: resourceAuthType, limit = 50, offset = 0, withProperty: { company?: true } = {}): Promise<tape[]> {
+    // Security check
+    const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: "" }, resourceAuth, "ra")
+    interpretAuthResponseAndError(authResponse)
+
+    // Collect conditions dynamically
+    const whereClauses: SQLWrapper[] = []
+
+    if (filter.id !== undefined) {
+        whereClauses.push(eq(tapes.id, filter.id))
+    }
+
+    if (filter.companyId !== undefined) {
+        whereClauses.push(eq(tapes.companyId, filter.companyId))
+    }
+
+    if (filter.mediaLabel !== undefined) {
+        whereClauses.push(
+            sql`LOWER(${tapes.mediaLabel}) LIKE LOWER(${`%${filter.mediaLabel}%`})`
+        )
+    }
+
+    if (filter.tapeLocation !== undefined) {
+        whereClauses.push(filter.oppositeLocation ? ne(tapes.tapeLocation, filter.tapeLocation) : eq(tapes.tapeLocation, filter.tapeLocation))
+    }
+
+    // Run the query
+    const results = await db.query.tapes.findMany({
+        where: and(...whereClauses),
+        orderBy: [desc(tapes.dateAdded)],
+        limit,
+        offset,
+        with: {
+            company: withProperty.company
+        }
+    })
+
+    return results
 }
 
 export async function updateTapes(tapeId: tape["id"], tapeObj: Partial<updateTape>, resourceAuth: resourceAuthType): Promise<tape> {
@@ -56,59 +96,6 @@ export async function getSpecificTapes(tapeId: tape["id"], resourceAuth: resourc
     });
 
     return result
-}
-
-export async function getTapes(option: { type: "mediaLabel", mediaLabel: string, companyId: company["id"], } | { type: "location", tapeLocation: tapeLocation, getOppositeOfLocation: boolean, companyId: company["id"] } | { type: "all" } | { type: "allFromCompany", companyId: company["id"] }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<tape[]> {
-    //security check  
-    const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: "" }, resourceAuth, "ra")
-    interpretAuthResponseAndError(authResponse)
-
-    if (option.type === "mediaLabel") {
-        const results = await db.query.tapes.findMany({
-            limit: limit,
-            offset: offset,
-            where: and(eq(tapes.companyId, option.companyId), (
-                sql`LOWER(${tapes.mediaLabel}) LIKE LOWER(${`%${option.mediaLabel}%`})`
-            ))
-        });
-
-        return results
-
-    } else if (option.type === "allFromCompany") {
-        const results = await db.query.tapes.findMany({
-            limit: limit,
-            offset: offset,
-            where: eq(tapes.companyId, option.companyId),
-            orderBy: [desc(tapes.dateAdded)],
-        });
-
-        return results
-
-    } else if (option.type === "all") {
-        const results = await db.query.tapes.findMany({
-            limit: limit,
-            offset: offset,
-            orderBy: [desc(tapes.dateAdded)],
-            with: {
-                company: true
-            }
-        });
-
-        return results
-
-    } else if (option.type === "location") {
-        const results = await db.query.tapes.findMany({
-            limit: limit,
-            offset: offset,
-            where: and(eq(tapes.companyId, option.companyId), option.getOppositeOfLocation ? ne(tapes.tapeLocation, option.tapeLocation) : eq(tapes.tapeLocation, option.tapeLocation)),
-            orderBy: [desc(tapes.dateAdded)],
-        });
-
-        return results
-
-    } else {
-        throw new Error("invalid selection")
-    }
 }
 
 export async function deleteTapes(tapeId: tape["id"], resourceAuth: resourceAuthType) {

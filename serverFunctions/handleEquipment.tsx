@@ -1,9 +1,9 @@
 "use server"
 import { db } from "@/db";
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql, SQLWrapper } from "drizzle-orm";
 import { ensureCanAccessResource } from "./handleAuth";
 import { interpretAuthResponseAndError } from "@/utility/utility";
-import { equipmentT, newEquipmentT, newEquipmentSchema, resourceAuthType, equipmentSchema, company } from "@/types";
+import { equipmentT, newEquipmentT, newEquipmentSchema, resourceAuthType, equipmentSchema, company, equipmentFilterType } from "@/types";
 import { equipment } from "@/db/schema";
 
 export async function addEquipment(newEquipmentObj: newEquipmentT, resourceAuth: resourceAuthType): Promise<equipmentT> {
@@ -58,44 +58,92 @@ export async function getSpecificEquipment(equipmentId: equipmentT["id"], resour
     return result
 }
 
-export async function getEquipment(option: { type: "makeModel", makeModel: string, companyId: company["id"] } | { type: "serialNumber", serialNumber: equipmentT["serialNumber"], companyId: company["id"] } | { type: "all" } | { type: "allFromCompany", companyId: company["id"] }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<equipmentT[]> {
+export async function getEquipment(filter: equipmentFilterType, resourceAuth: resourceAuthType, limit = 50, offset = 0, withProperty: { company?: true } = {}): Promise<equipmentT[]> {
+    // Security check
+    const authResponse = await ensureCanAccessResource({ type: "equipment", equipmentId: "" }, resourceAuth, "ra")
+    interpretAuthResponseAndError(authResponse)
+
+    // Collect conditions dynamically
+    const whereClauses: SQLWrapper[] = []
+
+    if (filter.id !== undefined) {
+        whereClauses.push(eq(equipment.id, filter.id))
+    }
+
+    if (filter.companyId !== undefined) {
+        whereClauses.push(eq(equipment.companyId, filter.companyId))
+    }
+
+    if (filter.makeModel !== undefined) {
+        whereClauses.push(
+            sql`LOWER(${equipment.makeModel}) LIKE LOWER(${`%${filter.makeModel}%`})`
+        )
+    }
+
+    if (filter.serialNumber !== undefined) {
+        whereClauses.push(
+            sql`LOWER(${equipment.serialNumber}) LIKE LOWER(${`%${filter.serialNumber}%`})`
+        )
+    }
+
+    if (filter.equipmentLocation !== undefined) {
+        whereClauses.push(
+            sql`LOWER(${equipment.equipmentLocation}) LIKE LOWER(${`%${filter.equipmentLocation}%`})`
+        )
+    }
+
+    // Run the query
+    const results = await db.query.equipment.findMany({
+        where: and(...whereClauses),
+        orderBy: [desc(equipment.dateAdded)],
+        limit: limit,
+        offset: offset,
+        with: {
+            company: withProperty.company
+        }
+    });
+
+    return results
+}
+
+export async function getEquipmentOld(filter: { type: "makeModel", makeModel: string, companyId: company["id"] } | { type: "serialNumber", serialNumber: equipmentT["serialNumber"], companyId: company["id"] } | { type: "all" } | { type: "allFromCompany", companyId: company["id"] }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<equipmentT[]> {
     //security check  
     const authResponse = await ensureCanAccessResource({ type: "equipment", equipmentId: "" }, resourceAuth, "ra")
     interpretAuthResponseAndError(authResponse)
 
-    if (option.type === "makeModel") {
+    if (filter.type === "makeModel") {
         const results = await db.query.equipment.findMany({
             limit: limit,
             offset: offset,
-            where: and(eq(equipment.companyId, option.companyId), (
-                sql`LOWER(${equipment.makeModel}) LIKE LOWER(${`%${option.makeModel}%`})`
+            where: and(eq(equipment.companyId, filter.companyId), (
+                sql`LOWER(${equipment.makeModel}) LIKE LOWER(${`%${filter.makeModel}%`})`
             ))
         });
 
         return results
 
-    } else if (option.type === "serialNumber") {
+    } else if (filter.type === "serialNumber") {
         const results = await db.query.equipment.findMany({
             limit: limit,
             offset: offset,
-            where: and(eq(equipment.companyId, option.companyId), (
-                sql`LOWER(${equipment.serialNumber}) LIKE LOWER(${`%${option.serialNumber}%`})`
+            where: and(eq(equipment.companyId, filter.companyId), (
+                sql`LOWER(${equipment.serialNumber}) LIKE LOWER(${`%${filter.serialNumber}%`})`
             ))
         });
 
         return results
 
-    } else if (option.type === "allFromCompany") {
+    } else if (filter.type === "allFromCompany") {
         const results = await db.query.equipment.findMany({
             limit: limit,
             offset: offset,
-            where: eq(equipment.companyId, option.companyId),
+            where: eq(equipment.companyId, filter.companyId),
             orderBy: [desc(equipment.dateAdded)],
         });
 
         return results
 
-    } else if (option.type === "all") {
+    } else if (filter.type === "all") {
         const results = await db.query.equipment.findMany({
             limit: limit,
             offset: offset,

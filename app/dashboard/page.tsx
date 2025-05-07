@@ -160,7 +160,8 @@ export default function Page() {
                     //this enures that admin users get initial info on the dashboard page - but have to go to admin page to get further info
                     await Promise.all([1, 2].map(async each => {
                         if (each === 1) {
-                            const localNewTapes = await getTapes({ type: "all" }, resourceAuth)
+                            const localNewTapes = await getTapes({}, resourceAuth)
+
                             tapesSearchObjSet(prevSearchObj => {
                                 const newSearchObj = { ...prevSearchObj }
 
@@ -169,9 +170,8 @@ export default function Page() {
                                 return newSearchObj
                             })
 
-
                         } else if (each === 2) {
-                            const localNewEquipment = await getEquipment({ type: "all" }, resourceAuth)
+                            const localNewEquipment = await getEquipment({}, resourceAuth)
 
                             equipmentSearchObjSet(prevSearchObj => {
                                 const newSearchObj = { ...prevSearchObj }
@@ -184,10 +184,33 @@ export default function Page() {
                     }))
 
                 } else {
-                    //get tapes, equipment from company
-                    loadResourceValues("tape", "all")
+                    await Promise.all([1, 2].map(async each => {
+                        if (each === 1) {
+                            //get tapes, equipment from company
+                            const localNewTapes = await loadResourceValues<tape>("tape", "all")
 
-                    loadResourceValues("equipment", "all")
+                            tapesSearchObjSet(prevSearchObj => {
+                                const newSearchObj = { ...prevSearchObj }
+
+                                newSearchObj.searchItems = localNewTapes
+
+                                return newSearchObj
+                            })
+
+
+                        } else if (each === 2) {
+                            const localNewEquipment = await loadResourceValues<equipmentT>("equipment", "all")
+
+                            equipmentSearchObjSet(prevSearchObj => {
+                                const newSearchObj = { ...prevSearchObj }
+
+                                newSearchObj.searchItems = localNewEquipment
+
+                                return newSearchObj
+                            })
+                        }
+                    }))
+
                 }
 
             } catch (error) {
@@ -256,9 +279,9 @@ export default function Page() {
     type updateOptionType = "all" | "specific"
 
     //handle tapes and equipment for clients only
-    async function loadResourceValues(option: optionType, updateOption: updateOptionType) {
+    async function loadResourceValues<T>(option: optionType, updateOption: updateOptionType): Promise<T[]> {
         if (resourceAuth === undefined) throw new Error("no auth seen")
-        if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type === "userDepartment") return
+        if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type === "userDepartment") throw new Error("clients only")
 
         async function getResults<T>(updateOption: updateOptionType, specificFunction: () => Promise<T[]>, getAllFunction: () => Promise<T[]>): Promise<T[]> {
             let results: T[] = []
@@ -277,63 +300,36 @@ export default function Page() {
             return results
         }
 
-        //perform update or new array
-        function setSearchItemsOnSearchObj<T>(sentSearchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchItems: T[]) {
-            sentSearchObjSet(prevSearchObj => {
-                const newSearchObj = { ...prevSearchObj }
-
-                newSearchObj.searchItems = searchItems
-
-                return newSearchObj
-            })
-        }
-
-        function respondToResults(sentResults: unknown[]) {
-            //tell of results
-            if (sentResults.length === 0) {
-                toast.error("not seeing anything")
-            }
-        }
-
         if (option === "tape") {
             const results = await getResults<tape>(updateOption,
                 async () => {
                     if (updateOption !== "specific") throw new Error("incorrect updateOption sent")
-                    return await getTapes({ type: "mediaLabel", mediaLabel: specificResourceSearch.current.tapeSearch, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                    return await getTapes({ companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, mediaLabel: specificResourceSearch.current.tapeSearch }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+
                 },
                 async () => {
-                    return await getTapes({ type: "allFromCompany", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                    return await getTapes({ companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
                 },
-            )
+            ) as T[]
 
-            //general send off
-            respondToResults(results)
-
-            //update state
-            setSearchItemsOnSearchObj(tapesSearchObjSet, results)
+            return results
 
         } else if (option === "equipment") {
             const results = await getResults<equipmentT>(updateOption,
                 async () => {
                     if (updateOption !== "specific") throw new Error("incorrect updateOption sent")
 
-                    if (specificResourceSearch.current.equipmentSearch.type === "model") {
-                        return await getEquipment({ type: "makeModel", makeModel: specificResourceSearch.current.equipmentSearch.text, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
-
-                    } else {//handle serial number search
-                        return await getEquipment({ type: "serialNumber", serialNumber: specificResourceSearch.current.equipmentSearch.text, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
-                    }
+                    return await getEquipment({ makeModel: specificResourceSearch.current.equipmentSearch.type === "model" ? specificResourceSearch.current.equipmentSearch.text : undefined, serialNumber: specificResourceSearch.current.equipmentSearch.type === "serial" ? specificResourceSearch.current.equipmentSearch.text : undefined, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
                 },
                 async () => {
-                    return await getEquipment({ type: "allFromCompany", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
+                    return await getEquipment({ companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
                 },
-            )
+            ) as T[]
 
-            //general send off
-            respondToResults(results)
+            return results
 
-            //update state
-            setSearchItemsOnSearchObj(equipmentSearchObjSet, results)
+        } else {
+            throw new Error("invalid selection")
         }
     }
 
@@ -350,15 +346,7 @@ export default function Page() {
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
             <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
-                <button style={{ justifySelf: "flex-end" }}
-                    onClick={() => {
-                        showingSideBarSet(false)
-                    }}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
-                </button>
-
-                <ul className={styles.dashboardMenu}>
+                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
                     <button
                         onClick={() => {
                             activeScreenSet(undefined)
@@ -366,6 +354,17 @@ export default function Page() {
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M575.8 255.5c0 18-15 32.1-32 32.1l-32 0 .7 160.2c0 2.7-.2 5.4-.5 8.1l0 16.2c0 22.1-17.9 40-40 40l-16 0c-1.1 0-2.2 0-3.3-.1c-1.4 .1-2.8 .1-4.2 .1L416 512l-24 0c-22.1 0-40-17.9-40-40l0-24 0-64c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32 14.3-32 32l0 64 0 24c0 22.1-17.9 40-40 40l-24 0-31.9 0c-1.5 0-3-.1-4.5-.2c-1.2 .1-2.4 .2-3.6 .2l-16 0c-22.1 0-40-17.9-40-40l0-112c0-.9 0-1.9 .1-2.8l0-69.7-32 0c-18 0-32-14-32-32.1c0-9 3-17 10-24L266.4 8c7-7 15-8 22-8s15 2 21 7L564.8 231.5c8 7 12 15 11 24z" /></svg>
                     </button>
+
+                    <button style={{ justifySelf: "flex-end" }}
+                        onClick={() => {
+                            showingSideBarSet(false)
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+                    </button>
+
+                </div>
+                <ul className={styles.dashboardMenu}>
 
                     {clientRequestsAuthResponse["c"] && (
                         <>
@@ -594,7 +593,7 @@ export default function Page() {
                                     searchObj={tapesSearchObj}
                                     searchObjSet={tapesSearchObjSet}
                                     allSearchFunc={() => {
-                                        loadResourceValues("tape", "all")
+                                        return loadResourceValues<tape>("tape", "all")
                                     }}
                                     specificSearchFunc={(seenText) => {
                                         //show update
@@ -602,7 +601,7 @@ export default function Page() {
 
                                         specificResourceSearch.current.tapeSearch = seenText
 
-                                        loadResourceValues("tape", "specific")
+                                        return loadResourceValues<tape>("tape", "specific")
                                     }}
                                     label={<h3>filter by media label</h3>}
                                     placeHolder={"enter tape media label"}
@@ -628,7 +627,7 @@ export default function Page() {
                                     searchObj={equipmentSearchObj}
                                     searchObjSet={equipmentSearchObjSet}
                                     allSearchFunc={() => {
-                                        loadResourceValues("equipment", "all")
+                                        return loadResourceValues<equipmentT>("equipment", "all")
                                     }}
                                     specificSearchFunc={(seenText) => {
                                         //show update
@@ -636,7 +635,7 @@ export default function Page() {
 
                                         specificResourceSearch.current.equipmentSearch.text = seenText
 
-                                        loadResourceValues("equipment", "specific")
+                                        return loadResourceValues<equipmentT>("equipment", "specific")
                                     }}
                                     label={(
                                         <div>
