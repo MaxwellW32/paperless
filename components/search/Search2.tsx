@@ -4,24 +4,27 @@ import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import React, { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 
-type searchFiltersType = {
-    type: "tape" | "equipment"
-    filters: allFilterType & { userEditable?: true }
+type searchFiltersType<T> = {
+    filters: {
+        [K in keyof T]?: {
+            notEditable?: true,
+            value: T[K]
+        }
+    },
+    usingFilters?: boolean
 }
 
-export default function Search2<T>({ searchObj, searchObjSet, allSearchFunc, specificSearchFunc, searchLabel = "search", showPage, searchFilters }: {
-    searchObj: searchObj<T>, searchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, allSearchFunc: () => Promise<T[]>, specificSearchFunc: (filters: allFilterType) => Promise<T[]>, searchLabel?: string, showPage?: boolean, searchFilters: searchFiltersType
+export default function Search2<T>({ searchObj, searchObjSet, allSearchFunc, specificSearchFunc, showPage, searchFilters }: {
+    searchObj: searchObj<T>, searchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, allSearchFunc: () => Promise<T[]>, specificSearchFunc: (filters: allFilterType) => Promise<T[]>, showPage?: boolean, searchFilters?: searchFiltersType<T>
 }) {
     const wantsToSearchAgain = useRef(false)
 
     const [pageIndex, pageIndexSet] = useState<number | undefined>()
     const pageDebounce = useRef<NodeJS.Timeout>()
 
-    const [search, searchSet] = useState("")
     const searchDebounce = useRef<NodeJS.Timeout | undefined>()
 
-    type optionType = "all" | "specific"
-    const [lastFunctionTypeRan, lastFunctionTypeRanSet] = useState<optionType>("all")
+    const [activeSearchFilters, activeSearchFiltersSet] = useState<searchFiltersType<T>>(searchFilters === undefined ? { filters: {}, usingFilters: false } : { ...searchFilters })
 
     //respond to next/prev incrementers
     useEffect(() => {
@@ -29,7 +32,7 @@ export default function Search2<T>({ searchObj, searchObjSet, allSearchFunc, spe
         if (!wantsToSearchAgain.current) return
         wantsToSearchAgain.current = false
 
-        handleSearch(lastFunctionTypeRan)
+        handleSearch()
 
     }, [searchObj.offset])
 
@@ -47,9 +50,21 @@ export default function Search2<T>({ searchObj, searchObjSet, allSearchFunc, spe
             return newSearchObj
         })
 
-        handleSearch(lastFunctionTypeRan, false)
+        handleSearch(false)
 
     }, [searchObj.refreshAll])
+
+    //respond to search filter changes from user
+    useEffect(() => {
+        if (!activeSearchFilters.usingFilters) return
+
+        if (searchDebounce.current) clearTimeout(searchDebounce.current)
+
+        searchDebounce.current = setTimeout(async () => {
+            handleSearch()
+        }, 1000);
+
+    }, [activeSearchFilters.filters])
 
     function handleOffset(option: "increment" | "decrement") {
         searchObjSet(prevSearchObj => {
@@ -97,16 +112,7 @@ export default function Search2<T>({ searchObj, searchObjSet, allSearchFunc, spe
         wantsToSearchAgain.current = true
     }
 
-    //search on button click
-    //search on increment / decrement
-    //show notifcations
-    //set the state
-    //get an array of filter options
-    //send the filter object to the function directly
-    //more options for filter
-    //this component allows editing
-
-    async function handleSearch(option: optionType, showExtra = true) {
+    async function handleSearch(showExtra = true) {
         try {
             //notify user search is happening
             if (showExtra) {
@@ -114,22 +120,26 @@ export default function Search2<T>({ searchObj, searchObjSet, allSearchFunc, spe
             }
 
             //get bulk results
-            if (option === "all") {
+            if (!activeSearchFilters.usingFilters) {
                 const results = await allSearchFunc()
                 respondToResults(results)
 
                 //get results with filter applied
-            } else if (option === "specific") {
-                const results = await specificSearchFunc(searchFilters.filters)
-
-                respondToResults(results)
-
             } else {
-                throw new Error("invalid selection")
-            }
+                const filtersOnlyPre = Object.entries(activeSearchFilters.filters).map(eachEntry => {
+                    const seenKey = eachEntry[0] as keyof searchFiltersType<T>["filters"]
+                    const seenValue = eachEntry[1] as searchFiltersType<T>["filters"][keyof T]
 
-            //set last run
-            lastFunctionTypeRanSet(option)
+                    if (seenValue === undefined) return null
+
+                    return [seenKey, seenValue.value]
+                })
+
+                const filtersOnly = Object.fromEntries(filtersOnlyPre.filter(each => each !== null)) as allFilterType
+
+                const results = await specificSearchFunc(filtersOnly)
+                respondToResults(results)
+            }
 
         } catch (error) {
             consoleAndToastError(error)
@@ -154,21 +164,14 @@ export default function Search2<T>({ searchObj, searchObjSet, allSearchFunc, spe
         })
     }
 
-    //instead of search with input its search only with filters - provide a list of model table names - all receive strings - if not undefined can fill out,when empty its undefined - pass the filters directly to the database unction where i can handle it 
-
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center" }}>
                 <button className='button1'
-                    onClick={async () => {//always search for all results - general
-                        //check if using filters
-                        //if any filters detected then run specific
-                        //else run all
-                        //only on if user editable filters are on
-
-                        handleSearch("all")
+                    onClick={async () => {
+                        handleSearch()
                     }}
-                >{searchLabel}</button>
+                >search</button>
 
                 <button className='button2'
                     onClick={() => {
@@ -221,25 +224,90 @@ export default function Search2<T>({ searchObj, searchObjSet, allSearchFunc, spe
                         />
                     </>
                 )}
-
-                <input type='text' value={search} placeholder={"enter "}
-                    onChange={(e) => {
-                        const seenText = e.target.value
-
-                        //set value
-                        searchSet(seenText)
-
-                        if (searchDebounce.current) clearTimeout(searchDebounce.current)
-
-                        searchDebounce.current = setTimeout(async () => {
-                            if (seenText === "") return
-
-                            const seenResults = await specificSearchFunc(seenText)
-                            respondToResults(seenResults)
-                        }, 1000);
-                    }}
-                />
             </div>
+
+            {searchFilters !== undefined && (//user sent search filters so display them
+                <div style={{ position: "relative" }}>
+                    <button className='button2'
+                        onClick={() => {
+                            activeSearchFiltersSet(prevSearchFilters => {
+                                const newSearchFilters = { ...prevSearchFilters }
+                                newSearchFilters.usingFilters = !newSearchFilters.usingFilters
+
+                                return newSearchFilters
+                            })
+                        }}
+                    >{activeSearchFilters.usingFilters ? "using" : "no"} filters</button>
+
+                    <div style={{ display: activeSearchFilters.usingFilters ? "grid" : "none", alignContent: "flex-start", gap: "1rem", padding: "1rem" }}>
+                        {Object.entries(activeSearchFilters.filters).map((eachEntry) => {
+                            const eachFilterKey = eachEntry[0] as keyof searchFiltersType<T>["filters"]
+                            const eachFilterValue = eachEntry[1] as searchFiltersType<T>["filters"][keyof T]
+
+                            if (eachFilterValue === undefined) return null
+                            if (eachFilterValue.notEditable) return null
+
+                            const eachFilterKeyAsString = eachFilterKey as string
+
+                            const label = eachFilterKeyAsString.charAt(0).toUpperCase() + eachFilterKeyAsString.slice(1);
+
+                            return (
+                                <div key={eachFilterKeyAsString} style={{ display: "grid", alignContent: "flex-start", gap: ".5rem" }}>
+                                    <label>{label}</label>
+
+                                    {typeof eachFilterValue.value === "boolean" && (
+                                        <button className='button1' style={{ backgroundColor: activeSearchFilters.filters[eachFilterKey] ? "" : "rgb(var(--color2))" }}
+                                            onClick={() => {
+                                                activeSearchFiltersSet(prevSearchFilters => {
+                                                    const newSearchFilters = { ...prevSearchFilters }
+                                                    newSearchFilters.filters = { ...newSearchFilters.filters }
+                                                    if (newSearchFilters.filters[eachFilterKey] === undefined) return prevSearchFilters
+
+                                                    newSearchFilters.filters[eachFilterKey] = { ...newSearchFilters.filters[eachFilterKey] }
+
+                                                    //@ts-expect-error type
+                                                    newSearchFilters.filters[eachFilterKey].value = !newSearchFilters.filters[eachFilterKey].value
+
+                                                    return newSearchFilters
+                                                })
+                                            }}
+                                        >{label}</button>
+                                    )}
+
+                                    {(typeof eachFilterValue.value === "string" || typeof eachFilterValue.value === "number") && (
+                                        <input type={typeof eachFilterValue.value === "number" ? "number" : "text"} value={eachFilterValue.value} placeholder={`enter ${label}`}
+                                            onChange={(e) => {
+                                                let seenText: string | number = e.target.value
+
+                                                if (typeof eachFilterValue.value === "number") {
+                                                    seenText = parseInt(seenText)
+
+                                                    if (isNaN(seenText)) {
+                                                        seenText = 0
+                                                    }
+                                                }
+
+                                                activeSearchFiltersSet(prevSearchFilters => {
+                                                    const newSearchFilters = { ...prevSearchFilters }
+                                                    newSearchFilters.filters = { ...newSearchFilters.filters }
+                                                    if (newSearchFilters.filters[eachFilterKey] === undefined) return prevSearchFilters
+
+                                                    newSearchFilters.filters[eachFilterKey] = { ...newSearchFilters.filters[eachFilterKey] }
+
+                                                    //@ts-expect-error type
+                                                    newSearchFilters.filters[eachFilterKey].value = seenText
+
+                                                    return newSearchFilters
+                                                })
+                                            }}
+                                        />
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

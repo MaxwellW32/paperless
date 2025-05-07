@@ -4,16 +4,15 @@ import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '@/components/textInput/TextInput'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
-import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { getTapes } from '@/serverFunctions/handleTapes'
 import toast from 'react-hot-toast'
 import ViewTape from '@/components/tapes/ViewTape'
 import { useAtom } from 'jotai'
-import { resourceAuthGlobal, userDepartmentCompanySelectionGlobal } from '@/utility/globalState'
-import { company, resourceAuthType, searchObj, tape, tapeFormNewTapeSchema, tapeFormNewTapeType, tapeFormType, userDepartmentCompanySelection } from '@/types'
+import { resourceAuthGlobal } from '@/utility/globalState'
+import { company, resourceAuthType, searchObj, tape, tapeFormNewTapeSchema, tapeFormNewTapeType, tapeFormType } from '@/types'
 import { getInitialTapeData } from '@/components/tapes/getTapeData'
 import ShowMore from '@/components/showMore/ShowMore'
-import SearchWithInput from '@/components/tapes/SearchWithInput'
+import Search2 from '@/components/search/Search2'
 
 export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { seenForm: tapeFormType, handleFormUpdate: (updatedFormData: tapeFormType) => void, seenCompanyId: company["id"] }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -115,7 +114,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
                 label='search tapes'
                 content={
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                        <SearchWithInput
+                        <Search2
                             searchObj={tapesSearchObj}
                             searchObjSet={tapesSearchObjSet}
                             allSearchFunc={async () => {
@@ -123,13 +122,19 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
 
                                 return await getTapes({ tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", companyId: seenCompanyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
                             }}
-                            specificSearchFunc={async seenText => {
+                            specificSearchFunc={async seenFilters => {//adds on user applied filters
                                 if (resourceAuth === undefined) throw new Error("no auth seen")
 
-                                return await getTapes({ tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", companyId: seenCompanyId, mediaLabel: seenText }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                                return await getTapes({ tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", companyId: seenCompanyId, ...seenFilters }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
                             }}
-                            label={<h3>filter by media label</h3>}
-                            placeHolder={"enter tape media label"}
+                            showPage={true}
+                            searchFilters={{
+                                filters: {
+                                    mediaLabel: {
+                                        value: "",
+                                    }
+                                }
+                            }}
                         />
 
                         {tapesSearchObj.searchItems.length > 0 && (
