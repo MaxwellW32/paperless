@@ -201,7 +201,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                     </div>
 
                     {formObj.checklist.length > 0 && (
-                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", maxHeight: "60vh", overflow: "auto" }}>
                             {formObj.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
                                 let foundDepartment: department | undefined = undefined
 

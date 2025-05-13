@@ -29,6 +29,7 @@ make all search components search2...
 change getClientRequests for filters - ensure it calls with company...
 
 make proper checklist - tapes/equipment
+make home page main page
 ensure client request forms are valid - have required info, not empty
 ensure rest of search components use search 2 - admin
 add company name to requests for non clients
