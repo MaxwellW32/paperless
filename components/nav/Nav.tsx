@@ -11,10 +11,10 @@ export default async function Nav() {
     return (
         <nav className={styles.nav}>
             <Link href={"/"}>
-                <Image alt="logo" src={logo} width={30} height={30} priority={true} style={{ objectFit: "contain" }} />
+                <Image alt="logo" src={logo} width={100} height={100} priority={true} style={{ objectFit: "contain" }} />
             </Link>
 
-            <p>client portal</p>
+            <p style={{ fontFamily: "var(--montserrat)" }}>DCO portal</p>
 
             <ul className={styles.menu}>
                 {session === null ? (

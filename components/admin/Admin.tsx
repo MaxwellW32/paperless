@@ -23,13 +23,13 @@ import { getClientRequests, getSpecificClientRequest } from '@/serverFunctions/h
 import DashboardClientRequest from '../clientRequests/DashboardClientRequest'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
-import Search from '../search/Search'
 import useWebsockets from '../websockets/UseWebsockets'
 import { webSocketStandardMessageType } from '@/types/wsTypes'
 import AddEditTape from '../tapes/AddEditTape'
 import { getSpecificTapes, getTapes } from '@/serverFunctions/handleTapes'
 import { getEquipment, getSpecificEquipment } from '@/serverFunctions/handleEquipment'
 import AddEditEquipment from '../equipment/AddEditEquipment'
+import Search from '../search/Search'
 
 type schemaType = typeof schema;
 type schemaTableNamesType = keyof schemaType;
@@ -90,7 +90,7 @@ export default function Page() {
 
     type updateOption = { type: "all" } | { type: "specific", id: string }
 
-    async function loadStarterValues(sentActiveScreen: activeScreenType, updateOption: updateOption, runWebsocketUpdate = true) {
+    async function loadStarterValues<T>(sentActiveScreen: activeScreenType, updateOption: updateOption, runWebsocketUpdate = true): Promise<T[]> {
         if (resourceAuth === undefined) throw new Error("no auth seen")
 
         async function getResults<T>(updateOption: updateOption, specificFunction: () => Promise<T | undefined>, getAllFunction: () => Promise<T[]>): Promise<T[]> {
@@ -149,6 +149,15 @@ export default function Page() {
             }
         }
 
+        //send update off for other admins
+        if (runWebsocketUpdate) {
+            sendWebsocketUpdate({
+                type: "adminPage",
+                activeScreen: sentActiveScreen,
+                update: updateOption
+            })
+        }
+
         if (sentActiveScreen === "checklistStarters") {
             const results = await getResults<checklistStarter>(updateOption,
                 async () => {
@@ -167,6 +176,8 @@ export default function Page() {
             //update state
             setSearchItemsOnSearchObj(checklistStartersSearchObjSet, results, updateOption)
 
+            return results as T[]
+
         } else if (sentActiveScreen === "clientRequests") {
             const results = await getResults<clientRequest>(updateOption,
                 async () => {
@@ -175,7 +186,7 @@ export default function Page() {
                     return await getSpecificClientRequest(updateOption.id, resourceAuth)
                 },
                 async () => {
-                    return await getClientRequests({ type: "all" }, { type: "date" }, resourceAuth, clientRequestsSearchObj.limit, clientRequestsSearchObj.offset)
+                    return await getClientRequests({ type: "all" }, {}, resourceAuth, clientRequestsSearchObj.limit, clientRequestsSearchObj.offset)
                 },
             )
 
@@ -184,6 +195,9 @@ export default function Page() {
 
             //update state
             setSearchItemsOnSearchObj(clientRequestsSearchObjSet, results, updateOption)
+
+            return results as T[]
+
 
         } else if (sentActiveScreen === "companies") {
             const results = await getResults<company>(updateOption,
@@ -203,6 +217,9 @@ export default function Page() {
             //update state
             setSearchItemsOnSearchObj(companiesSearchObjSet, results, updateOption)
 
+            return results as T[]
+
+
         } else if (sentActiveScreen === "departments") {
             const results = await getResults<department>(updateOption,
                 async () => {
@@ -220,6 +237,9 @@ export default function Page() {
 
             //update state
             setSearchItemsOnSearchObj(departmentsSearchObjSet, results, updateOption)
+
+            return results as T[]
+
 
         } else if (sentActiveScreen === "tapes") {
             const results = await getResults<tape>(updateOption,
@@ -239,6 +259,9 @@ export default function Page() {
             //update state
             setSearchItemsOnSearchObj(tapesSearchObjSet, results, updateOption)
 
+            return results as T[]
+
+
         } else if (sentActiveScreen === "equipment") {
             const results = await getResults<equipmentT>(updateOption,
                 async () => {
@@ -256,6 +279,9 @@ export default function Page() {
 
             //update state
             setSearchItemsOnSearchObj(equipmentSearchObjSet, results, updateOption)
+
+            return results as T[]
+
 
         } else if (sentActiveScreen === "users") {
             const results = await getResults<user>(updateOption,
@@ -275,6 +301,9 @@ export default function Page() {
             //update state
             setSearchItemsOnSearchObj(usersSearchObjSet, results, updateOption)
 
+            return results as T[]
+
+
         } else if (sentActiveScreen === "usersToDepartments") {
             const results = await getResults<userToDepartment>(updateOption,
                 async () => {
@@ -293,6 +322,9 @@ export default function Page() {
             //update state
             setSearchItemsOnSearchObj(usersToDepartmentsSearchObjSet, results, updateOption)
 
+            return results as T[]
+
+
         } else if (sentActiveScreen === "usersToCompanies") {
             const results = await getResults<userToCompany>(updateOption,
                 async () => {
@@ -310,17 +342,10 @@ export default function Page() {
             //update state
             setSearchItemsOnSearchObj(usersToCompaniesSearchObjSet, results, updateOption)
 
+            return results as T[]
+
         } else {
             throw new Error("invalid selection")
-        }
-
-        //send update off for other admins
-        if (runWebsocketUpdate) {
-            sendWebsocketUpdate({
-                type: "adminPage",
-                activeScreen: sentActiveScreen,
-                update: updateOption
-            })
         }
     }
 
@@ -336,11 +361,13 @@ export default function Page() {
     return (
         <main className={styles.main} style={{ gridTemplateColumns: showingSideBar ? "auto 1fr" : "1fr" }}>
             <div className={styles.sidebar} style={{ display: showingSideBar ? "" : "none" }}>
-                <button className='button2'
+                <button style={{ justifySelf: "flex-end" }}
                     onClick={() => {
                         showingSideBarSet(false)
                     }}
-                >close</button>
+                >
+                    <svg style={{ fill: "rgb(var(--shade1))" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+                </button>
 
                 <h3>Choose a screen</h3>
 
@@ -367,704 +394,725 @@ export default function Page() {
             </div>
 
             <div className={styles.mainContent}>
-                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                    {!showingSideBar && (
-                        <button className='button1' style={{ alignSelf: "flex-start" }}
-                            onClick={() => {
-                                showingSideBarSet(true)
-                            }}
-                        >open</button>
-                    )}
+                {!showingSideBar && (
+                    <button style={{ alignSelf: "flex-start" }}
+                        onClick={() => {
+                            showingSideBarSet(true)
+                        }}
+                    >
+                        <svg style={{ fill: "rgb(var(--shade1))", width: "1.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" /></svg>
+                    </button>
+                )}
 
-                    {activeScreen !== undefined ? (
-                        <>
-                            {activeScreen === "checklistStarters" && (
-                                <>
-                                    <AddResourceButton
-                                        adding={adding}
-                                        addingSet={addingSet}
-                                        keyName={activeScreen}
-                                    />
+                {activeScreen !== undefined ? (
+                    <>
+                        {activeScreen === "checklistStarters" && (
+                            <>
+                                <AddResourceButton
+                                    adding={adding}
+                                    addingSet={addingSet}
+                                    keyName={activeScreen}
+                                />
 
-                                    {adding.checklistStarters === true && (
-                                        <AddEditChecklistStarter
-                                            submissionAction={() => {
-                                                loadStarterValues(activeScreen, { type: "all" })
-                                            }}
-                                        />
-                                    )}
-
-                                    <Search
-                                        searchObj={checklistStartersSearchObj}
-                                        searchObjSet={checklistStartersSearchObjSet}
-                                        searchFunction={async () => {
-                                            loadStarterValues(activeScreen, { type: "all" }, false)
+                                {adding.checklistStarters === true && (
+                                    <AddEditChecklistStarter
+                                        submissionAction={() => {
+                                            loadStarterValues(activeScreen, { type: "all" })
                                         }}
                                     />
+                                )}
 
-                                    {checklistStartersSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {checklistStartersSearchObj.searchItems.map(eachCheckliststarter => {
+                                <Search
+                                    searchObj={checklistStartersSearchObj}
+                                    searchObjSet={checklistStartersSearchObjSet}
+                                    searchFunc={async () => {
+                                        return loadStarterValues<checklistStarter>(activeScreen, { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
 
-                                                return (
-                                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                        <h3>{eachCheckliststarter.type}</h3>
+                                {checklistStartersSearchObj.searchItems.length > 0 && (
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                        {checklistStartersSearchObj.searchItems.map(eachCheckliststarter => {
 
-                                                        <EditResourceButton
-                                                            editing={editing}
-                                                            editingSet={editingSet}
-                                                            keyName={activeScreen}
-                                                            eachObj={eachCheckliststarter}
-                                                        />
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
+                                            return (
+                                                <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <h3>{eachCheckliststarter.type}</h3>
 
-                                    {editing.checklistStarters !== undefined && (
-                                        <>
-                                            <h3>Edit form:</h3>
+                                                    <EditResourceButton
+                                                        editing={editing}
+                                                        editingSet={editingSet}
+                                                        keyName={activeScreen}
+                                                        eachObj={eachCheckliststarter}
+                                                    />
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
 
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                <AddEditChecklistStarter
-                                                    sentChecklistStarter={editing.checklistStarters}
-                                                    submissionAction={() => {
-                                                        if (editing.checklistStarters === undefined) return
+                                {editing.checklistStarters !== undefined && (
+                                    <>
+                                        <h3>Edit form:</h3>
 
-                                                        loadStarterValues(activeScreen, { type: "specific", id: editing.checklistStarters.id })
-                                                    }}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-
-                            {activeScreen === "clientRequests" && (
-                                <>
-                                    <AddResourceButton
-                                        adding={adding}
-                                        addingSet={addingSet}
-                                        keyName={activeScreen}
-                                    />
-
-                                    {adding.clientRequests === true && (
-                                        <>
-                                            <AddEditClientRequest
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                            <AddEditChecklistStarter
+                                                sentChecklistStarter={editing.checklistStarters}
                                                 submissionAction={() => {
-                                                    loadStarterValues(activeScreen, { type: "all" })
+                                                    if (editing.checklistStarters === undefined) return
+
+                                                    loadStarterValues(activeScreen, { type: "specific", id: editing.checklistStarters.id })
                                                 }}
                                             />
-                                        </>
-                                    )}
+                                        </div>
+                                    </>
+                                )}
+                            </>
+                        )}
 
-                                    <Search
-                                        searchObj={clientRequestsSearchObj}
-                                        searchObjSet={clientRequestsSearchObjSet}
-                                        searchFunction={async () => {
-                                            await loadStarterValues(activeScreen, { type: "all" }, false)
+                        {activeScreen === "clientRequests" && (
+                            <>
+                                <AddResourceButton
+                                    adding={adding}
+                                    addingSet={addingSet}
+                                    keyName={activeScreen}
+                                />
+
+                                {adding.clientRequests === true && (
+                                    <>
+                                        <AddEditClientRequest
+                                            submissionAction={() => {
+                                                loadStarterValues(activeScreen, { type: "all" })
+                                            }}
+                                        />
+                                    </>
+                                )}
+
+                                <Search
+                                    searchObj={clientRequestsSearchObj}
+                                    searchObjSet={clientRequestsSearchObjSet}
+                                    searchFunc={async () => {
+                                        return await loadStarterValues<clientRequest>(activeScreen, { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
+
+                                {clientRequestsSearchObj.searchItems.length > 0 && (
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(400px, 90%)", overflow: "auto" }} className='snap'>
+                                        {clientRequestsSearchObj.searchItems.map(eachClientRequest => {
+                                            if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
+
+                                            return (
+                                                <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "rgb(var(--color3))" }}
+                                                    eachClientRequest={eachClientRequest}
+                                                    editButtonComp={(
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachClientRequest}
+                                                        />
+                                                    )}
+                                                />
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
+                                {editing.clientRequests !== undefined && (
+                                    <>
+                                        <h3>Edit form:</h3>
+
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                            <AddEditClientRequest
+                                                sentClientRequest={editing.clientRequests}
+                                                submissionAction={() => {
+                                                    if (editing.clientRequests === undefined) return
+
+                                                    loadStarterValues(activeScreen, { type: "specific", id: editing.clientRequests.id })
+                                                }}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                            </>
+                        )}
+
+                        {activeScreen === "companies" && (
+                            <>
+                                <AddResourceButton
+                                    adding={adding}
+                                    addingSet={addingSet}
+                                    keyName={activeScreen}
+                                />
+
+                                {adding.companies && (
+                                    <AddEditCompany
+                                        submissionAction={() => {
+                                            loadStarterValues(activeScreen, { type: "all" })
                                         }}
                                     />
+                                )}
 
-                                    {clientRequestsSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(400px, 90%)", overflow: "auto" }} className='snap'>
-                                            {clientRequestsSearchObj.searchItems.map(eachClientRequest => {
-                                                if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
+                                <Search
+                                    searchObj={companiesSearchObj}
+                                    searchObjSet={companiesSearchObjSet}
+                                    searchFunc={async () => {
+                                        return await loadStarterValues<company>(activeScreen, { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
 
-                                                return (
-                                                    <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "rgb(var(--color3))" }}
-                                                        eachClientRequest={eachClientRequest}
-                                                        editButtonComp={(
-                                                            <EditResourceButton
-                                                                editing={editing}
-                                                                editingSet={editingSet}
-                                                                keyName={activeScreen}
-                                                                eachObj={eachClientRequest}
-                                                            />
-                                                        )}
+                                {companiesSearchObj.searchItems.length > 0 && (
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                        {companiesSearchObj.searchItems.map(eachCompany => {
+                                            return (
+                                                <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                    <h3>{eachCompany.name}</h3>
+
+                                                    <Link href={`companies/edit/${eachCompany.id}`} target='_blank'>
+                                                        <button className='button1'>edit company</button>
+                                                    </Link>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {activeScreen === "departments" && (
+                            <>
+                                <AddResourceButton
+                                    adding={adding}
+                                    addingSet={addingSet}
+                                    keyName={activeScreen}
+                                />
+
+                                {adding.departments && (
+                                    <AddEditDepartment
+                                        submissionAction={() => {
+                                            loadStarterValues(activeScreen, { type: "all" })
+                                        }}
+                                    />
+                                )}
+
+                                <Search
+                                    searchObj={departmentsSearchObj}
+                                    searchObjSet={departmentsSearchObjSet}
+                                    searchFunc={async () => {
+                                        return await loadStarterValues<department>(activeScreen, { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
+
+                                {departmentsSearchObj.searchItems.length > 0 && (
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                        {departmentsSearchObj.searchItems.map(eachDepartment => {
+                                            return (
+                                                <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                    <h3>{eachDepartment.name}</h3>
+
+                                                    <Link href={`departments/edit/${eachDepartment.id}`} target='_blank'>
+                                                        <button className='button1'>edit department</button>
+                                                    </Link>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {activeScreen === "tapes" && (
+                            <>
+                                <AddResourceButton
+                                    adding={adding}
+                                    addingSet={addingSet}
+                                    keyName={activeScreen}
+                                />
+
+                                {adding.tapes && (
+                                    <AddEditTape
+                                        submissionAction={() => {
+                                            loadStarterValues(activeScreen, { type: "all" })
+                                        }}
+                                    />
+                                )}
+
+                                <Search
+                                    searchObj={tapesSearchObj}
+                                    searchObjSet={tapesSearchObjSet}
+                                    searchFunc={async () => {
+                                        return await loadStarterValues<tape>(activeScreen, { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
+
+                                {tapesSearchObj.searchItems.length > 0 && (
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                        {tapesSearchObj.searchItems.map(eachTape => {
+                                            if (eachTape.company === undefined) return null
+
+                                            return (
+                                                <div key={eachTape.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <h3>{eachTape.mediaLabel}</h3>
+
+                                                    <h3>{eachTape.company.name}</h3>
+
+                                                    <EditResourceButton
+                                                        editing={editing}
+                                                        editingSet={editingSet}
+                                                        keyName={activeScreen}
+                                                        eachObj={eachTape}
                                                     />
-                                                )
-                                            })}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
+                                {editing.tapes !== undefined && (
+                                    <>
+                                        <h3>Edit form:</h3>
+
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                            <AddEditTape
+                                                sentTape={editing.tapes}
+                                                submissionAction={() => {
+                                                    if (editing.tapes === undefined) return
+
+                                                    loadStarterValues(activeScreen, { type: "specific", id: editing.tapes.id })
+                                                }}
+                                            />
                                         </div>
-                                    )}
+                                    </>
+                                )}
+                            </>
+                        )}
 
-                                    {editing.clientRequests !== undefined && (
-                                        <>
-                                            <h3>Edit form:</h3>
+                        {activeScreen === "equipment" && (
+                            <>
+                                <AddResourceButton
+                                    adding={adding}
+                                    addingSet={addingSet}
+                                    keyName={activeScreen}
+                                />
 
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                <AddEditClientRequest
-                                                    sentClientRequest={editing.clientRequests}
-                                                    submissionAction={() => {
-                                                        if (editing.clientRequests === undefined) return
-
-                                                        loadStarterValues(activeScreen, { type: "specific", id: editing.clientRequests.id })
-                                                    }}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-
-                            {activeScreen === "companies" && (
-                                <>
-                                    <AddResourceButton
-                                        adding={adding}
-                                        addingSet={addingSet}
-                                        keyName={activeScreen}
-                                    />
-
-                                    {adding.companies && (
-                                        <AddEditCompany
-                                            submissionAction={() => {
-                                                loadStarterValues(activeScreen, { type: "all" })
-                                            }}
-                                        />
-                                    )}
-
-                                    <Search
-                                        searchObj={companiesSearchObj}
-                                        searchObjSet={companiesSearchObjSet}
-                                        searchFunction={async () => {
-                                            await loadStarterValues(activeScreen, { type: "all" }, false)
+                                {adding.equipment && (
+                                    <AddEditEquipment
+                                        submissionAction={() => {
+                                            loadStarterValues(activeScreen, { type: "all" })
                                         }}
                                     />
+                                )}
 
-                                    {companiesSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {companiesSearchObj.searchItems.map(eachCompany => {
-                                                return (
-                                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                        <h3>{eachCompany.name}</h3>
+                                <Search
+                                    searchObj={equipmentSearchObj}
+                                    searchObjSet={equipmentSearchObjSet}
+                                    searchFunc={async () => {
+                                        return await loadStarterValues<equipmentT>(activeScreen, { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
 
-                                                        <Link href={`companies/edit/${eachCompany.id}`} target='_blank'>
-                                                            <button className='button1'>edit company</button>
-                                                        </Link>
-                                                    </div>
-                                                )
-                                            })}
+                                {equipmentSearchObj.searchItems.length > 0 && (
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                        {equipmentSearchObj.searchItems.map(eachEquipment => {
+                                            if (eachEquipment.company === undefined) return null
+
+                                            return (
+                                                <div key={eachEquipment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <h3>{eachEquipment.makeModel}</h3>
+
+                                                    <h3>{eachEquipment.company.name}</h3>
+
+                                                    <EditResourceButton
+                                                        editing={editing}
+                                                        editingSet={editingSet}
+                                                        keyName={activeScreen}
+                                                        eachObj={eachEquipment}
+                                                    />
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
+                                {editing.equipment !== undefined && (
+                                    <>
+                                        <h3>Edit form:</h3>
+
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                            <AddEditEquipment
+                                                sentEquipment={editing.equipment}
+                                                submissionAction={() => {
+                                                    if (editing.equipment === undefined) return
+
+                                                    loadStarterValues(activeScreen, { type: "specific", id: editing.equipment.id })
+                                                }}
+                                            />
                                         </div>
-                                    )}
-                                </>
-                            )}
+                                    </>
+                                )}
+                            </>
+                        )}
 
-                            {activeScreen === "departments" && (
-                                <>
-                                    <AddResourceButton
-                                        adding={adding}
-                                        addingSet={addingSet}
-                                        keyName={activeScreen}
-                                    />
+                        {activeScreen === "users" && (
+                            <>
+                                <AddResourceButton
+                                    adding={adding}
+                                    addingSet={addingSet}
+                                    keyName={activeScreen}
+                                />
 
-                                    {adding.departments && (
-                                        <AddEditDepartment
-                                            submissionAction={() => {
-                                                loadStarterValues(activeScreen, { type: "all" })
-                                            }}
-                                        />
-                                    )}
-
-                                    <Search
-                                        searchObj={departmentsSearchObj}
-                                        searchObjSet={departmentsSearchObjSet}
-                                        searchFunction={async () => {
-                                            await loadStarterValues(activeScreen, { type: "all" }, false)
+                                {adding.users && (
+                                    <AddEditUser
+                                        submissionAction={() => {
+                                            loadStarterValues(activeScreen, { type: "all" })
                                         }}
                                     />
+                                )}
 
-                                    {departmentsSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {departmentsSearchObj.searchItems.map(eachDepartment => {
-                                                return (
-                                                    <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                        <h3>{eachDepartment.name}</h3>
+                                <label>search users by name</label>
 
-                                                        <Link href={`departments/edit/${eachDepartment.id}`} target='_blank'>
-                                                            <button className='button1'>edit department</button>
-                                                        </Link>
-                                                    </div>
-                                                )
-                                            })}
+                                <input type='text' placeholder='enter name to search' defaultValue={""}
+                                    onChange={async (e) => {
+                                        try {
+                                            if (searchDebounce.current) clearTimeout(searchDebounce.current)
+
+                                            searchDebounce.current = setTimeout(async () => {
+                                                if (e.target.value === "") return
+
+                                                toast.success("searching")
+
+                                                const seenUsers = await getUsers({ type: "name", name: e.target.value })
+
+                                                usersSearchObjSet(prevUsersSearchObj => {
+                                                    const newUsersSearchObj = { ...prevUsersSearchObj }
+
+                                                    newUsersSearchObj.searchItems = seenUsers
+
+                                                    return newUsersSearchObj
+                                                })
+                                            }, 1000);
+
+                                        } catch (error) {
+                                            consoleAndToastError(error)
+                                        }
+                                    }}
+                                />
+
+                                <label>search all</label>
+
+                                <Search
+                                    searchObj={usersSearchObj}
+                                    searchObjSet={usersSearchObjSet}
+                                    searchFunc={async () => {
+                                        return await loadStarterValues<user>(activeScreen, { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
+
+                                {usersSearchObj.searchItems.length > 0 && (
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                        {usersSearchObj.searchItems.map(eachUser => {
+
+                                            return (
+                                                <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <h3>{eachUser.name}</h3>
+
+                                                    <EditResourceButton
+                                                        editing={editing}
+                                                        editingSet={editingSet}
+                                                        keyName={activeScreen}
+                                                        eachObj={eachUser}
+                                                    />
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
+                                {editing.users !== undefined && (
+                                    <>
+                                        <h3>Edit form:</h3>
+
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                            <AddEditUser
+                                                sentUser={editing.users}
+                                                submissionAction={() => {
+                                                    if (editing.users === undefined) return
+
+                                                    loadStarterValues(activeScreen, { type: "specific", id: editing.users.id })
+                                                }}
+                                            />
                                         </div>
-                                    )}
-                                </>
-                            )}
+                                    </>
+                                )}
+                            </>
+                        )}
 
-                            {activeScreen === "tapes" && (
-                                <>
-                                    <AddResourceButton
-                                        adding={adding}
-                                        addingSet={addingSet}
-                                        keyName={activeScreen}
-                                    />
+                        {activeScreen === "usersToDepartments" && (
+                            <>
+                                <AddResourceButton
+                                    adding={adding}
+                                    addingSet={addingSet}
+                                    keyName={activeScreen}
+                                />
 
-                                    {adding.tapes && (
-                                        <AddEditTape
-                                            submissionAction={() => {
-                                                loadStarterValues(activeScreen, { type: "all" })
-                                            }}
-                                        />
-                                    )}
-
-                                    <Search
-                                        searchObj={tapesSearchObj}
-                                        searchObjSet={tapesSearchObjSet}
-                                        searchFunction={async () => {
-                                            await loadStarterValues(activeScreen, { type: "all" }, false)
+                                {adding.usersToDepartments === true && (
+                                    <AddEditUserDepartment departmentsStarter={departmentsSearchObj.searchItems}
+                                        submissionAction={() => {
+                                            loadStarterValues(activeScreen, { type: "all" })
                                         }}
                                     />
+                                )}
 
-                                    {tapesSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {tapesSearchObj.searchItems.map(eachTape => {
-                                                if (eachTape.company === undefined) return null
+                                <h3>search by department</h3>
 
-                                                return (
-                                                    <div key={eachTape.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                        <h3>{eachTape.mediaLabel}</h3>
+                                <Search
+                                    searchObj={departmentsSearchObj}
+                                    searchObjSet={departmentsSearchObjSet}
+                                    searchFunc={async () => {
+                                        return await loadStarterValues<department>("departments", { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
 
-                                                        <h3>{eachTape.company.name}</h3>
+                                {departmentsSearchObj.searchItems.length > 0 && (
+                                    <>
+                                        <h3>department selection</h3>
 
-                                                        <EditResourceButton
-                                                            editing={editing}
-                                                            editingSet={editingSet}
-                                                            keyName={activeScreen}
-                                                            eachObj={eachTape}
-                                                        />
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
-
-                                    {editing.tapes !== undefined && (
-                                        <>
-                                            <h3>Edit form:</h3>
-
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                <AddEditTape
-                                                    sentTape={editing.tapes}
-                                                    submissionAction={() => {
-                                                        if (editing.tapes === undefined) return
-
-                                                        loadStarterValues(activeScreen, { type: "specific", id: editing.tapes.id })
-                                                    }}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-
-                            {activeScreen === "equipment" && (
-                                <>
-                                    <AddResourceButton
-                                        adding={adding}
-                                        addingSet={addingSet}
-                                        keyName={activeScreen}
-                                    />
-
-                                    {adding.equipment && (
-                                        <AddEditEquipment
-                                            submissionAction={() => {
-                                                loadStarterValues(activeScreen, { type: "all" })
-                                            }}
-                                        />
-                                    )}
-
-                                    <Search
-                                        searchObj={equipmentSearchObj}
-                                        searchObjSet={equipmentSearchObjSet}
-                                        searchFunction={async () => {
-                                            await loadStarterValues(activeScreen, { type: "all" }, false)
-                                        }}
-                                    />
-
-                                    {equipmentSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {equipmentSearchObj.searchItems.map(eachEquipment => {
-                                                if (eachEquipment.company === undefined) return null
-
-                                                return (
-                                                    <div key={eachEquipment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                        <h3>{eachEquipment.makeModel}</h3>
-
-                                                        <h3>{eachEquipment.company.name}</h3>
-
-                                                        <EditResourceButton
-                                                            editing={editing}
-                                                            editingSet={editingSet}
-                                                            keyName={activeScreen}
-                                                            eachObj={eachEquipment}
-                                                        />
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
-
-                                    {editing.equipment !== undefined && (
-                                        <>
-                                            <h3>Edit form:</h3>
-
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                <AddEditEquipment
-                                                    sentEquipment={editing.equipment}
-                                                    submissionAction={() => {
-                                                        if (editing.equipment === undefined) return
-
-                                                        loadStarterValues(activeScreen, { type: "specific", id: editing.equipment.id })
-                                                    }}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-
-                            {activeScreen === "users" && (
-                                <>
-                                    <AddResourceButton
-                                        adding={adding}
-                                        addingSet={addingSet}
-                                        keyName={activeScreen}
-                                    />
-
-                                    {adding.users && (
-                                        <AddEditUser
-                                            submissionAction={() => {
-                                                loadStarterValues(activeScreen, { type: "all" })
-                                            }}
-                                        />
-                                    )}
-
-                                    <label>search users by name</label>
-
-                                    <input type='text' placeholder='enter name to search' defaultValue={""}
-                                        onChange={async (e) => {
-                                            try {
-                                                if (searchDebounce.current) clearTimeout(searchDebounce.current)
-
-                                                searchDebounce.current = setTimeout(async () => {
-                                                    if (e.target.value === "") return
-
+                                        <select defaultValue={""}
+                                            onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
+                                                try {
+                                                    if (event.target.value === "") return
                                                     toast.success("searching")
 
-                                                    const seenUsers = await getUsers({ type: "name", name: e.target.value })
+                                                    const eachDepartmentId = event.target.value as department["id"]
 
-                                                    usersSearchObjSet(prevUsersSearchObj => {
-                                                        const newUsersSearchObj = { ...prevUsersSearchObj }
+                                                    const seenUsersToDepartments = await getUsersToDepartments({ type: "department", departmentId: eachDepartmentId })
 
-                                                        newUsersSearchObj.searchItems = seenUsers
+                                                    //search latest usersToDepartments
+                                                    usersToDepartmentsSearchObjSet(prevUsersToDepartmentsSearchObj => {
+                                                        const newUsersToDepartmentsSearchObj = { ...prevUsersToDepartmentsSearchObj }
 
-                                                        return newUsersSearchObj
+                                                        newUsersToDepartmentsSearchObj.searchItems = seenUsersToDepartments
+
+                                                        return newUsersToDepartmentsSearchObj
                                                     })
-                                                }, 1000);
 
-                                            } catch (error) {
-                                                consoleAndToastError(error)
-                                            }
-                                        }}
-                                    />
-
-                                    <label>search all</label>
-
-                                    <Search
-                                        searchObj={usersSearchObj}
-                                        searchObjSet={usersSearchObjSet}
-                                        searchFunction={async () => {
-                                            await loadStarterValues(activeScreen, { type: "all" }, false)
-                                        }}
-                                    />
-
-                                    {usersSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {usersSearchObj.searchItems.map(eachUser => {
-
-                                                return (
-                                                    <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                        <h3>{eachUser.name}</h3>
-
-                                                        <EditResourceButton
-                                                            editing={editing}
-                                                            editingSet={editingSet}
-                                                            keyName={activeScreen}
-                                                            eachObj={eachUser}
-                                                        />
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
-
-                                    {editing.users !== undefined && (
-                                        <>
-                                            <h3>Edit form:</h3>
-
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                <AddEditUser
-                                                    sentUser={editing.users}
-                                                    submissionAction={() => {
-                                                        if (editing.users === undefined) return
-
-                                                        loadStarterValues(activeScreen, { type: "specific", id: editing.users.id })
-                                                    }}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-
-                            {activeScreen === "usersToDepartments" && (
-                                <>
-                                    <AddResourceButton
-                                        adding={adding}
-                                        addingSet={addingSet}
-                                        keyName={activeScreen}
-                                    />
-
-                                    {adding.usersToDepartments === true && (
-                                        <AddEditUserDepartment departmentsStarter={departmentsSearchObj.searchItems}
-                                            submissionAction={() => {
-                                                loadStarterValues(activeScreen, { type: "all" })
+                                                } catch (error) {
+                                                    consoleAndToastError(error)
+                                                }
                                             }}
-                                        />
-                                    )}
+                                        >
+                                            <option value={""}
+                                            >select</option>
 
-                                    <h3>search by department</h3>
-
-                                    <Search
-                                        searchLabel='search departments'
-                                        searchObj={departmentsSearchObj}
-                                        searchObjSet={departmentsSearchObjSet}
-                                        searchFunction={async () => {
-                                            await loadStarterValues("departments", { type: "all" }, false)
-                                        }}
-                                    />
-
-                                    {departmentsSearchObj.searchItems.length > 0 && (
-                                        <>
-                                            <h3>department selection</h3>
-
-                                            <select defaultValue={""}
-                                                onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
-                                                    try {
-                                                        if (event.target.value === "") return
-                                                        toast.success("searching")
-
-                                                        const eachDepartmentId = event.target.value as department["id"]
-
-                                                        const seenUsersToDepartments = await getUsersToDepartments({ type: "department", departmentId: eachDepartmentId })
-
-                                                        //search latest usersToDepartments
-                                                        usersToDepartmentsSearchObjSet(prevUsersToDepartmentsSearchObj => {
-                                                            const newUsersToDepartmentsSearchObj = { ...prevUsersToDepartmentsSearchObj }
-
-                                                            newUsersToDepartmentsSearchObj.searchItems = seenUsersToDepartments
-
-                                                            return newUsersToDepartmentsSearchObj
-                                                        })
-
-                                                    } catch (error) {
-                                                        consoleAndToastError(error)
-                                                    }
-                                                }}
-                                            >
-                                                <option value={""}
-                                                >select</option>
-
-                                                {departmentsSearchObj.searchItems.map(eachDepartment => {
-
-                                                    return (
-                                                        <option key={eachDepartment.id} value={eachDepartment.id}
-                                                        >{eachDepartment.name}</option>
-                                                    )
-                                                })}
-                                            </select>
-                                        </>
-                                    )}
-
-                                    <h3>search all</h3>
-
-                                    <Search
-                                        searchObj={usersToDepartmentsSearchObj}
-                                        searchObjSet={usersToDepartmentsSearchObjSet}
-                                        searchFunction={async () => {
-                                            await loadStarterValues(activeScreen, { type: "all" }, false)
-                                        }}
-                                    />
-
-                                    {usersToDepartmentsSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {usersToDepartmentsSearchObj.searchItems.map(eachUserToDepartment => {
-                                                if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
+                                            {departmentsSearchObj.searchItems.map(eachDepartment => {
 
                                                 return (
-                                                    <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                        <h3>{eachUserToDepartment.user.name}</h3>
-
-                                                        <h3>{eachUserToDepartment.department.name}</h3>
-
-                                                        <EditResourceButton
-                                                            editing={editing}
-                                                            editingSet={editingSet}
-                                                            keyName={activeScreen}
-                                                            eachObj={eachUserToDepartment}
-                                                        />
-                                                    </div>
+                                                    <option key={eachDepartment.id} value={eachDepartment.id}
+                                                    >{eachDepartment.name}</option>
                                                 )
                                             })}
+                                        </select>
+                                    </>
+                                )}
+
+                                <h3>search all</h3>
+
+                                <Search
+                                    searchObj={usersToDepartmentsSearchObj}
+                                    searchObjSet={usersToDepartmentsSearchObjSet}
+                                    searchFunc={async () => {
+                                        return await loadStarterValues<userToDepartment>(activeScreen, { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
+
+                                {usersToDepartmentsSearchObj.searchItems.length > 0 && (
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                        {usersToDepartmentsSearchObj.searchItems.map(eachUserToDepartment => {
+                                            if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
+
+                                            return (
+                                                <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <h3>{eachUserToDepartment.user.name}</h3>
+
+                                                    <h3>{eachUserToDepartment.department.name}</h3>
+
+                                                    <EditResourceButton
+                                                        editing={editing}
+                                                        editingSet={editingSet}
+                                                        keyName={activeScreen}
+                                                        eachObj={eachUserToDepartment}
+                                                    />
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
+                                {editing.usersToDepartments !== undefined && (
+                                    <>
+                                        <h3>Edit form:</h3>
+
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                            <AddEditUserDepartment
+                                                sentUserDepartment={editing.usersToDepartments}
+                                                departmentsStarter={departmentsSearchObj.searchItems}
+                                                submissionAction={() => {
+                                                    if (editing.usersToDepartments === undefined) return
+
+                                                    loadStarterValues(activeScreen, { type: "specific", id: editing.usersToDepartments.id })
+                                                }}
+                                            />
                                         </div>
-                                    )}
+                                    </>
+                                )}
+                            </>
+                        )}
 
-                                    {editing.usersToDepartments !== undefined && (
-                                        <>
-                                            <h3>Edit form:</h3>
+                        {activeScreen === "usersToCompanies" && (
+                            <>
+                                <AddResourceButton
+                                    adding={adding}
+                                    addingSet={addingSet}
+                                    keyName={activeScreen}
+                                />
 
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                <AddEditUserDepartment
-                                                    sentUserDepartment={editing.usersToDepartments}
-                                                    departmentsStarter={departmentsSearchObj.searchItems}
-                                                    submissionAction={() => {
-                                                        if (editing.usersToDepartments === undefined) return
-
-                                                        loadStarterValues(activeScreen, { type: "specific", id: editing.usersToDepartments.id })
-                                                    }}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-
-                            {activeScreen === "usersToCompanies" && (
-                                <>
-                                    <AddResourceButton
-                                        adding={adding}
-                                        addingSet={addingSet}
-                                        keyName={activeScreen}
+                                {adding.usersToCompanies === true && (
+                                    <AddEditUserCompany companiesStarter={companiesSearchObj.searchItems}
+                                        submissionAction={() => {
+                                            loadStarterValues(activeScreen, { type: "all" })
+                                        }}
                                     />
+                                )}
 
-                                    {adding.usersToCompanies === true && (
-                                        <AddEditUserCompany companiesStarter={companiesSearchObj.searchItems}
-                                            submissionAction={() => {
-                                                loadStarterValues(activeScreen, { type: "all" })
+                                <h3>search by company</h3>
+
+                                <Search
+                                    searchObj={companiesSearchObj}
+                                    searchObjSet={companiesSearchObjSet}
+                                    searchFunc={async () => {
+                                        if (resourceAuth === undefined) throw new Error("not seeing auth")
+                                        return await loadStarterValues<company>("companies", { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
+
+                                {companiesSearchObj.searchItems.length > 0 && (
+                                    <>
+                                        <h3>Select company to search</h3>
+
+                                        <select defaultValue={""}
+                                            onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
+                                                try {
+                                                    if (event.target.value === "") return
+                                                    toast.success("searching")
+
+                                                    const eachCompanyId = event.target.value as company["id"]
+
+                                                    const seenUsersToCompanies = await getUsersToCompanies({ type: "company", companyId: eachCompanyId })
+
+                                                    //search latest usersToCompanies
+                                                    usersToCompaniesSearchObjSet(prevUsersToCompaniesSearchObj => {
+                                                        const newUsersToCompaniesSearchObj = { ...prevUsersToCompaniesSearchObj }
+
+                                                        newUsersToCompaniesSearchObj.searchItems = seenUsersToCompanies
+
+                                                        return newUsersToCompaniesSearchObj
+                                                    })
+
+                                                } catch (error) {
+                                                    consoleAndToastError(error)
+                                                }
                                             }}
-                                        />
-                                    )}
+                                        >
+                                            <option value={""}
+                                            >select</option>
 
-                                    <h3>search by company</h3>
-
-                                    <Search
-                                        searchObj={companiesSearchObj}
-                                        searchObjSet={companiesSearchObjSet}
-                                        searchFunction={async () => {
-                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
-                                            await loadStarterValues("companies", { type: "all" }, false)
-                                        }}
-                                    />
-
-                                    {companiesSearchObj.searchItems.length > 0 && (
-                                        <>
-                                            <h3>Select company to search</h3>
-
-                                            <select defaultValue={""}
-                                                onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
-                                                    try {
-                                                        if (event.target.value === "") return
-                                                        toast.success("searching")
-
-                                                        const eachCompanyId = event.target.value as company["id"]
-
-                                                        const seenUsersToCompanies = await getUsersToCompanies({ type: "company", companyId: eachCompanyId })
-
-                                                        //search latest usersToCompanies
-                                                        usersToCompaniesSearchObjSet(prevUsersToCompaniesSearchObj => {
-                                                            const newUsersToCompaniesSearchObj = { ...prevUsersToCompaniesSearchObj }
-
-                                                            newUsersToCompaniesSearchObj.searchItems = seenUsersToCompanies
-
-                                                            return newUsersToCompaniesSearchObj
-                                                        })
-
-                                                    } catch (error) {
-                                                        consoleAndToastError(error)
-                                                    }
-                                                }}
-                                            >
-                                                <option value={""}
-                                                >select</option>
-
-                                                {companiesSearchObj.searchItems.map(eachCompany => {
-                                                    return (
-                                                        <option key={eachCompany.id} value={eachCompany.id}
-                                                        >{eachCompany.name}</option>
-                                                    )
-                                                })}
-                                            </select>
-                                        </>
-                                    )}
-
-                                    <h3>search all</h3>
-
-                                    <Search
-                                        searchObj={usersToCompaniesSearchObj}
-                                        searchObjSet={usersToCompaniesSearchObjSet}
-                                        searchFunction={async () => {
-                                            await loadStarterValues(activeScreen, { type: "all" }, false)
-                                        }}
-                                    />
-
-                                    {usersToCompaniesSearchObj.searchItems.length > 0 && (
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                            {usersToCompaniesSearchObj.searchItems.map(eachUserToCompany => {
-                                                if (eachUserToCompany.user === undefined || eachUserToCompany.company === undefined) return null
-
+                                            {companiesSearchObj.searchItems.map(eachCompany => {
                                                 return (
-                                                    <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                        <h3>{eachUserToCompany.user.name}</h3>
-
-                                                        <h3>{eachUserToCompany.company.name}</h3>
-
-                                                        <EditResourceButton
-                                                            editing={editing}
-                                                            editingSet={editingSet}
-                                                            keyName={activeScreen}
-                                                            eachObj={eachUserToCompany}
-                                                        />
-                                                    </div>
+                                                    <option key={eachCompany.id} value={eachCompany.id}
+                                                    >{eachCompany.name}</option>
                                                 )
                                             })}
+                                        </select>
+                                    </>
+                                )}
+
+                                <h3>search all</h3>
+
+                                <Search
+                                    searchObj={usersToCompaniesSearchObj}
+                                    searchObjSet={usersToCompaniesSearchObjSet}
+                                    searchFunc={async () => {
+                                        return await loadStarterValues<userToCompany>(activeScreen, { type: "all" }, false)
+                                    }}
+                                    showPage={true}
+                                    handleResults={false}
+                                />
+
+                                {usersToCompaniesSearchObj.searchItems.length > 0 && (
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                        {usersToCompaniesSearchObj.searchItems.map(eachUserToCompany => {
+                                            if (eachUserToCompany.user === undefined || eachUserToCompany.company === undefined) return null
+
+                                            return (
+                                                <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <h3>{eachUserToCompany.user.name}</h3>
+
+                                                    <h3>{eachUserToCompany.company.name}</h3>
+
+                                                    <EditResourceButton
+                                                        editing={editing}
+                                                        editingSet={editingSet}
+                                                        keyName={activeScreen}
+                                                        eachObj={eachUserToCompany}
+                                                    />
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
+                                {editing.usersToCompanies !== undefined && (
+                                    <>
+                                        <h3>Edit form:</h3>
+
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                            <AddEditUserCompany
+                                                sentUserCompany={editing.usersToCompanies}
+                                                companiesStarter={companiesSearchObj.searchItems}
+                                                submissionAction={() => {
+                                                    if (editing.usersToCompanies === undefined) return
+
+                                                    loadStarterValues(activeScreen, { type: "specific", id: editing.usersToCompanies.id })
+                                                }}
+                                            />
                                         </div>
-                                    )}
-
-                                    {editing.usersToCompanies !== undefined && (
-                                        <>
-                                            <h3>Edit form:</h3>
-
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                                                <AddEditUserCompany
-                                                    sentUserCompany={editing.usersToCompanies}
-                                                    companiesStarter={companiesSearchObj.searchItems}
-                                                    submissionAction={() => {
-                                                        if (editing.usersToCompanies === undefined) return
-
-                                                        loadStarterValues(activeScreen, { type: "specific", id: editing.usersToCompanies.id })
-                                                    }}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        <h3>Choose a screen</h3>
-                    )}
-                </div>
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </>
+                ) : (
+                    <h3>Choose a screen</h3>
+                )}
             </div>
         </main>
     )

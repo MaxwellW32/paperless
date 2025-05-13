@@ -3,16 +3,17 @@
     justify-content: space-between;
     white-space: nowrap;
     text-transform: capitalize;
-    padding-inline: .5rem;
     align-items: center;
     z-index: 999;
     position: relative;
     border-bottom: 1px solid rgb(var(--shade1));
+    padding-inline: .5rem;
 }
 
 .menu {
     display: flex;
     gap: 1rem;
+    padding-block: .5rem;
 }
 
 .menuItem {

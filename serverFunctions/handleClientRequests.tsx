@@ -1,8 +1,8 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { checklistItemType, clientRequest, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, resourceAuthType, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
-import { eq, and, ne, desc } from "drizzle-orm"
+import { checklistItemType, clientRequest, clientRequestFilterType, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, resourceAuthType, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { eq, and, ne, desc, SQLWrapper } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
 import { ensureCanAccessResource } from "./handleAuth"
 import { interpretAuthResponseAndError } from "@/utility/utility"
@@ -104,67 +104,124 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
     return result
 }
 
-export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] } | { type: "all" }, filter: { type: "status", status: clientRequestStatusType, getOppositeOfStatus: boolean } | { type: "date" }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequests(option: { type: "user" } | { type: "company" } | { type: "all" }, filter: clientRequestFilterType, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: "" }, resourceAuth, "ra")
     const { session } = interpretAuthResponseAndError(authResponse)
+
+    // Collect conditions dynamically
+    const whereClauses: SQLWrapper[] = []
+
+    if (filter.id !== undefined) {
+        whereClauses.push(eq(clientRequests.id, filter.id))
+    }
+
+    if (filter.userId !== undefined) {
+        whereClauses.push(eq(clientRequests.userId, filter.userId))
+    }
+
+    if (filter.companyId !== undefined) {
+        whereClauses.push(eq(clientRequests.companyId, filter.companyId))
+    }
+
+    if (filter.status !== undefined) {
+        whereClauses.push(filter.oppositeStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status))
+    }
 
     if (option.type === "user") {
         //security check
         if (session.user.accessLevel !== "admin") throw new Error("need to be admin")
-
-        //make sure you are that user
-        userSchema.shape.id.parse(option.userId)
-
-        const results = await db.query.clientRequests.findMany({
-            limit: limit,
-            offset: offset,
-            where: filter.type === "status" ? and(eq(clientRequests.userId, option.userId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
-            with: {
-                checklistStarter: true,
-                company: true
-            },
-            orderBy: [desc(clientRequests.dateSubmitted)],
-        });
-
-        return results
+        if (filter.userId === undefined) throw new Error("need to provide user id")
 
     } else if (option.type === "company") {
-        companySchema.shape.id.parse(option.companyId)
-
-        const results = await db.query.clientRequests.findMany({
-            limit: limit,
-            offset: offset,
-            where: filter.type === "status" ? and(eq(clientRequests.companyId, option.companyId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
-            with: {
-                checklistStarter: true,
-                company: true
-            },
-            orderBy: [desc(clientRequests.dateSubmitted)],
-        });
-
-        return results
+        if (filter.companyId === undefined) throw new Error("need to provide company id")
 
     } else if (option.type === "all") {
         //security check
         if (session.user.accessLevel !== "admin") throw new Error("need to be admin")
 
-        const results = await db.query.clientRequests.findMany({
-            limit: limit,
-            offset: offset,
-            where: filter.type === "status" ? filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status) : undefined,
-            with: {
-                checklistStarter: true,
-                company: true
-            },
-            orderBy: [desc(clientRequests.dateSubmitted)],
-        });
-
-        return results
-
     } else {
         throw new Error("invalid selection")
     }
+
+    const results = await db.query.clientRequests.findMany({
+        where: and(...whereClauses),
+        limit: limit,
+        offset: offset,
+        with: {
+            checklistStarter: true,
+            company: true
+        },
+        orderBy: [desc(clientRequests.dateSubmitted)],
+    });
+
+    return results
 }
+
+// export async function getClientRequests(option: { type: "user", userId: user["id"] } | { type: "company", companyId: company["id"] } | { type: "all" }, filter: { type: "status", status: clientRequestStatusType, getOppositeOfStatus: boolean } | { type: "date" }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
+//     const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: "" }, resourceAuth, "ra")
+//     const { session } = interpretAuthResponseAndError(authResponse)
+
+
+
+
+
+//     if (option.type === "user") {
+//         //security check
+//         if (session.user.accessLevel !== "admin") throw new Error("need to be admin")
+
+//         //make sure you are that user
+//         userSchema.shape.id.parse(option.userId)
+
+//         const results = await db.query.clientRequests.findMany({
+//             limit: limit,
+//             offset: offset,
+//             where: filter.type === "status" ? and(eq(clientRequests.userId, option.userId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
+//             with: {
+//                 checklistStarter: true,
+//                 company: true
+//             },
+//             orderBy: [desc(clientRequests.dateSubmitted)],
+//         });
+
+//         return results
+
+//     } else if (option.type === "company") {
+//         companySchema.shape.id.parse(option.companyId)
+
+//         const results = await db.query.clientRequests.findMany({
+//             limit: limit,
+//             offset: offset,
+//             where: filter.type === "status" ? and(eq(clientRequests.companyId, option.companyId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
+//             with: {
+//                 checklistStarter: true,
+//                 company: true
+//             },
+//             orderBy: [desc(clientRequests.dateSubmitted)],
+//         });
+
+//         return results
+
+//     } else if (option.type === "all") {
+//         //security check
+//         if (session.user.accessLevel !== "admin") throw new Error("need to be admin")
+
+//         const results = await db.query.clientRequests.findMany({
+//             limit: limit,
+//             offset: offset,
+//             where: filter.type === "status" ? filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status) : undefined,
+//             with: {
+//                 checklistStarter: true,
+//                 company: true
+//             },
+//             orderBy: [desc(clientRequests.dateSubmitted)],
+//         });
+
+//         return results
+
+//     } else {
+//         throw new Error("invalid selection")
+//     }
+// }
 
 export async function getClientRequestsForDepartments(status: clientRequestStatusType, getOppositeOfStatus: boolean, departmentId: department["id"], resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     //security check

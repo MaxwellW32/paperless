@@ -1,4 +1,4 @@
-import { authAccessLevelResponseType, baseDynamicFormType, checklistItemType, dateSchma, refreshObjType } from "@/types"
+import { authAccessLevelResponseType, baseDynamicFormType, dateSchma, refreshObjType } from "@/types"
 import { z } from "zod"
 
 export function deepClone<T>(object: T): T {

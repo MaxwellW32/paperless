@@ -134,14 +134,10 @@ export const baseDynamicFormInputArrSchema = z.object({
 });
 
 export type tapeFilterType = { id?: tape["id"], mediaLabel?: tape["mediaLabel"], companyId?: company["id"], tapeLocation?: tape["tapeLocation"], oppositeLocation?: boolean }
+export type clientRequestFilterType = { id?: clientRequest["id"], companyId?: company["id"], userId?: clientRequest["userId"], status?: clientRequest["status"], oppositeStatus?: boolean }
 export type equipmentFilterType = { id?: equipmentT["id"], makeModel?: equipmentT["makeModel"], serialNumber?: equipmentT["serialNumber"], companyId?: company["id"], equipmentLocation?: equipmentT["equipmentLocation"] }
 export type allFilterType = tapeFilterType | equipmentFilterType
 
-// export type tapeFilterType = { id?: filterObjType<tape["id"]>, mediaLabel?: filterObjType<tape["mediaLabel"]>, companyId?: filterObjType<company["id"]>, tapeLocation?: filterObjType<tape["tapeLocation"]>, oppositeLocation?: filterObjType<boolean> }
-// export type equipmentFilterType = {
-//     id?: filterObjType<equipmentT["id"]>, makeModel?: filterObjType<equipmentT["makeModel"]>, serialNumber?: filterObjType<equipmentT["serialNumber"]>, companyId?: filterObjType<company["id"]>, equipmentLocation?: filterObjType<equipmentT["equipmentLocation"]>
-// }
-// export type allFilterType = tapeFilterType | equipmentFilterType
 
 
 

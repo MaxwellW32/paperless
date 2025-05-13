@@ -12,7 +12,7 @@ import { resourceAuthGlobal } from '@/utility/globalState'
 import { company, resourceAuthType, searchObj, tape, tapeFormNewTapeSchema, tapeFormNewTapeType, tapeFormType } from '@/types'
 import { getInitialTapeData } from '@/components/tapes/getTapeData'
 import ShowMore from '@/components/showMore/ShowMore'
-import Search2 from '@/components/search/Search2'
+import Search from '@/components/search/Search'
 
 export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { seenForm: tapeFormType, handleFormUpdate: (updatedFormData: tapeFormType) => void, seenCompanyId: company["id"] }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -114,25 +114,18 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
                 label='search tapes'
                 content={
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                        <Search2
+                        <Search
                             searchObj={tapesSearchObj}
                             searchObjSet={tapesSearchObjSet}
-                            allSearchFunc={async () => {
-                                if (resourceAuth === undefined) throw new Error("no auth seen")
-
-                                return await getTapes({ tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", companyId: seenCompanyId }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
-                            }}
-                            specificSearchFunc={async seenFilters => {//adds on user applied filters
+                            searchFunc={async (seenFilters) => {
                                 if (resourceAuth === undefined) throw new Error("no auth seen")
 
                                 return await getTapes({ tapeLocation: formObj.type === "tapeDeposit" ? "with-client" : "in-vault", companyId: seenCompanyId, ...seenFilters }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
                             }}
                             showPage={true}
                             searchFilters={{
-                                filters: {
-                                    mediaLabel: {
-                                        value: "",
-                                    }
+                                mediaLabel: {
+                                    value: "",
                                 }
                             }}
                         />

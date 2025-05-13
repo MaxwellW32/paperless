@@ -22,8 +22,6 @@ import { getEquipment } from '@/serverFunctions/handleEquipment'
 import ViewTape from '@/components/tapes/ViewTape'
 import ViewEquipment from '@/components/equipment/ViewEquipment'
 import Search from '@/components/search/Search'
-import toast from 'react-hot-toast'
-import Search2 from '@/components/search/Search2'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -87,7 +85,7 @@ export default function Page() {
                 //if admin
                 if (session.user.accessLevel === "admin") {
                     //if app admin get all active requests
-                    localNewClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: false }, resourceAuth)
+                    localNewClientRequests = await getClientRequests({ type: "all" }, { status: "in-progress" }, resourceAuth)
 
                 } else {
                     if (userDepartmentCompanySelection === null) return
@@ -99,10 +97,10 @@ export default function Page() {
 
                     } else if (userDepartmentCompanySelection.type === "userCompany") {
                         //set active requests from client
-                        localNewClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, }, { type: "status", status: 'in-progress', getOppositeOfStatus: false }, resourceAuth)
+                        localNewClientRequests = await getClientRequests({ type: "company" }, { status: "in-progress", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, }, resourceAuth)
 
                         //set client requests history
-                        const seenHistoryClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, }, { type: "status", status: 'in-progress', getOppositeOfStatus: true }, resourceAuth)
+                        const seenHistoryClientRequests = await getClientRequests({ type: "company" }, { status: "in-progress", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, oppositeStatus: true }, resourceAuth)
 
                         //set initial history
                         pastRequestsSearchObjSet(prevSearchObj => {
@@ -242,12 +240,6 @@ export default function Page() {
                 return updateRefreshObj(prevRefreshObj, "clientRequests")
             })
         };
-    }
-
-    function alertSearchResults<T>(items: T[]) {
-        if (items.length === 0) {
-            toast.error("not seeing anything")
-        }
     }
 
     type optionType = "tape" | "equipment"
@@ -436,10 +428,10 @@ export default function Page() {
                         </div>
 
                         <div className={styles.overviewCont}>
-                            {pastRequestsSearchObj.searchItems.length > 0 && (
-                                <div style={{ gridArea: "a" }}>
-                                    <h2 className='noMargin'>past requests</h2>
+                            <div style={{ gridArea: "a" }}>
+                                <h2 className='noMargin'>past requests</h2>
 
+                                {pastRequestsSearchObj.searchItems.length > 0 ? (
                                     <div className={styles.clientRequests}>
                                         {pastRequestsSearchObj.searchItems.map(eachHistoryCientRequest => {
                                             return (
@@ -455,8 +447,10 @@ export default function Page() {
                                             )
                                         })}
                                     </div>
-                                </div>
-                            )}
+                                ) : (
+                                    <p>Add a new Request</p>
+                                )}
+                            </div>
 
                             {((tapesSearchObj.searchItems.length > 0) || (equipmentSearchObj.searchItems.length > 0)) && (
                                 <div style={{ gridArea: "b" }}>
@@ -516,25 +510,13 @@ export default function Page() {
                                 <Search
                                     searchObj={pastRequestsSearchObj}
                                     searchObjSet={pastRequestsSearchObjSet}
-                                    searchFunction={async () => {
+                                    searchFunc={async () => {
                                         //get all past requests for client only
-                                        if (resourceAuth === undefined) return
+                                        if (resourceAuth === undefined) throw new Error("auth not seen")
 
-                                        if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type === "userDepartment") return
+                                        if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type === "userDepartment") throw new Error("clients only")
 
-                                        const seenClientRequests = await getClientRequests({ type: "company", companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, { type: "date" }, resourceAuth, pastRequestsSearchObj.limit, pastRequestsSearchObj.offset)
-
-                                        //alert
-                                        alertSearchResults(seenClientRequests)
-
-                                        //set
-                                        pastRequestsSearchObjSet(prevSearchObj => {
-                                            const newSearchObj = { ...prevSearchObj }
-
-                                            newSearchObj.searchItems = seenClientRequests
-
-                                            return newSearchObj
-                                        })
+                                        return await getClientRequests({ type: "company" }, { companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, status: "in-progress", oppositeStatus: true }, resourceAuth, pastRequestsSearchObj.limit, pastRequestsSearchObj.offset)
                                     }}
                                     showPage={true}
                                 />
@@ -563,23 +545,18 @@ export default function Page() {
 
                                 <h2>tapes</h2>
 
-                                <Search2
+                                <Search
                                     searchObj={tapesSearchObj}
                                     searchObjSet={tapesSearchObjSet}
-                                    allSearchFunc={async () => {
+                                    searchFunc={async (seenFilters) => {
                                         if (resourceAuth === undefined) throw new Error("no auth seen")
 
-                                        return loadResourceValues<tape>("tape", "all", {})
-                                    }}
-                                    specificSearchFunc={async seenFilters => {//adds on user applied filters
                                         return await loadResourceValues<tape>("tape", "specific", seenFilters)
                                     }}
                                     showPage={true}
                                     searchFilters={{
-                                        filters: {
-                                            mediaLabel: {
-                                                value: "",
-                                            }
+                                        mediaLabel: {
+                                            value: "",
                                         }
                                     }}
                                 />
@@ -600,28 +577,21 @@ export default function Page() {
 
                                 <h2>equipment</h2>
 
-                                <Search2
+                                <Search
                                     searchObj={equipmentSearchObj}
                                     searchObjSet={equipmentSearchObjSet}
-                                    allSearchFunc={async () => {
-                                        if (resourceAuth === undefined) throw new Error("no auth seen")
-
-                                        return loadResourceValues<equipmentT>("equipment", "all", {})
-                                    }}
-                                    specificSearchFunc={async seenFilters => {
+                                    searchFunc={async (seenFilters) => {
                                         if (resourceAuth === undefined) throw new Error("no auth seen")
 
                                         return loadResourceValues<equipmentT>("equipment", "specific", seenFilters)
                                     }}
                                     showPage={true}
                                     searchFilters={{
-                                        filters: {
-                                            makeModel: {
-                                                value: "",
-                                            },
-                                            serialNumber: {
-                                                value: "",
-                                            }
+                                        makeModel: {
+                                            value: "",
+                                        },
+                                        serialNumber: {
+                                            value: "",
                                         }
                                     }}
                                 />

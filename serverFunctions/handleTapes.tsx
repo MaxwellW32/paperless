@@ -2,7 +2,7 @@
 import { db } from "@/db";
 import { and, desc, eq, ne, sql, SQLWrapper } from "drizzle-orm";
 import { ensureCanAccessResource } from "./handleAuth";
-import { newTape, newTapeSchema, tape, tapeSchema, updateTape, resourceAuthType, company, tapeFilterType } from "@/types";
+import { newTape, newTapeSchema, tape, tapeSchema, updateTape, resourceAuthType, tapeFilterType } from "@/types";
 import { tapes } from "@/db/schema";
 import { interpretAuthResponseAndError } from "@/utility/utility";
 
@@ -51,12 +51,12 @@ export async function getTapes(filter: tapeFilterType, resourceAuth: resourceAut
     // Run the query
     const results = await db.query.tapes.findMany({
         where: and(...whereClauses),
-        orderBy: [desc(tapes.dateAdded)],
         limit,
         offset,
         with: {
             company: withProperty.company
-        }
+        },
+        orderBy: [desc(tapes.dateAdded)],
     })
 
     return results

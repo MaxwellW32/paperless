@@ -507,8 +507,8 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         </>
                     ) : (
                         <>
-                            <p>No users seen with facility access</p>
-                            <p>Please ask our team to add visiting access for some users</p>
+                            <p>No users seen with visiting access</p>
+                            <p>Please ask our team to add access for some users</p>
                         </>
                     )}
                 </>
