@@ -28,7 +28,9 @@ show more toggle on tapes/equipment form...
 
 make proper checklist - tapes/equipment
 ensure client request forms are valid - have required info, not empty
-ensure rest of search components use search 2
+ensure rest of search components use search 2 - admin
+add company name to requests for non clients
+change getClientRequests for filters - ensure it calls with company
 
 Fonts
     Open sans...

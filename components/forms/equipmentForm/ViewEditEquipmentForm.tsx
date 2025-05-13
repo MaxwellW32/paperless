@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react'
 import styles from "./style.module.css"
 import TextInput from '@/components/textInput/TextInput'
 import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
-import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import toast from 'react-hot-toast'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
@@ -14,7 +13,7 @@ import ViewEquipment from '@/components/equipment/ViewEquipment'
 import TextArea from '@/components/textArea/TextArea'
 import { getEquipmentData } from '@/components/equipment/getEquipmentData'
 import ShowMore from '@/components/showMore/ShowMore'
-import SearchWithInput from '@/components/tapes/SearchWithInput'
+import Search2 from '@/components/search/Search2'
 
 export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }: { seenForm: equipmentFormType, handleFormUpdate: (updatedFormData: equipmentFormType) => void, seenCompanyId: company["id"] }) {
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
@@ -118,7 +117,7 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                 label='search equipment'
                 content={
                     <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                        <SearchWithInput
+                        <Search2
                             searchObj={equipmentSearchObj}
                             searchObjSet={equipmentSearchObjSet}
                             allSearchFunc={async () => {
@@ -126,13 +125,22 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
 
                                 return await getEquipment({ companyId: seenCompanyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
                             }}
-                            specificSearchFunc={async seenText => {
+                            specificSearchFunc={async seenFilters => {
                                 if (resourceAuth === undefined) throw new Error("no auth seen")
 
-                                return await getEquipment({ companyId: seenCompanyId, makeModel: seenText }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
+                                return await getEquipment({ companyId: seenCompanyId, ...seenFilters }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
                             }}
-                            label={<h3>filter by media label</h3>}
-                            placeHolder={"enter equipment model"}
+                            showPage={true}
+                            searchFilters={{
+                                filters: {
+                                    makeModel: {
+                                        value: "",
+                                    },
+                                    serialNumber: {
+                                        value: "",
+                                    }
+                                }
+                            }}
                         />
 
                         {equipmentSearchObj.searchItems.length > 0 && (

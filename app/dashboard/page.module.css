@@ -22,7 +22,6 @@
 .dashboardMenu {
     display: grid;
     align-content: flex-start;
-    overflow: auto;
     gap: .5rem;
 }
 

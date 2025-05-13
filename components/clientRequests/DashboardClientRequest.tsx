@@ -20,7 +20,6 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
     const { data: session } = useSession()
     const [resourceAuth,] = useAtom<resourceAuthType | undefined>(resourceAuthGlobal)
 
-
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
     const [, refreshObjSet] = useAtom<refreshObjType>(refreshObjGlobal)
     const [, refreshWSObjSet] = useAtom<refreshWSObjType>(refreshWSObjGlobal)
@@ -69,6 +68,12 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
 
     return (
         <div {...elProps} className={`${styles.eachClientRequest} ${elProps.className !== undefined ? elProps.className : ""}`}>
+            {((session !== null && session.user.accessLevel === "admin") || (userDepartmentCompanySelection !== null && userDepartmentCompanySelection.type !== "userCompany")) && eachClientRequest.company !== undefined && (//admin or department user needs to see what company the request is from
+                <>
+                    <h3 className='noMargin'>{eachClientRequest.company.name}</h3>
+                </>
+            )}
+
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'center' }}>
                 {eachClientRequest.checklistStarter !== undefined && (
                     <h3>{eachClientRequest.checklistStarter.type}</h3>

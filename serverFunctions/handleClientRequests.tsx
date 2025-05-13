@@ -120,7 +120,8 @@ export async function getClientRequests(option: { type: "user", userId: user["id
             offset: offset,
             where: filter.type === "status" ? and(eq(clientRequests.userId, option.userId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
             with: {
-                checklistStarter: true
+                checklistStarter: true,
+                company: true
             },
             orderBy: [desc(clientRequests.dateSubmitted)],
         });
@@ -135,7 +136,8 @@ export async function getClientRequests(option: { type: "user", userId: user["id
             offset: offset,
             where: filter.type === "status" ? and(eq(clientRequests.companyId, option.companyId), filter.getOppositeOfStatus ? ne(clientRequests.status, filter.status) : eq(clientRequests.status, filter.status)) : undefined,
             with: {
-                checklistStarter: true
+                checklistStarter: true,
+                company: true
             },
             orderBy: [desc(clientRequests.dateSubmitted)],
         });
@@ -182,7 +184,8 @@ export async function getClientRequestsForDepartments(status: clientRequestStatu
         offset: offset,
         where: getOppositeOfStatus ? ne(clientRequests.status, status) : eq(clientRequests.status, status),
         with: {
-            checklistStarter: true
+            checklistStarter: true,
+            company: true
         },
     });
 

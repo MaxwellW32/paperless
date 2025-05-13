@@ -1,7 +1,7 @@
 "use client"
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, refreshWSObjType, expectedResourceType, resourceAuthType, tape, equipmentT, searchObj } from '@/types'
+import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, refreshWSObjType, expectedResourceType, resourceAuthType, tape, equipmentT, searchObj, allFilterType } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal } from '@/utility/globalState'
@@ -23,7 +23,7 @@ import ViewTape from '@/components/tapes/ViewTape'
 import ViewEquipment from '@/components/equipment/ViewEquipment'
 import Search from '@/components/search/Search'
 import toast from 'react-hot-toast'
-import SearchWithInput from '@/components/tapes/SearchWithInput'
+import Search2 from '@/components/search/Search2'
 
 export default function Page() {
     const { data: session } = useSession()
@@ -68,25 +68,6 @@ export default function Page() {
 
     }, [activeScreen, activeClientRequests, pastRequestsSearchObj.searchItems])
 
-    type specificResourceSearchType = {
-        tapeSearch: tape["mediaLabel"],
-        equipmentSearch: {
-            type: "model" | "serial",
-            text: equipmentT["makeModel"] | equipmentT["serialNumber"]
-        },
-        searchDebounce: NodeJS.Timeout | undefined
-    }
-    const specificResourceSearch = useRef<specificResourceSearchType>({
-        tapeSearch: "",
-        equipmentSearch: {
-            type: "model",
-            text: ""
-        },
-        searchDebounce: undefined
-    })
-
-    const [, refresherSet] = useState(false)
-
     //get checklist starters
     useEffect(() => {
         const search = async () => {
@@ -107,9 +88,6 @@ export default function Page() {
                 if (session.user.accessLevel === "admin") {
                     //if app admin get all active requests
                     localNewClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: false }, resourceAuth)
-
-                    // //get history
-                    // localHistoryClientRequests = await getClientRequests({ type: "all" }, { type: "status", status: 'in-progress', getOppositeOfStatus: true }, resourceAuth)
 
                 } else {
                     if (userDepartmentCompanySelection === null) return
@@ -184,10 +162,12 @@ export default function Page() {
                     }))
 
                 } else {
+                    if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type === "userDepartment") return
+
                     await Promise.all([1, 2].map(async each => {
                         if (each === 1) {
                             //get tapes, equipment from company
-                            const localNewTapes = await loadResourceValues<tape>("tape", "all")
+                            const localNewTapes = await loadResourceValues<tape>("tape", "all", {})
 
                             tapesSearchObjSet(prevSearchObj => {
                                 const newSearchObj = { ...prevSearchObj }
@@ -199,7 +179,7 @@ export default function Page() {
 
 
                         } else if (each === 2) {
-                            const localNewEquipment = await loadResourceValues<equipmentT>("equipment", "all")
+                            const localNewEquipment = await loadResourceValues<equipmentT>("equipment", "all", {})
 
                             equipmentSearchObjSet(prevSearchObj => {
                                 const newSearchObj = { ...prevSearchObj }
@@ -210,7 +190,6 @@ export default function Page() {
                             })
                         }
                     }))
-
                 }
 
             } catch (error) {
@@ -271,15 +250,11 @@ export default function Page() {
         }
     }
 
-    function refresh() {
-        refresherSet(prev => !prev)
-    }
-
     type optionType = "tape" | "equipment"
     type updateOptionType = "all" | "specific"
 
     //handle tapes and equipment for clients only
-    async function loadResourceValues<T>(option: optionType, updateOption: updateOptionType): Promise<T[]> {
+    async function loadResourceValues<T>(option: optionType, updateOption: updateOptionType, seenFilters: allFilterType): Promise<T[]> {
         if (resourceAuth === undefined) throw new Error("no auth seen")
         if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type === "userDepartment") throw new Error("clients only")
 
@@ -304,7 +279,7 @@ export default function Page() {
             const results = await getResults<tape>(updateOption,
                 async () => {
                     if (updateOption !== "specific") throw new Error("incorrect updateOption sent")
-                    return await getTapes({ companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, mediaLabel: specificResourceSearch.current.tapeSearch }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
+                    return await getTapes({ companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, ...seenFilters }, resourceAuth, tapesSearchObj.limit, tapesSearchObj.offset)
 
                 },
                 async () => {
@@ -319,7 +294,7 @@ export default function Page() {
                 async () => {
                     if (updateOption !== "specific") throw new Error("incorrect updateOption sent")
 
-                    return await getEquipment({ makeModel: specificResourceSearch.current.equipmentSearch.type === "model" ? specificResourceSearch.current.equipmentSearch.text : undefined, serialNumber: specificResourceSearch.current.equipmentSearch.type === "serial" ? specificResourceSearch.current.equipmentSearch.text : undefined, companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
+                    return await getEquipment({ companyId: userDepartmentCompanySelection.seenUserToCompany.companyId, ...seenFilters }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
                 },
                 async () => {
                     return await getEquipment({ companyId: userDepartmentCompanySelection.seenUserToCompany.companyId }, resourceAuth, equipmentSearchObj.limit, equipmentSearchObj.offset)
@@ -362,10 +337,9 @@ export default function Page() {
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
                     </button>
-
                 </div>
-                <ul className={styles.dashboardMenu}>
 
+                <ul className={styles.dashboardMenu}>
                     {clientRequestsAuthResponse["c"] && (
                         <>
                             {activeScreen !== undefined && activeScreen.type === "newRequest" ? (
@@ -589,22 +563,25 @@ export default function Page() {
 
                                 <h2>tapes</h2>
 
-                                <SearchWithInput
+                                <Search2
                                     searchObj={tapesSearchObj}
                                     searchObjSet={tapesSearchObjSet}
-                                    allSearchFunc={() => {
-                                        return loadResourceValues<tape>("tape", "all")
-                                    }}
-                                    specificSearchFunc={(seenText) => {
-                                        //show update
-                                        refresh()
+                                    allSearchFunc={async () => {
+                                        if (resourceAuth === undefined) throw new Error("no auth seen")
 
-                                        specificResourceSearch.current.tapeSearch = seenText
-
-                                        return loadResourceValues<tape>("tape", "specific")
+                                        return loadResourceValues<tape>("tape", "all", {})
                                     }}
-                                    label={<h3>filter by media label</h3>}
-                                    placeHolder={"enter tape media label"}
+                                    specificSearchFunc={async seenFilters => {//adds on user applied filters
+                                        return await loadResourceValues<tape>("tape", "specific", seenFilters)
+                                    }}
+                                    showPage={true}
+                                    searchFilters={{
+                                        filters: {
+                                            mediaLabel: {
+                                                value: "",
+                                            }
+                                        }
+                                    }}
                                 />
 
                                 {tapesSearchObj.searchItems.length > 0 && (
@@ -623,35 +600,30 @@ export default function Page() {
 
                                 <h2>equipment</h2>
 
-                                <SearchWithInput
+                                <Search2
                                     searchObj={equipmentSearchObj}
                                     searchObjSet={equipmentSearchObjSet}
-                                    allSearchFunc={() => {
-                                        return loadResourceValues<equipmentT>("equipment", "all")
+                                    allSearchFunc={async () => {
+                                        if (resourceAuth === undefined) throw new Error("no auth seen")
+
+                                        return loadResourceValues<equipmentT>("equipment", "all", {})
                                     }}
-                                    specificSearchFunc={(seenText) => {
-                                        //show update
-                                        refresh()
+                                    specificSearchFunc={async seenFilters => {
+                                        if (resourceAuth === undefined) throw new Error("no auth seen")
 
-                                        specificResourceSearch.current.equipmentSearch.text = seenText
-
-                                        return loadResourceValues<equipmentT>("equipment", "specific")
+                                        return loadResourceValues<equipmentT>("equipment", "specific", seenFilters)
                                     }}
-                                    label={(
-                                        <div>
-                                            <h3>filter by</h3>
-
-                                            <button className='button2'
-                                                onClick={() => {
-                                                    //swap
-                                                    specificResourceSearch.current.equipmentSearch.type = specificResourceSearch.current.equipmentSearch.type === "model" ? "serial" : "model"
-
-                                                    refresh()
-                                                }}
-                                            >{specificResourceSearch.current.equipmentSearch.type}</button>
-                                        </div>
-                                    )}
-                                    placeHolder={`enter equipment ${specificResourceSearch.current.equipmentSearch.type === "model" ? "model" : "serial number"}`}
+                                    showPage={true}
+                                    searchFilters={{
+                                        filters: {
+                                            makeModel: {
+                                                value: "",
+                                            },
+                                            serialNumber: {
+                                                value: "",
+                                            }
+                                        }
+                                    }}
                                 />
 
                                 {equipmentSearchObj.searchItems.length > 0 && (
