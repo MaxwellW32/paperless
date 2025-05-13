@@ -23,7 +23,7 @@ import ViewTape from '@/components/tapes/ViewTape'
 import ViewEquipment from '@/components/equipment/ViewEquipment'
 import Search from '@/components/search/Search'
 
-export default function Page() {
+export default function Dashboard() {
     const { data: session } = useSession()
     const { sendWebsocketUpdate, } = useWebsockets(handleMessageFromWebsocket)
 

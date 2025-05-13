@@ -128,6 +128,60 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
         }
     }
 
+    function AddOptions({ indexToAdd }: { indexToAdd?: number }) {
+        return (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+                {checklistTypeOptions.map(eachOption => {
+                    return (
+                        <button key={eachOption} className='button1'
+                            onClick={() => {
+                                if (formObj.checklist === undefined) return
+
+                                const newChecklistItem: checklistItemType | null =
+                                    eachOption === "form" ? {
+                                        type: "form",
+                                        form: {
+                                            type: "dynamic",
+                                            data: {}
+                                        },
+                                        completed: false
+                                    } :
+                                        eachOption === "email" ? {
+                                            type: "email",
+                                            to: "",
+                                            subject: "",
+                                            email: "",
+                                            completed: false
+                                        } :
+                                            eachOption === "manual" ? {
+                                                type: "manual",
+                                                for: {
+                                                    type: "department",
+                                                    departmenId: ""
+                                                },
+                                                prompt: "",
+                                                completed: false
+                                            } : null
+
+                                if (newChecklistItem === null) return
+
+                                //add at correct position
+                                const newChecklist = indexToAdd === undefined ? [...formObj.checklist, newChecklistItem] : [
+                                    ...formObj.checklist.slice(0, indexToAdd),
+                                    newChecklistItem,
+                                    ...formObj.checklist.slice(indexToAdd),
+                                ];
+
+                                updateChecklist(newChecklist)
+                            }}
+                        >add {eachOption}</button>
+                    )
+                })}
+            </div>
+
+        )
+    }
+
     return (
         <form {...elProps} className={styles.form} action={() => { }}>
             {formObj.type !== undefined && (
@@ -156,52 +210,8 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
 
             {formObj.checklist !== undefined && (
                 <>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
-                        {checklistTypeOptions.map(eachOption => {
-                            return (
-                                <button key={eachOption} className='button1'
-                                    onClick={() => {
-                                        if (formObj.checklist === undefined) return
-
-                                        const newChecklistItem: checklistItemType | null =
-                                            eachOption === "form" ? {
-                                                type: "form",
-                                                form: {
-                                                    type: "dynamic",
-                                                    data: {}
-                                                },
-                                                completed: false
-                                            } :
-                                                eachOption === "email" ? {
-                                                    type: "email",
-                                                    to: "",
-                                                    subject: "",
-                                                    email: "",
-                                                    completed: false
-                                                } :
-                                                    eachOption === "manual" ? {
-                                                        type: "manual",
-                                                        for: {
-                                                            type: "department",
-                                                            departmenId: ""
-                                                        },
-                                                        prompt: "",
-                                                        completed: false
-                                                    } : null
-
-                                        if (newChecklistItem === null) return
-
-                                        const newChecklist = [...formObj.checklist, newChecklistItem]
-
-                                        updateChecklist(newChecklist)
-                                    }}
-                                >add {eachOption}</button>
-                            )
-                        })}
-                    </div>
-
-                    {formObj.checklist.length > 0 && (
-                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", maxHeight: "60vh", overflow: "auto" }}>
+                    {formObj.checklist.length > 0 ? (
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
                             {formObj.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
                                 let foundDepartment: department | undefined = undefined
 
@@ -328,7 +338,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 250px)", overflow: "auto" }} className='snap'>
                                                                             {companies.map(eachCompany => {
                                                                                 return (
-                                                                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                                                                         <h3>{eachCompany.name}</h3>
 
                                                                                         {eachCompany.emails.length > 0 && (
@@ -417,7 +427,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                         <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 250px)", overflow: "auto" }} className='snap'>
                                                                             {departments.map(eachDepartment => {
                                                                                 return (
-                                                                                    <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                                                    <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                                                                         <h3>{eachDepartment.name}</h3>
 
                                                                                         {eachDepartment.emails.length > 0 && (
@@ -553,6 +563,25 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                         updateChecklist(newChecklist)
                                                     }}
                                                 />
+
+                                                <button className='button2' style={{ justifySelf: "flex-start" }}
+                                                    onClick={async () => {
+                                                        if (formObj.checklist === undefined) return
+
+                                                        const response = await fetch(`/starterEmail.html`)
+                                                        const seenEmail = await response.text()
+
+                                                        //edit new checklist item
+                                                        const newChecklistItem = { ...eachChecklistItem }
+                                                        newChecklistItem.email = seenEmail
+
+                                                        //edit new checklist at index
+                                                        const newChecklist = [...formObj.checklist]
+                                                        newChecklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                        updateChecklist(newChecklist)
+                                                    }}
+                                                >use default html</button>
                                             </>
                                         )}
 
@@ -624,7 +653,7 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                                                                 <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 250px)", overflow: "auto" }} className='snap'>
                                                                                     {departments.map(eachDepartment => {
                                                                                         return (
-                                                                                            <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color2))", padding: "1rem" }}>
+                                                                                            <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
                                                                                                 <h3>{eachDepartment.name}</h3>
 
                                                                                                 <button className='button1'
@@ -687,6 +716,8 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                         )}
 
                                         <div className={styles.moveButtonCont}>
+                                            <AddOptions indexToAdd={eachChecklistItemIndex + 1} />
+
                                             <button className='button2'
                                                 onClick={() => {
                                                     if (formObj.checklist === undefined) return
@@ -721,6 +752,10 @@ export default function AddEditChecklistStarter({ sentChecklistStarter, submissi
                                 )
                             })}
                         </div>
+                    ) : (
+                        <>
+                            <AddOptions />
+                        </>
                     )}
                 </>
             )}

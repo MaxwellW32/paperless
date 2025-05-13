@@ -433,22 +433,24 @@ export default function Page() {
                                 />
 
                                 {checklistStartersSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                        {checklistStartersSearchObj.searchItems.map(eachCheckliststarter => {
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                            {checklistStartersSearchObj.searchItems.map(eachCheckliststarter => {
 
-                                            return (
-                                                <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                    <h3>{eachCheckliststarter.type}</h3>
+                                                return (
+                                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                        <h3>{eachCheckliststarter.type}</h3>
 
-                                                    <EditResourceButton
-                                                        editing={editing}
-                                                        editingSet={editingSet}
-                                                        keyName={activeScreen}
-                                                        eachObj={eachCheckliststarter}
-                                                    />
-                                                </div>
-                                            )
-                                        })}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachCheckliststarter}
+                                                        />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 
@@ -500,24 +502,26 @@ export default function Page() {
                                 />
 
                                 {clientRequestsSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(400px, 90%)", overflow: "auto" }} className='snap'>
-                                        {clientRequestsSearchObj.searchItems.map(eachClientRequest => {
-                                            if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(400px, 90%)", overflow: "auto" }} className='snap'>
+                                            {clientRequestsSearchObj.searchItems.map(eachClientRequest => {
+                                                if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
 
-                                            return (
-                                                <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "rgb(var(--color3))" }}
-                                                    eachClientRequest={eachClientRequest}
-                                                    editButtonComp={(
-                                                        <EditResourceButton
-                                                            editing={editing}
-                                                            editingSet={editingSet}
-                                                            keyName={activeScreen}
-                                                            eachObj={eachClientRequest}
-                                                        />
-                                                    )}
-                                                />
-                                            )
-                                        })}
+                                                return (
+                                                    <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "rgb(var(--color3))" }}
+                                                        eachClientRequest={eachClientRequest}
+                                                        editButtonComp={(
+                                                            <EditResourceButton
+                                                                editing={editing}
+                                                                editingSet={editingSet}
+                                                                keyName={activeScreen}
+                                                                eachObj={eachClientRequest}
+                                                            />
+                                                        )}
+                                                    />
+                                                )
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 
@@ -655,25 +659,27 @@ export default function Page() {
                                 />
 
                                 {tapesSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                        {tapesSearchObj.searchItems.map(eachTape => {
-                                            if (eachTape.company === undefined) return null
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                            {tapesSearchObj.searchItems.map(eachTape => {
+                                                if (eachTape.company === undefined) return null
 
-                                            return (
-                                                <div key={eachTape.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                    <h3>{eachTape.mediaLabel}</h3>
+                                                return (
+                                                    <div key={eachTape.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                        <h3>{eachTape.mediaLabel}</h3>
 
-                                                    <h3>{eachTape.company.name}</h3>
+                                                        <h3>{eachTape.company.name}</h3>
 
-                                                    <EditResourceButton
-                                                        editing={editing}
-                                                        editingSet={editingSet}
-                                                        keyName={activeScreen}
-                                                        eachObj={eachTape}
-                                                    />
-                                                </div>
-                                            )
-                                        })}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachTape}
+                                                        />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 
@@ -723,25 +729,27 @@ export default function Page() {
                                 />
 
                                 {equipmentSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                        {equipmentSearchObj.searchItems.map(eachEquipment => {
-                                            if (eachEquipment.company === undefined) return null
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                            {equipmentSearchObj.searchItems.map(eachEquipment => {
+                                                if (eachEquipment.company === undefined) return null
 
-                                            return (
-                                                <div key={eachEquipment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                    <h3>{eachEquipment.makeModel}</h3>
+                                                return (
+                                                    <div key={eachEquipment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                        <h3>{eachEquipment.makeModel}</h3>
 
-                                                    <h3>{eachEquipment.company.name}</h3>
+                                                        <h3>{eachEquipment.company.name}</h3>
 
-                                                    <EditResourceButton
-                                                        editing={editing}
-                                                        editingSet={editingSet}
-                                                        keyName={activeScreen}
-                                                        eachObj={eachEquipment}
-                                                    />
-                                                </div>
-                                            )
-                                        })}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachEquipment}
+                                                        />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 
@@ -822,22 +830,24 @@ export default function Page() {
                                 />
 
                                 {usersSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                        {usersSearchObj.searchItems.map(eachUser => {
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                            {usersSearchObj.searchItems.map(eachUser => {
 
-                                            return (
-                                                <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                    <h3>{eachUser.name}</h3>
+                                                return (
+                                                    <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                        <h3>{eachUser.name}</h3>
 
-                                                    <EditResourceButton
-                                                        editing={editing}
-                                                        editingSet={editingSet}
-                                                        keyName={activeScreen}
-                                                        eachObj={eachUser}
-                                                    />
-                                                </div>
-                                            )
-                                        })}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachUser}
+                                                        />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 
@@ -943,25 +953,27 @@ export default function Page() {
                                 />
 
                                 {usersToDepartmentsSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                        {usersToDepartmentsSearchObj.searchItems.map(eachUserToDepartment => {
-                                            if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                            {usersToDepartmentsSearchObj.searchItems.map(eachUserToDepartment => {
+                                                if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
 
-                                            return (
-                                                <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                    <h3>{eachUserToDepartment.user.name}</h3>
+                                                return (
+                                                    <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                        <h3>{eachUserToDepartment.user.name}</h3>
 
-                                                    <h3>{eachUserToDepartment.department.name}</h3>
+                                                        <h3>{eachUserToDepartment.department.name}</h3>
 
-                                                    <EditResourceButton
-                                                        editing={editing}
-                                                        editingSet={editingSet}
-                                                        keyName={activeScreen}
-                                                        eachObj={eachUserToDepartment}
-                                                    />
-                                                </div>
-                                            )
-                                        })}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachUserToDepartment}
+                                                        />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 
@@ -1068,25 +1080,27 @@ export default function Page() {
                                 />
 
                                 {usersToCompaniesSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
-                                        {usersToCompaniesSearchObj.searchItems.map(eachUserToCompany => {
-                                            if (eachUserToCompany.user === undefined || eachUserToCompany.company === undefined) return null
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                            {usersToCompaniesSearchObj.searchItems.map(eachUserToCompany => {
+                                                if (eachUserToCompany.user === undefined || eachUserToCompany.company === undefined) return null
 
-                                            return (
-                                                <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                                    <h3>{eachUserToCompany.user.name}</h3>
+                                                return (
+                                                    <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                        <h3>{eachUserToCompany.user.name}</h3>
 
-                                                    <h3>{eachUserToCompany.company.name}</h3>
+                                                        <h3>{eachUserToCompany.company.name}</h3>
 
-                                                    <EditResourceButton
-                                                        editing={editing}
-                                                        editingSet={editingSet}
-                                                        keyName={activeScreen}
-                                                        eachObj={eachUserToCompany}
-                                                    />
-                                                </div>
-                                            )
-                                        })}
+                                                        <EditResourceButton
+                                                            editing={editing}
+                                                            editingSet={editingSet}
+                                                            keyName={activeScreen}
+                                                            eachObj={eachUserToCompany}
+                                                        />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 

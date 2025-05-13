@@ -1,11 +1,7 @@
-"use client"
-import { useSession } from "next-auth/react"
-import styles from "./page.module.css"
-import { useState } from "react"
-import { checkIfUserEmailInUse } from "@/serverFunctions/handleUser"
-import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast"
-import { signIn } from "next-auth/react"
-import toast from "react-hot-toast"
+import { auth } from '@/auth/auth'
+import Dashboard from '@/components/dashboard/dashboard'
+import LoginComp from '@/components/login/login'
+import React from 'react'
 
 //roles
 //admin - admin - maxwellwedderburn@outlook.com
@@ -24,62 +20,16 @@ import toast from "react-hot-toast"
 //
 //
 
-export default function Home() {
-  const { data: session } = useSession()
-
-  const [email, emailSet] = useState("")
-
-  async function handleSubmit() {
-    try {
-      //ensure user is expected
-      const canLogin = await checkIfUserEmailInUse(email)
-
-      if (!canLogin) {
-        throw new Error("not seeing email - contact us to setup an account")
-      }
-
-      toast.success("sending login email")
-
-      await signIn("nodemailer", {
-        email: email,
-        callbackUrl: `${window.location.origin}/dashboard`,
-        redirect: false,
-      })
-
-      toast.success("sent")
-
-    } catch (error) {
-      consoleAndToastError(error)
-    }
-  }
+export default async function Home() {
+  const session = await auth()
 
   return (
-    <main className={styles.main}>
-      <h1>Paperless</h1>
-
-      {session === null && (
-        <div style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", justifyItems: "center" }}>
-          <h3>Email sign in</h3>
-
-          <input type="text" value={email} placeholder="Please enter your email"
-            onChange={(e) => {
-              emailSet(e.target.value)
-            }}
-
-            onKeyDown={e => {
-              const seenKey = e.key.toLowerCase()
-
-              if (seenKey === "enter") {
-                handleSubmit()
-              }
-            }}
-          />
-
-          <button className="button1" style={{ justifySelf: "center" }}
-            onClick={handleSubmit}
-          >Submit</button>
-        </div>
+    <>
+      {session === null ? (
+        <LoginComp />
+      ) : (
+        <Dashboard />
       )}
-    </main>
+    </>
   )
 }
