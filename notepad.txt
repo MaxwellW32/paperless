@@ -35,6 +35,7 @@ ensure client request forms are valid - have required info, not empty
 add extra field to equipment - specific location
 add loading check to search items
 make specific users accept manual checks
+fix manual check add
 
 Fonts
     Open sans...
