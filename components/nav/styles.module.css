@@ -11,9 +11,11 @@
 }
 
 .menu {
+    flex: 0 0 110px;
     display: flex;
     gap: 1rem;
     padding-block: .5rem;
+    justify-content: flex-end;
 }
 
 .menuItem {

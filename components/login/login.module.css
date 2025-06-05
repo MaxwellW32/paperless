@@ -1,8 +1,9 @@
 .main {
     display: grid;
-    align-content: flex-start;
+    justify-items: center;
+    align-items: center;
     overflow: auto;
     justify-items: center;
-    padding: 1rem;
-    gap: .5rem;
+    position: relative;
+    z-index: 0;
 }

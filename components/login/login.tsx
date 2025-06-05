@@ -5,6 +5,7 @@ import { checkIfUserEmailInUse } from "@/serverFunctions/handleUser"
 import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast"
 import { signIn } from "next-auth/react"
 import toast from "react-hot-toast"
+import ConnectBackground from "../connectBackground/ConnectBg"
 
 export default function LoginComp() {
     const [email, emailSet] = useState("")
@@ -35,25 +36,29 @@ export default function LoginComp() {
 
     return (
         <main className={styles.main}>
-            <h3>Email sign in</h3>
+            <div style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", width: "min(400px, 90%)" }}>
+                <h3>Email sign in</h3>
 
-            <input type="text" value={email} placeholder="Please enter your email"
-                onChange={(e) => {
-                    emailSet(e.target.value)
-                }}
+                <input type="text" value={email} placeholder="Please enter your email"
+                    onChange={(e) => {
+                        emailSet(e.target.value)
+                    }}
 
-                onKeyDown={e => {
-                    const seenKey = e.key.toLowerCase()
+                    onKeyDown={e => {
+                        const seenKey = e.key.toLowerCase()
 
-                    if (seenKey === "enter") {
-                        handleSubmit()
-                    }
-                }}
-            />
+                        if (seenKey === "enter") {
+                            handleSubmit()
+                        }
+                    }}
+                />
 
-            <button className="button1" style={{ justifySelf: "center" }}
-                onClick={handleSubmit}
-            >Submit</button>
+                <button className="button1" style={{ justifySelf: "center" }}
+                    onClick={handleSubmit}
+                >Submit</button>
+            </div>
+
+            <ConnectBackground text={email} />
         </main>
     )
 }
