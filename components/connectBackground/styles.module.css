@@ -10,11 +10,28 @@
     z-index: -1;
     perspective: 200px;
     overflow: clip;
+    filter: blur(4px);
 }
 
-.backgroundCont .displayText {
+.displayText {
     position: absolute;
     transform-style: preserve-3d;
     top: 0;
     left: 0;
+    animation: scaleMove 1200ms ease-out;
+}
+
+@keyframes scaleMove {
+    0% {
+        scale: 0;
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        scale: 1;
+    }
 }

@@ -18,7 +18,6 @@ type letterObjType = {
     id: string,
     position: { x: number, y: number },
     direction: { x: number, y: number },
-    speed: number,
     rotation: { x: { value: number, incrementer: number }, y: { value: number, incrementer: number }, z: { value: number, incrementer: number } },
     width: number,
     el: HTMLParagraphElement
@@ -28,18 +27,18 @@ export default function ConnectBackground({ text }: { text: string }) {
     const backgroundContRef = useRef<HTMLDivElement | null>(null)
     const lettersOnBackground = useRef<{ [key: string]: letterObjType }>({})
 
-    const amtOfRequests = useRef(0)
-    const currentlyHandling = useRef(1)
-
-    const callsPerSecond = useRef(0)
-    const rateLimitDebounce = useRef<NodeJS.Timeout>()
-    const rateResetDebounce = useRef<NodeJS.Timeout>()
+    const amtOfRequests = useRef(-1)
+    const functionTimes = useRef<number[]>([])
+    const requestDebounce = useRef<NodeJS.Timeout | undefined>()
 
     //everytime text changes animate the letter
     useEffect(() => {
         if (text === "") return
 
-        rateLimit(() => {
+        //limit amount on screen
+        if (amtOfRequests.current > 200) return
+
+        sequentialOrder(() => {
             animateLetter(text[text.length - 1])
         })
     }, [text])
@@ -47,31 +46,31 @@ export default function ConnectBackground({ text }: { text: string }) {
     function animateLetter(letter: string) {
         if (backgroundContRef.current === null) return
 
-        const center = { x: backgroundContRef.current.clientWidth / 2, y: backgroundContRef.current.clientHeight / 2 }
-        const direction = { x: Math.random() * 5, y: Math.random() * 5 }
+        const width = Math.floor(Math.random() * 250) + 50
 
-        const flipDirectionX = Math.random() > 0.5
-        const flipDirectionY = Math.random() > 0.5
-        if (flipDirectionX) {
-            direction.x *= -1
-        }
-        if (flipDirectionY) {
-            direction.y *= -1
-        }
+        let offsetX = Math.random() * (width / 2)
+        let offsetY = Math.random() * (width / 2)
+        offsetX = Math.random() > 0.5 ? offsetX : offsetX * -1
+        offsetY = Math.random() > 0.5 ? offsetY : offsetY * -1
 
-        const rotationIncrementer = { x: Math.floor(Math.random() * 10), y: Math.floor(Math.random() * 10), z: Math.floor(Math.random() * 10) }
+        const center = { x: (backgroundContRef.current.clientWidth / 2) + offsetX, y: (backgroundContRef.current.clientHeight / 2) + offsetY }
+        const direction = { x: Math.random() * 3, y: Math.random() * 3 }
+
+        //flip direction
+        if (Math.random() > 0.5) direction.x *= -1
+        if (Math.random() > 0.5) direction.y *= -1
+
+
+        const rotationIncrementer = { x: Math.floor(Math.random() * 3), y: Math.floor(Math.random() * 3), z: 0 }
         //limit z rotation
-        if (Math.random() < 0.8) {
-            rotationIncrementer.z = 0
-        }
+        if (Math.random() > 0.8) rotationIncrementer.z = Math.floor(Math.random() * 3)
 
         const newLetterObj: letterObjType = {
             id: uuidV4(),
             position: center,
             direction: direction,
-            speed: 100,
             rotation: { x: { value: 0, incrementer: rotationIncrementer.x }, y: { value: 0, incrementer: rotationIncrementer.y }, z: { value: 0, incrementer: rotationIncrementer.z } },
-            width: Math.floor(Math.random() * 250) + 50,
+            width: width,
             el: document.createElement("p")
         }
 
@@ -80,6 +79,8 @@ export default function ConnectBackground({ text }: { text: string }) {
         //add styles
         newLetterObj.el.classList.add(styles.displayText)
         newLetterObj.el.style.fontSize = `${newLetterObj.width}px`
+        Math.random() > 0.5 ? newLetterObj.el.style.textTransform = "uppercase" : null
+
         //initial position
         applyLetterTransforms(newLetterObj)
 
@@ -93,20 +94,15 @@ export default function ConnectBackground({ text }: { text: string }) {
 
     function moveText(seenLetterObj: letterObjType) {
         const moveInterval = setInterval(() => {
-            console.log(`$loop`);
             if (backgroundContRef.current === null) return
-
-            //write changes
-            //stop and clear if off screen
-
             //increase the position by the direction
             seenLetterObj.position.x += seenLetterObj.direction.x
             seenLetterObj.position.y += seenLetterObj.direction.y
 
             //increase the rotation
-            seenLetterObj.rotation.x.value += seenLetterObj.rotation.x.incrementer
-            seenLetterObj.rotation.y.value += seenLetterObj.rotation.y.incrementer
-            seenLetterObj.rotation.z.value += seenLetterObj.rotation.z.incrementer
+            seenLetterObj.rotation.x.value = (seenLetterObj.rotation.x.value + seenLetterObj.rotation.x.incrementer) % 360
+            seenLetterObj.rotation.y.value = (seenLetterObj.rotation.y.value + seenLetterObj.rotation.y.incrementer) % 360
+            seenLetterObj.rotation.z.value = (seenLetterObj.rotation.z.value + seenLetterObj.rotation.z.incrementer) % 360
 
             //set changes to dom
             applyLetterTransforms(seenLetterObj)
@@ -126,9 +122,9 @@ export default function ConnectBackground({ text }: { text: string }) {
                 //remove from lettersOnBackground
                 delete lettersOnBackground.current[seenLetterObj.id]
 
-                console.log(`$out of bounds`);
+                console.log(`$cleaned`);
             }
-        }, seenLetterObj.speed);
+        }, 10);
     }
 
     function applyLetterTransforms(seenLetterObj: letterObjType) {
@@ -137,43 +133,28 @@ export default function ConnectBackground({ text }: { text: string }) {
         seenLetterObj.el.style.transform = `rotateX(${seenLetterObj.rotation.x.value}deg) rotateY(${seenLetterObj.rotation.y.value}deg) rotateZ(${seenLetterObj.rotation.z.value}deg)`
     }
 
-    function rateLimit(funcToRun: () => void, timeToWait = 2000) {
-        //handle how often rate is called
-        callsPerSecond.current += 1
+    async function sequentialOrder(funcToRun: () => void) {
+        //reset functionTimes after long delay
+        if (requestDebounce.current) clearTimeout(requestDebounce.current)
+        requestDebounce.current = setTimeout(() => {
+            functionTimes.current = []
+            amtOfRequests.current = -1
+        }, 10_000);
 
-        if (rateLimitDebounce.current) clearTimeout(rateLimitDebounce.current)
-        rateLimitDebounce.current = setTimeout(() => {
-            callsPerSecond.current = 0
-        }, 1000);
+        const IndexOfRequest = amtOfRequests.current += 1
+        const largeTime = Math.random() > 0.95 ? 1.5 : 1
+        const waitTime = IndexOfRequest === 0 ? 0 : (Math.floor(Math.random() * 1500) * largeTime)
+        const prevFuncWaitTime: number | undefined = functionTimes.current[IndexOfRequest - 1]
+        const combinedWaitTime = (prevFuncWaitTime === undefined ? 0 : prevFuncWaitTime) + waitTime
 
-        const IdOfRequest = amtOfRequests.current += 1
+        //add onto wait times
+        functionTimes.current[IndexOfRequest] = waitTime
 
-        function runCheck() {
-            if (IdOfRequest === currentlyHandling.current) {
-                funcToRun()
+        //wait
+        await new Promise(resolve => setTimeout(() => resolve(true), combinedWaitTime))    //+ wait time of previous function
 
-                //after some time can accept the next request
-                setTimeout(() => {
-                    currentlyHandling.current = IdOfRequest
-                }, timeToWait);
-
-                if (IdOfRequest === amtOfRequests.current) {
-                    if (rateResetDebounce.current) clearTimeout(rateResetDebounce.current)
-                    rateResetDebounce.current = setTimeout(() => {
-                        //reset since finished
-                        amtOfRequests.current = 0
-                        currentlyHandling.current = 0
-                    }, 1000);
-                }
-
-            } else {
-                //check back after some time
-                setTimeout(() => {
-                    runCheck()
-                }, timeToWait);
-            }
-        }
-        runCheck()
+        //run
+        funcToRun()
     }
 
     return (
