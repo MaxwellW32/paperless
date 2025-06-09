@@ -71,6 +71,7 @@ export type crudOptionType = "c" | "r" | "ra" | "u" | "d"
 //handle search component with limits/offsets
 export type searchObj<T> = {
     searchItems: T[],
+    loading?: true,
     limit?: number, //how many
     offset?: number, //increaser
     incrementOffsetBy?: number, //how much to increase by

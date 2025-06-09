@@ -14,9 +14,9 @@ import React from 'react'
 //leave only client forms on older saved client requests
 //delete button
 //cancellation button for requests - cancellation reasons, notes
+//respond to loading state of seach items
 
 //plan for today
-//
 //
 //
 

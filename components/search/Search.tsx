@@ -1,10 +1,10 @@
 "use client"
 import { allFilterType, searchObj } from '@/types'
-import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 import { spaceCamelCase } from '@/utility/utility'
 import React, { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import ShowMore from '../showMore/ShowMore'
+import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
 
 type searchFiltersType<T> = {
     [K in keyof T]?: {
@@ -14,18 +14,25 @@ type searchFiltersType<T> = {
     }
 }
 
-export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPage, searchFilters, handleResults = true }: {
-    searchObj: searchObj<T>, searchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchFunc: (allFilters: allFilterType) => Promise<T[]>, showPage?: boolean, searchFilters?: searchFiltersType<T>, handleResults?: boolean
+export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPage, searchFilters, handleResults = true, autoSearch = undefined }: {
+    searchObj: searchObj<T>, searchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchFunc: (allFilters: allFilterType) => Promise<T[]>, showPage?: boolean, searchFilters?: searchFiltersType<T>, handleResults?: boolean,
+    autoSearch?: true
 }) {
     const wantsToSearchAgain = useRef(false)
 
     const [pageIndex, pageIndexSet] = useState<number | undefined>()
     const pageDebounce = useRef<NodeJS.Timeout>()
 
-    const mounted = useRef(false);
     const searchDebounce = useRef<NodeJS.Timeout | undefined>()
 
     const [activeSearchFilters, activeSearchFiltersSet] = useState<searchFiltersType<T>>(searchFilters === undefined ? {} : { ...searchFilters })
+
+    //if auto search - search once
+    useEffect(() => {
+        if (!autoSearch) return
+
+        handleSearch()
+    }, [])
 
     //respond to next/prev incrementers
     useEffect(() => {
@@ -59,13 +66,11 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
     useEffect(() => {
         if (searchFilters == undefined) return
 
-        if (!mounted.current) {
-            mounted.current = true;
-            return;
-        }
+        //only run when button clicked
+        if (!wantsToSearchAgain.current) return
+        wantsToSearchAgain.current = false
 
         if (searchDebounce.current) clearTimeout(searchDebounce.current)
-
         searchDebounce.current = setTimeout(async () => {
             handleSearch(false)
         }, 1000);
@@ -140,12 +145,43 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
 
             const filtersOnly = Object.fromEntries(filtersOnlyPre.filter(each => each !== null)) as allFilterType
 
+            //set loading
+            searchObjSet(prevSearchObj => {
+                const newSearchObj = { ...prevSearchObj }
+
+                newSearchObj.loading = true
+
+                return newSearchObj
+            })
+
             //search
             const results = await searchFunc(filtersOnly)
 
+            //update loading
+            searchObjSet(prevSearchObj => {
+                const newSearchObj = { ...prevSearchObj }
+
+                newSearchObj.loading = undefined
+
+                return newSearchObj
+            })
+
             if (handleResults) {
                 //set results
-                handleSearchResults(results)
+                if (results.length === 0) {
+                    toast.error("not seeing anything")
+
+                    return
+                }
+
+                //update state
+                searchObjSet(prevSearchObj => {
+                    const newSearchObj = { ...prevSearchObj }
+
+                    newSearchObj.searchItems = results
+
+                    return newSearchObj
+                })
             }
 
         } catch (error) {
@@ -153,34 +189,20 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
         }
     }
 
-    //ensure seeing results - set the state
-    function handleSearchResults(sentResults: T[]) {
-        if (sentResults.length === 0) {
-            toast.error("not seeing anything")
-
-            return
-        }
-
-        //update state
-        searchObjSet(prevSearchObj => {
-            const newSearchObj = { ...prevSearchObj }
-
-            newSearchObj.searchItems = sentResults
-
-            return newSearchObj
-        })
+    function runAllOnFilters() {
+        wantsToSearchAgain.current = true
     }
 
     return (
-        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center" }}>
-                <button className='button1'
+                <button className='mainButton'
                     onClick={async () => {
                         handleSearch()
                     }}
                 >search</button>
 
-                <button className='button2'
+                <button className='thirdButton'
                     onClick={() => {
                         //decrease offset
                         handleOffset("decrement")
@@ -190,7 +212,7 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
                     }}
                 >prev</button>
 
-                <button className='button2'
+                <button className='thirdButton'
                     onClick={() => {
                         //increase offset
                         handleOffset("increment")
@@ -237,7 +259,7 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
                 <ShowMore
                     label='Filters'
                     content={
-                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", paddingBlock: "1rem", position: "relative" }}>
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", paddingBlock: "1rem", position: "relative" }}>
                             {Object.entries(activeSearchFilters).map((eachEntry) => {
                                 const eachFilterKey = eachEntry[0] as keyof searchFiltersType<T>
                                 const eachFilterValue = eachEntry[1] as searchFiltersType<T>[keyof T]
@@ -256,6 +278,8 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
                                             {typeof eachFilterValue.value === "boolean" && (
                                                 <button className='button1' style={{ backgroundColor: activeSearchFilters[eachFilterKey] ? "" : "rgb(var(--color2))" }}
                                                     onClick={() => {
+                                                        runAllOnFilters()
+
                                                         activeSearchFiltersSet(prevSearchFilters => {
                                                             const newSearchFilters = { ...prevSearchFilters }
                                                             if (newSearchFilters[eachFilterKey] === undefined) return prevSearchFilters
@@ -284,6 +308,8 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
                                                             }
                                                         }
 
+                                                        runAllOnFilters()
+
                                                         activeSearchFiltersSet(prevSearchFilters => {
                                                             const newSearchFilters = { ...prevSearchFilters }
                                                             if (newSearchFilters[eachFilterKey] === undefined) return prevSearchFilters
@@ -303,6 +329,8 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
 
                                             <button
                                                 onClick={() => {
+                                                    runAllOnFilters()
+
                                                     activeSearchFiltersSet(prevSearchFilters => {
                                                         const newSearchFilters = { ...prevSearchFilters }
                                                         if (newSearchFilters[eachFilterKey] === undefined) return prevSearchFilters
