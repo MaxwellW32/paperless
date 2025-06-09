@@ -132,9 +132,9 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
 
                         {tapesSearchObj.searchItems.length > 0 && (
                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
-                                {tapesSearchObj.searchItems.map((eachTape, eachTapeIndex) => {
+                                {tapesSearchObj.searchItems.map(eachTape => {
                                     return (
-                                        <ViewTape key={eachTapeIndex} seenTape={eachTape}
+                                        <ViewTape key={eachTape.id} seenTape={eachTape}
                                             addFunction={() => {
                                                 runSameOnAllFormObjUpdates()
 

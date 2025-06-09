@@ -461,9 +461,9 @@ export default function Dashboard() {
                                             <h2>tapes</h2>
 
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
-                                                {tapesSearchObj.searchItems.map((eachTape, eachTapeIndex) => {
+                                                {tapesSearchObj.searchItems.map(eachTape => {
                                                     return (
-                                                        <ViewTape key={eachTapeIndex} seenTape={eachTape} />
+                                                        <ViewTape key={eachTape.id} seenTape={eachTape} />
                                                     )
                                                 })}
                                             </div>
@@ -475,9 +475,9 @@ export default function Dashboard() {
                                             <h2>equipment</h2>
 
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
-                                                {equipmentSearchObj.searchItems.map((eachEquipment, eachEquipmentIndex) => {
+                                                {equipmentSearchObj.searchItems.map(eachEquipment => {
                                                     return (
-                                                        <ViewEquipment key={eachEquipmentIndex} seenEquipment={eachEquipment} />
+                                                        <ViewEquipment key={eachEquipment.id} seenEquipment={eachEquipment} />
                                                     )
                                                 })}
                                             </div>
@@ -565,9 +565,9 @@ export default function Dashboard() {
                                     <>
                                         <div style={{ display: "grid", alignContent: "flex-start" }}>
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
-                                                {tapesSearchObj.searchItems.map((eachTape, eachTapeIndex) => {
+                                                {tapesSearchObj.searchItems.map(eachTape => {
                                                     return (
-                                                        <ViewTape key={eachTapeIndex} seenTape={eachTape} />
+                                                        <ViewTape key={eachTape.id} seenTape={eachTape} />
                                                     )
                                                 })}
                                             </div>
@@ -600,9 +600,9 @@ export default function Dashboard() {
                                     <>
                                         <div style={{ display: "grid", alignContent: "flex-start" }}>
                                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
-                                                {equipmentSearchObj.searchItems.map((eachEquipment, eachEquipmentIndex) => {
+                                                {equipmentSearchObj.searchItems.map(eachEquipment => {
                                                     return (
-                                                        <ViewEquipment key={eachEquipmentIndex} seenEquipment={eachEquipment} />
+                                                        <ViewEquipment key={eachEquipment.id} seenEquipment={eachEquipment} />
                                                     )
                                                 })}
                                             </div>

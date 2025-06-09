@@ -138,9 +138,9 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
 
                         {equipmentSearchObj.searchItems.length > 0 && (
                             <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
-                                {equipmentSearchObj.searchItems.map((eachEquipment, eachEquipmentIndex) => {
+                                {equipmentSearchObj.searchItems.map(eachEquipment => {
                                     return (
-                                        <ViewEquipment key={eachEquipmentIndex} seenEquipment={eachEquipment}
+                                        <ViewEquipment key={eachEquipment.id} seenEquipment={eachEquipment}
                                             addFunction={() => {
                                                 runSameOnAllFormObjUpdates()
 
