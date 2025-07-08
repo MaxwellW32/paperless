@@ -1,7 +1,7 @@
 To do:
 Convo with Albert login - email Auth - IT security. Look at login credentials for security - e.g ensure only company domain emails can be used for account login
 
-Bank app - logout after 15 minutes - timeour screen with pin
+Bank app - logout after 15 minutes - timeout screen with pin
 
 Standardize initial - confirm with Danielle what we expect there - e.g enter your name 
 

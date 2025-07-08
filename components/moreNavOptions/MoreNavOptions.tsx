@@ -46,7 +46,7 @@ export default function MoreNavOptions({ session }: { session: Session }) {
 
     return (
         <div className={styles.contDiv}>
-            <Image alt="logo" src={session.user.image !== null ? session.user.image : noImage} width={30} height={30} style={{ objectFit: "cover" }}
+            <Image alt="userImage" src={session.user.image !== null ? session.user.image : noImage} width={30} height={30} style={{ objectFit: "cover" }}
                 onClick={() => { showingNavSet(prev => !prev) }}
             />
 
