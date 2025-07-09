@@ -28,19 +28,21 @@ export default function ConnectBackground({ text }: { text: string }) {
     const lettersOnBackground = useRef<{ [key: string]: letterObjType }>({})
 
     const amtOfRequests = useRef(-1)
-    const functionTimes = useRef<number[]>([])
+    const totalWaitTime = useRef<number>(0)
     const requestDebounce = useRef<NodeJS.Timeout | undefined>()
 
     //everytime text changes animate the letter
     useEffect(() => {
         if (text === "") return
 
-        //limit amount on screen
-        if (amtOfRequests.current > 200) return
+        const seenLetter = text[text.length - 1]
+        const amountToRepeat = Math.floor(Math.random() * 10)
 
-        sequentialOrder(() => {
-            animateLetter(text[text.length - 1])
-        })
+        for (let index = 0; index < amountToRepeat; index++) {
+            sequentialOrder(() => {
+                animateLetter(seenLetter)
+            })
+        }
     }, [text])
 
     function animateLetter(letter: string) {
@@ -61,7 +63,7 @@ export default function ConnectBackground({ text }: { text: string }) {
         if (Math.random() > 0.5) direction.y *= -1
 
 
-        const rotationIncrementer = { x: Math.floor(Math.random() * 3), y: Math.floor(Math.random() * 3), z: 0 }
+        const rotationIncrementer = { x: Math.random() * 1, y: Math.floor(Math.random() * 3), z: 0 }
         //limit z rotation
         if (Math.random() > 0.8) rotationIncrementer.z = Math.floor(Math.random() * 3)
 
@@ -79,7 +81,6 @@ export default function ConnectBackground({ text }: { text: string }) {
         //add styles
         newLetterObj.el.classList.add(styles.displayText)
         newLetterObj.el.style.fontSize = `${newLetterObj.width}px`
-        Math.random() > 0.5 ? newLetterObj.el.style.textTransform = "uppercase" : null
 
         //initial position
         applyLetterTransforms(newLetterObj)
@@ -137,21 +138,41 @@ export default function ConnectBackground({ text }: { text: string }) {
         //reset functionTimes after long delay
         if (requestDebounce.current) clearTimeout(requestDebounce.current)
         requestDebounce.current = setTimeout(() => {
-            functionTimes.current = []
+            totalWaitTime.current = 0
             amtOfRequests.current = -1
         }, 10_000);
 
-        const IndexOfRequest = amtOfRequests.current += 1
-        const largeTime = Math.random() > 0.95 ? 1.5 : 1
-        const waitTime = IndexOfRequest === 0 ? 0 : (Math.floor(Math.random() * 1500) * largeTime)
-        const prevFuncWaitTime: number | undefined = functionTimes.current[IndexOfRequest - 1]
-        const combinedWaitTime = (prevFuncWaitTime === undefined ? 0 : prevFuncWaitTime) + waitTime
+        amtOfRequests.current += 1
 
-        //add onto wait times
-        functionTimes.current[IndexOfRequest] = waitTime
+        let waitTime = Math.floor(Math.random() * 400)
+
+        //wait time exists
+        //if over a threshold sub from that wait time
+        //threshold is 100 requests
+
+        //see how many requests over the threshold ive gone
+        //compare that number to the request limit
+        //make percentage of it
+        //multiple percentage against wait time
+
+        const requestLimit = 50
+
+        if (amtOfRequests.current > requestLimit) {
+            let amountToSubtract = amtOfRequests.current - requestLimit //20 requests - 10
+            if (amountToSubtract > requestLimit) amountToSubtract = requestLimit //if ever greater than value 100 / 100% limit at 100
+
+            const percentToSubtract = amountToSubtract / requestLimit
+
+            const percentageAmountToSubtract = waitTime * percentToSubtract //1% of wait time
+            waitTime = waitTime - percentageAmountToSubtract
+        }
+
+        //add onto wait time
+        totalWaitTime.current += waitTime
+        // console.log(`$functionTimes.current`, totalWaitTime.current);
 
         //wait
-        await new Promise(resolve => setTimeout(() => resolve(true), combinedWaitTime))    //+ wait time of previous function
+        await new Promise(resolve => setTimeout(() => resolve(true), totalWaitTime.current))    //+ wait time of previous function
 
         //run
         funcToRun()

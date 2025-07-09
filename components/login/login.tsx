@@ -5,7 +5,7 @@ import { checkIfUserEmailInUse } from "@/serverFunctions/handleUser"
 import { consoleAndToastError } from "@/usefulFunctions/consoleErrorWithToast"
 import { signIn } from "next-auth/react"
 import toast from "react-hot-toast"
-// import ConnectBackground from "../connectBackground/ConnectBg"
+import ConnectBackground from "../connectBackground/ConnectBg"
 
 export default function LoginComp() {
     const [email, emailSet] = useState("")
@@ -58,7 +58,7 @@ export default function LoginComp() {
                 >Submit</button>
             </div>
 
-            {/* <ConnectBackground text={email} /> */}
+            <ConnectBackground text={email} />
         </main>
     )
 }
