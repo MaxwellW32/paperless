@@ -100,7 +100,7 @@ export default function AddEditCompany({ sentCompany, submissionAction }: { sent
             if (resourceAuth === undefined) throw new Error("not seeing auth")
             toast.success("submittting")
 
-            //new department
+            //new company
             if (sentCompany === undefined) {
                 const validatedNewDepartment = newCompanySchema.parse(formObj)
 
