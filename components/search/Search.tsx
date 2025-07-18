@@ -196,13 +196,13 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
     return (
         <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center" }}>
-                <button className='mainButton'
+                <button className='button1'
                     onClick={async () => {
                         handleSearch()
                     }}
                 >search</button>
 
-                <button className='thirdButton'
+                <button className='button2'
                     onClick={() => {
                         //decrease offset
                         handleOffset("decrement")
@@ -212,7 +212,7 @@ export default function Search<T>({ searchObj, searchObjSet, searchFunc, showPag
                     }}
                 >prev</button>
 
-                <button className='thirdButton'
+                <button className='button2'
                     onClick={() => {
                         //increase offset
                         handleOffset("increment")
