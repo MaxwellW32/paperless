@@ -77,7 +77,6 @@ export async function getChecklistStarters(limit = 50, offset = 0): Promise<chec
 
 export async function getChecklistStartersTypes(): Promise<(checklistStarter["type"])[]> {
     const results = await db.query.checklistStarters.findMany();
-    console.log(`$resuls`, JSON.stringify(results, null, 2));
     return results.map(eachChecklistStarter => eachChecklistStarter.type)
 }
 
