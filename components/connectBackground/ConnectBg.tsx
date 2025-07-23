@@ -2,18 +2,6 @@ import React, { useEffect, useRef } from 'react'
 import styles from "./styles.module.css"
 import { v4 as uuidV4 } from 'uuid'
 
-//want to see the email im typing displayed in dots
-//make a matrix of dots
-//on key press fetch the correct dot trace sequence 
-//draw the character 
-//move the dots randomly 
-//animate 
-// 
-// 
-// 
-// 
-// 
-
 type letterObjType = {
     id: string,
     position: { x: number, y: number },
@@ -36,13 +24,10 @@ export default function ConnectBackground({ text }: { text: string }) {
         if (text === "") return
 
         const seenLetter = text[text.length - 1]
-        const amountToRepeat = Math.floor(Math.random() * 10)
 
-        for (let index = 0; index < amountToRepeat; index++) {
-            sequentialOrder(() => {
-                animateLetter(seenLetter)
-            })
-        }
+        sequentialOrder(() => {
+            animateLetter(seenLetter)
+        })
     }, [text])
 
     function animateLetter(letter: string) {
