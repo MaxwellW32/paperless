@@ -110,7 +110,7 @@ function DynamicMakeForm({ formData, formDataSet, sentKeys = "", parentArrayName
     };
 
     return (
-        <div  {...elProps} style={{ display: "grid", gap: "1rem", alignContent: "flex-start", overflow: "auto", ...elProps?.style }} className={`${parentArrayName ? "snap" : ""} ${elProps?.className ?? ""}`}>
+        <div  {...elProps} style={{ display: "grid", gap: "var(--spacingR)", alignContent: "flex-start", overflow: "auto", ...elProps?.style }} className={`${parentArrayName ? "snap" : ""} ${elProps?.className ?? ""}`}>
             {Object.entries(formData).map(eachEntry => {
                 const eachKey = eachEntry[0]
                 const eachFormDataValue = eachEntry[1]
@@ -208,7 +208,7 @@ function DynamicMakeForm({ formData, formDataSet, sentKeys = "", parentArrayName
                                                 />
 
                                             ) : eachFormDataValue.data.type === "boolean" ? (
-                                                <button className="button1" style={{ backgroundColor: eachFormDataValue.data.value ? "rgb(var(--color1))" : "" }}
+                                                <button className="button1" style={{ backgroundColor: eachFormDataValue.data.value ? "var(--color1)" : "" }}
                                                     onClick={() => handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: !eachFormDataValue.data.value } })}>
                                                     Toggle
                                                 </button>
@@ -239,7 +239,7 @@ function DynamicMakeForm({ formData, formDataSet, sentKeys = "", parentArrayName
                                                 >{eachFormDataValue.data.isFloat ? "float" : "integer"}</button>
                                             )}
 
-                                            <button className="button1" style={{ backgroundColor: eachFormDataValue.required ? "rgb(var(--color1))" : "" }}
+                                            <button className="button1" style={{ backgroundColor: eachFormDataValue.required ? "var(--color1)" : "" }}
                                                 onClick={() => {
                                                     handleChange(seenKeys, { ...eachFormDataValue, required: !eachFormDataValue.required })
                                                 }}
@@ -272,7 +272,7 @@ function DynamicMakeForm({ formData, formDataSet, sentKeys = "", parentArrayName
                                                             }}
                                                         />
 
-                                                        <button className="button1" style={{ backgroundColor: eachFormDataValue.required ? "rgb(var(--color1))" : "" }}
+                                                        <button className="button1" style={{ backgroundColor: eachFormDataValue.required ? "var(--color1)" : "" }}
                                                             onClick={() => {
                                                                 handleChange(seenKeys, { ...eachFormDataValue, required: !eachFormDataValue.required })
                                                             }}
@@ -318,7 +318,7 @@ function DynamicMakeForm({ formData, formDataSet, sentKeys = "", parentArrayName
                                                             }}
                                                         />
 
-                                                        <button className="button1" style={{ backgroundColor: eachFormDataValue.required ? "rgb(var(--color1))" : "" }}
+                                                        <button className="button1" style={{ backgroundColor: eachFormDataValue.required ? "var(--color1)" : "" }}
                                                             onClick={() => {
                                                                 handleChange(seenKeys, { ...eachFormDataValue, required: !eachFormDataValue.required })
                                                             }}
@@ -362,7 +362,7 @@ function ButtonSelectionOptions({ seenKeys, addField }: {
 
             <div style={{ display: "flex", flexWrap: "wrap" }}>
                 {fieldTypeOptions.map(eachFieldTypeOption => (
-                    <button key={eachFieldTypeOption} className="button2" style={{ backgroundColor: eachFieldTypeOption === fieldTypeSelection ? "rgb(var(--color1))" : "" }}
+                    <button key={eachFieldTypeOption} className="button2" style={{ backgroundColor: eachFieldTypeOption === fieldTypeSelection ? "var(--color1)" : "" }}
                         onClick={() => {
                             fieldTypeSelectionSet(eachFieldTypeOption)
                         }}
@@ -374,7 +374,7 @@ function ButtonSelectionOptions({ seenKeys, addField }: {
 
             <div style={{ display: fieldTypeSelection === "input" ? "flex" : "none", flexWrap: "wrap" }}>
                 {inputTypeOptions.map(eachInputTypeOption => (
-                    <button key={eachInputTypeOption} className="button2" style={{ backgroundColor: eachInputTypeOption === inputTypeSelection ? "rgb(var(--color1))" : "" }}
+                    <button key={eachInputTypeOption} className="button2" style={{ backgroundColor: eachInputTypeOption === inputTypeSelection ? "var(--color1)" : "" }}
                         onClick={() => inputTypeSelectionSet(eachInputTypeOption)}
                     >
                         {eachInputTypeOption}
@@ -454,7 +454,7 @@ function DynamicReadForm({ formData, setFormData, sentKeys = "", parentArrayName
     };
 
     return (
-        <div  {...elProps} style={{ display: "grid", gap: "1rem", alignContent: "flex-start", overflow: "auto", ...elProps?.style }} className={`${parentArrayName ? "snap" : ""} ${elProps?.className ?? ""}`}>
+        <div  {...elProps} style={{ display: "grid", gap: "var(--spacingR)", alignContent: "flex-start", overflow: "auto", ...elProps?.style }} className={`${parentArrayName ? "snap" : ""} ${elProps?.className ?? ""}`}>
             {Object.entries(formData).map(eachEntry => {
                 const eachKey = eachEntry[0]
                 const eachFormDataValue = eachEntry[1]
@@ -515,7 +515,7 @@ function DynamicReadForm({ formData, setFormData, sentKeys = "", parentArrayName
                                     />
 
                                 ) : eachFormDataValue.data.type === "boolean" ? (
-                                    <button className="button1" style={{ backgroundColor: eachFormDataValue.data.value ? "rgb(var(--color1))" : "" }}
+                                    <button className="button1" style={{ backgroundColor: eachFormDataValue.data.value ? "var(--color1)" : "" }}
                                         onClick={() => handleChange(seenKeys, { ...eachFormDataValue, data: { ...eachFormDataValue.data, value: !eachFormDataValue.data.value } })}>
                                         Toggle
                                     </button>
@@ -562,7 +562,7 @@ function DynamicReadForm({ formData, setFormData, sentKeys = "", parentArrayName
                                     )}
                                     content={(
                                         <>
-                                            <div className="snap" style={{ display: "grid", gridAutoColumns: "min(400px, 90%)", gridAutoFlow: "column", gap: "1rem", overflow: "auto", paddingBlock: "1rem" }} >
+                                            <div className="snap" style={{ display: "grid", gridAutoColumns: "min(400px, 90%)", gridAutoFlow: "column", gap: "var(--spacingR)", overflow: "auto", paddingBlock: "1rem" }} >
                                                 {eachFormDataValue.data.map((eachFormData, eachFormDataIndex) => {
                                                     return (
                                                         <DynamicReadForm key={eachFormDataIndex} formData={eachFormData} setFormData={setFormData} sentKeys={`${seenKeys}/data/${eachFormDataIndex}`} parentArrayName={eachKey} />

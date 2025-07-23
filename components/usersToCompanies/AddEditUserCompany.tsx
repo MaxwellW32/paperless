@@ -129,7 +129,7 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
                 <>
                     <label>user to add</label>
 
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                         <label>search users by name</label>
 
                         <input type='text' placeholder='enter name to search' value={userNameSearch}
@@ -154,13 +154,13 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
                         />
 
                         {users.length > 0 && (
-                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                 {users.map(eachUser => {
                                     return (
-                                        <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                        <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                             <h3>{eachUser.name}</h3>
 
-                                            <button className='button1' style={{ backgroundColor: eachUser.id === activeUserId ? "rgb(var(--color1))" : "" }}
+                                            <button className='button1' style={{ backgroundColor: eachUser.id === activeUserId ? "var(--color1)" : "" }}
                                                 onClick={() => {
                                                     try {
                                                         //validation
@@ -184,7 +184,7 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
 
                     <label>company to add</label>
 
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                         <button className='button3'
                             onClick={async () => {
                                 try {
@@ -201,13 +201,13 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
                         >search companies</button>
 
                         {companies.length > 0 && (
-                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                 {companies.map(eachCompany => {
                                     return (
-                                        <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                        <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                             <h3>{eachCompany.name}</h3>
 
-                                            <button className='button1' style={{ backgroundColor: eachCompany.id === activeCompanyId ? "rgb(var(--color1))" : "" }}
+                                            <button className='button1' style={{ backgroundColor: eachCompany.id === activeCompanyId ? "var(--color1)" : "" }}
                                                 onClick={() => {
                                                     toast.success(`${eachCompany.name} selected!`)
 
@@ -339,7 +339,7 @@ export default function AddEditUserCompany({ sentUserCompany, companiesStarter, 
             )}
 
             {formObj.onAccessList !== undefined && (
-                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                     <label>can company user visit site?</label>
 
                     <button className='button1'

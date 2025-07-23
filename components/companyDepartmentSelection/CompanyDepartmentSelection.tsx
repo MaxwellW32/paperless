@@ -43,7 +43,7 @@ export default function CompanyDepartmentSelection() {
         <div style={{ position: "relative", display: seenSelectionOnce ? "" : "none", whiteSpace: "nowrap" }}>
             {userDepartmentCompanySelection === null ? (
                 <>
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", position: "absolute", backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", position: "absolute", backgroundColor: "var(--shade2)", padding: "var(--spacingR)" }}>
                         {seenUser.fromDepartment ? (
                             <>
                                 <label>department selection</label>

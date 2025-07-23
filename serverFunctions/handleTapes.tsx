@@ -2,7 +2,7 @@
 import { db } from "@/db";
 import { and, desc, eq, ne, sql, SQLWrapper } from "drizzle-orm";
 import { ensureCanAccessResource } from "./handleAuth";
-import { newTape, newTapeSchema, tape, tapeSchema, updateTape, resourceAuthType, tapeFilterType } from "@/types";
+import { newTape, newTapeSchema, tape, tapeSchema, updateTape, resourceAuthType, tableFilterTypes } from "@/types";
 import { tapes } from "@/db/schema";
 import { interpretAuthResponseAndError } from "@/utility/utility";
 
@@ -22,7 +22,7 @@ export async function addTapes(newTapeObj: newTape, resourceAuth: resourceAuthTy
     return addedTape
 }
 
-export async function getTapes(filter: tapeFilterType, resourceAuth: resourceAuthType, limit = 50, offset = 0, withProperty: { company?: true } = {}): Promise<tape[]> {
+export async function getTapes(filter: tableFilterTypes<tape>, resourceAuth: resourceAuthType, limit = 50, offset = 0, withProperty: { company?: true } = {}): Promise<tape[]> {
     // Security check
     const authResponse = await ensureCanAccessResource({ type: "tape", tapeId: "" }, resourceAuth, "ra")
     interpretAuthResponseAndError(authResponse)
@@ -45,7 +45,7 @@ export async function getTapes(filter: tapeFilterType, resourceAuth: resourceAut
     }
 
     if (filter.tapeLocation !== undefined) {
-        whereClauses.push(filter.oppositeLocation ? ne(tapes.tapeLocation, filter.tapeLocation) : eq(tapes.tapeLocation, filter.tapeLocation))
+        whereClauses.push(eq(tapes.tapeLocation, filter.tapeLocation))
     }
 
     // Run the query

@@ -385,14 +385,14 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                     </button>
 
                     {checklistStarters.length > 0 && (
-                        <div style={{ display: "flex", gap: "1rem", overflow: "auto" }}>
+                        <div style={{ display: "flex", gap: "var(--spacingR)", overflow: "auto" }}>
                             {checklistStarters.map(eachCheckliststarter => {
 
                                 return (
-                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", flex: "0 0 auto" }}>
+                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", flex: "0 0 auto" }}>
                                         <h3>{eachCheckliststarter.type}</h3>
 
-                                        <button className='button1' style={{ backgroundColor: eachCheckliststarter.type === chosenChecklistStarterType ? "rgb(var(--color1))" : "", }}
+                                        <button className='button1' style={{ backgroundColor: eachCheckliststarter.type === chosenChecklistStarterType ? "var(--color1)" : "", }}
                                             onClick={() => {
                                                 toast.success(`${eachCheckliststarter.type} selected`)
 
@@ -411,7 +411,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 <>
                     <label>company for request</label>
 
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
                         <button className='button1'
                             onClick={async () => {
                                 try {
@@ -427,13 +427,13 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                             }}
                         >get companies</button>
 
-                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(250px, 90%)", overflow: "auto" }} className='snap'>
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(250px, 90%)", overflow: "auto" }} className='snap'>
                             {companies.map(eachCompany => {
                                 return (
-                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", padding: "1rem" }}>
+                                    <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", padding: "var(--spacingR)" }}>
                                         <h3>{eachCompany.name}</h3>
 
-                                        <button className='button1' style={{ backgroundColor: eachCompany.id === formObj.companyId ? "" : "rgb(var(--color2))" }}
+                                        <button className='button1' style={{ backgroundColor: eachCompany.id === formObj.companyId ? "" : "var(--color2)" }}
                                             onClick={() => {
                                                 toast.success(`selected`)
 
@@ -458,7 +458,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                 <>
                     {usersToCompaniesWithAccess.length > 0 ? (
                         <>
-                            <label style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                            <label style={{ display: "flex", gap: "var(--spacingS)", alignItems: "center" }}>
                                 <p>Clients visiting</p>
 
                                 {formObj.companyId !== undefined && (
@@ -476,7 +476,7 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                                             }
                                         }}
                                     >
-                                        <svg style={{ fill: "rgb(var(--shade1))", transform: "rotateX(180deg)" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M463.5 224l8.5 0c13.3 0 24-10.7 24-24l0-128c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1c-87.5 87.5-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8l119.5 0z" /></svg>
+                                        <svg style={{ fill: "var(--shade1)", transform: "rotateX(180deg)" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M463.5 224l8.5 0c13.3 0 24-10.7 24-24l0-128c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1c-87.5 87.5-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8l119.5 0z" /></svg>
                                     </button>
                                 )}
                             </label>
@@ -512,214 +512,221 @@ export default function AddEditClientRequest({ seenChecklistStarterType, sentCli
                         </>
                     )}
                 </>
-            )}
+            )
+            }
 
-            {formObj.status !== undefined && session.user.accessLevel === "admin" && ( //for admin only show the form status
-                <>
-                    <label>status</label>
+            {
+                formObj.status !== undefined && session.user.accessLevel === "admin" && ( //for admin only show the form status
+                    <>
+                        <label>status</label>
 
-                    <select value={formObj.status}
-                        onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
-                            const eachAccessLevel = event.target.value as clientRequestStatusType
+                        <select value={formObj.status}
+                            onChange={async (event: React.ChangeEvent<HTMLSelectElement>) => {
+                                const eachAccessLevel = event.target.value as clientRequestStatusType
 
+                                formObjSet(prevFormObj => {
+                                    const newFormObj = { ...prevFormObj }
+                                    if (newFormObj.status === undefined) return prevFormObj
+
+                                    newFormObj.status = eachAccessLevel
+
+                                    return newFormObj
+                                })
+                            }}
+                        >
+                            {clientRequestStatusOptions.map(eachStatusOption => {
+
+                                return (
+                                    <option key={eachStatusOption} value={eachStatusOption}
+                                    >{eachStatusOption}</option>
+                                )
+                            })}
+                        </select>
+                    </>
+                )
+            }
+
+            {
+                formObj.eta !== undefined && (
+                    <TextInput style={{ justifySelf: "flex-start", width: "min(400px, 100%)" }}
+                        name={`eta`}
+                        value={offsetTime(new Date(formObj.eta), -5).toISOString().slice(0, 16)}
+                        type={"datetime-local"}
+                        label={"expected arrival"}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            //set the checklist and checklist id
                             formObjSet(prevFormObj => {
                                 const newFormObj = { ...prevFormObj }
-                                if (newFormObj.status === undefined) return prevFormObj
+                                if (newFormObj.eta === undefined) return prevFormObj
 
-                                newFormObj.status = eachAccessLevel
-
+                                newFormObj.eta = new Date(e.target.value)
                                 return newFormObj
                             })
                         }}
-                    >
-                        {clientRequestStatusOptions.map(eachStatusOption => {
+                        onBlur={() => { checkIfValid(formObj, "eta", clientRequestSchema) }}
+                        errors={formErrors["eta"]}
+                    />
+                )
+            }
 
-                            return (
-                                <option key={eachStatusOption} value={eachStatusOption}
-                                >{eachStatusOption}</option>
-                            )
-                        })}
-                    </select>
-                </>
-            )}
+            {
+                formObj.checklist !== undefined && (
+                    <>
+                        {session.user.accessLevel === "admin" && (
+                            <label>checklist</label>
+                        )}
 
-            {formObj.eta !== undefined && (
-                <TextInput style={{ justifySelf: "flex-start", width: "min(400px, 100%)" }}
-                    name={`eta`}
-                    value={offsetTime(new Date(formObj.eta), -5).toISOString().slice(0, 16)}
-                    type={"datetime-local"}
-                    label={"expected arrival"}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        //set the checklist and checklist id
-                        formObjSet(prevFormObj => {
-                            const newFormObj = { ...prevFormObj }
-                            if (newFormObj.eta === undefined) return prevFormObj
+                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
+                            {formObj.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
+                                if (session === null || formObj.checklist === undefined) return null
 
-                            newFormObj.eta = new Date(e.target.value)
-                            return newFormObj
-                        })
-                    }}
-                    onBlur={() => { checkIfValid(formObj, "eta", clientRequestSchema) }}
-                    errors={formErrors["eta"]}
-                />
-            )}
+                                let canShowChecklistItem = false;
 
-            {formObj.checklist !== undefined && (
-                <>
-                    {session.user.accessLevel === "admin" && (
-                        <label>checklist</label>
-                    )}
-
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
-                        {formObj.checklist.map((eachChecklistItem, eachChecklistItemIndex) => {
-                            if (session === null || formObj.checklist === undefined) return null
-
-                            let canShowChecklistItem = false;
-
-                            if (session.user.accessLevel === "admin") {
-                                canShowChecklistItem = true;
-
-                            } else if (eachChecklistItem.type === "form") {
-                                if (editableFormIndexes.includes(eachChecklistItemIndex)) {
+                                if (session.user.accessLevel === "admin") {
                                     canShowChecklistItem = true;
+
+                                } else if (eachChecklistItem.type === "form") {
+                                    if (editableFormIndexes.includes(eachChecklistItemIndex)) {
+                                        canShowChecklistItem = true;
+                                    }
                                 }
-                            }
 
-                            if (!canShowChecklistItem) return null;
+                                if (!canShowChecklistItem) return null;
 
-                            return (
-                                <div key={eachChecklistItemIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
-                                    {session.user.accessLevel === "admin" && (
-                                        <label>{eachChecklistItem.type}</label>
-                                    )}
+                                return (
+                                    <div key={eachChecklistItemIndex} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", backgroundColor: "var(--color3)", padding: "var(--spacingR)" }}>
+                                        {session.user.accessLevel === "admin" && (
+                                            <label>{eachChecklistItem.type}</label>
+                                        )}
 
-                                    {eachChecklistItem.type === "form" && (//refresh all forms when a new checklist type is loaded
-                                        <React.Fragment key={formObj.checklistStarterId}>
-                                            {eachChecklistItem.form.type === "dynamic" && (
-                                                <ReadDynamicForm seenForm={eachChecklistItem.form.data} viewOnly={false}
-                                                    handleFormUpdate={(seenLatestForm) => {
+                                        {eachChecklistItem.type === "form" && (//refresh all forms when a new checklist type is loaded
+                                            <React.Fragment key={formObj.checklistStarterId}>
+                                                {eachChecklistItem.form.type === "dynamic" && (
+                                                    <ReadDynamicForm seenForm={eachChecklistItem.form.data} viewOnly={false}
+                                                        handleFormUpdate={(seenLatestForm) => {
+                                                            formObjSet(prevFormObj => {
+                                                                const newFormObj = { ...prevFormObj }
+                                                                if (newFormObj.checklist === undefined) return prevFormObj
+
+                                                                //edit new checklist item
+                                                                const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
+                                                                if (newChecklistItem.type !== "form" || newChecklistItem.form.type !== "dynamic") return prevFormObj
+
+                                                                newChecklistItem.form.data = seenLatestForm
+
+                                                                newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                                return newFormObj
+                                                            })
+                                                        }}
+                                                    />
+                                                )}
+
+                                                {formObj.companyId !== undefined && (
+                                                    <>
+                                                        {((eachChecklistItem.form.type === "tapeDeposit") || (eachChecklistItem.form.type === "tapeWithdraw")) && (
+                                                            <EditTapeForm seenForm={eachChecklistItem.form} seenCompanyId={formObj.companyId}
+                                                                handleFormUpdate={(seenLatestForm) => {
+                                                                    formObjSet(prevFormObj => {
+                                                                        const newFormObj = { ...prevFormObj }
+                                                                        if (newFormObj.checklist === undefined) return prevFormObj
+
+                                                                        //edit new checklist item
+                                                                        const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
+                                                                        if (newChecklistItem.type !== "form") return prevFormObj
+                                                                        if (newChecklistItem.form.type !== "tapeDeposit" && newChecklistItem.form.type !== "tapeWithdraw") return prevFormObj
+
+                                                                        //set the new form data
+                                                                        newChecklistItem.form = seenLatestForm
+
+                                                                        newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                                        return newFormObj
+                                                                    })
+                                                                }}
+                                                            />
+                                                        )}
+
+                                                        {((eachChecklistItem.form.type === "equipmentDeposit") || (eachChecklistItem.form.type === "equipmentWithdraw")) && (
+                                                            <EditEquipmentForm seenForm={eachChecklistItem.form} seenCompanyId={formObj.companyId}
+                                                                handleFormUpdate={(seenLatestForm) => {
+                                                                    formObjSet(prevFormObj => {
+                                                                        const newFormObj = { ...prevFormObj }
+                                                                        if (newFormObj.checklist === undefined) return prevFormObj
+
+                                                                        //edit new checklist item
+                                                                        const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
+                                                                        if (newChecklistItem.type !== "form") return prevFormObj
+                                                                        if (newChecklistItem.form.type !== "equipmentDeposit" && newChecklistItem.form.type !== "equipmentWithdraw") return prevFormObj
+
+                                                                        //set the new form data
+                                                                        newChecklistItem.form = seenLatestForm
+
+                                                                        newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
+
+                                                                        return newFormObj
+                                                                    })
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </>
+                                                )}
+                                            </React.Fragment>
+                                        )}
+
+                                        {eachChecklistItem.type === "email" && (
+                                            <>
+                                                <label>to: </label>
+                                                <p>{eachChecklistItem.to}</p>
+
+                                                <label>subject: </label>
+                                                <p>{eachChecklistItem.subject}</p>
+
+                                                <label>email text: </label>
+                                                <p>{eachChecklistItem.email}</p>
+                                            </>
+                                        )}
+
+                                        {eachChecklistItem.type === "manual" && (
+                                            <>
+                                                <label>for: </label>
+                                                <p>{eachChecklistItem.for.type}</p>
+
+                                                <label>prompt: </label>
+                                                <p>{eachChecklistItem.prompt}</p>
+                                            </>
+                                        )}
+
+                                        {session.user.accessLevel === "admin" && (
+                                            <>
+                                                <button className='button1' style={{ backgroundColor: eachChecklistItem.completed ? "var(--color1)" : "" }}
+                                                    onClick={() => {
                                                         formObjSet(prevFormObj => {
                                                             const newFormObj = { ...prevFormObj }
                                                             if (newFormObj.checklist === undefined) return prevFormObj
 
-                                                            //edit new checklist item
-                                                            const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
-                                                            if (newChecklistItem.type !== "form" || newChecklistItem.form.type !== "dynamic") return prevFormObj
-
-                                                            newChecklistItem.form.data = seenLatestForm
-
-                                                            newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
+                                                            //to ensure refresh of boolean
+                                                            newFormObj.checklist = [...newFormObj.checklist]
+                                                            newFormObj.checklist[eachChecklistItemIndex] = { ...newFormObj.checklist[eachChecklistItemIndex] }
+                                                            newFormObj.checklist[eachChecklistItemIndex].completed = !newFormObj.checklist[eachChecklistItemIndex].completed
 
                                                             return newFormObj
                                                         })
                                                     }}
-                                                />
-                                            )}
-
-                                            {formObj.companyId !== undefined && (
-                                                <>
-                                                    {((eachChecklistItem.form.type === "tapeDeposit") || (eachChecklistItem.form.type === "tapeWithdraw")) && (
-                                                        <EditTapeForm seenForm={eachChecklistItem.form} seenCompanyId={formObj.companyId}
-                                                            handleFormUpdate={(seenLatestForm) => {
-                                                                formObjSet(prevFormObj => {
-                                                                    const newFormObj = { ...prevFormObj }
-                                                                    if (newFormObj.checklist === undefined) return prevFormObj
-
-                                                                    //edit new checklist item
-                                                                    const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
-                                                                    if (newChecklistItem.type !== "form") return prevFormObj
-                                                                    if (newChecklistItem.form.type !== "tapeDeposit" && newChecklistItem.form.type !== "tapeWithdraw") return prevFormObj
-
-                                                                    //set the new form data
-                                                                    newChecklistItem.form = seenLatestForm
-
-                                                                    newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
-
-                                                                    return newFormObj
-                                                                })
-                                                            }}
-                                                        />
-                                                    )}
-
-                                                    {((eachChecklistItem.form.type === "equipmentDeposit") || (eachChecklistItem.form.type === "equipmentWithdraw")) && (
-                                                        <EditEquipmentForm seenForm={eachChecklistItem.form} seenCompanyId={formObj.companyId}
-                                                            handleFormUpdate={(seenLatestForm) => {
-                                                                formObjSet(prevFormObj => {
-                                                                    const newFormObj = { ...prevFormObj }
-                                                                    if (newFormObj.checklist === undefined) return prevFormObj
-
-                                                                    //edit new checklist item
-                                                                    const newChecklistItem = { ...newFormObj.checklist[eachChecklistItemIndex] }
-                                                                    if (newChecklistItem.type !== "form") return prevFormObj
-                                                                    if (newChecklistItem.form.type !== "equipmentDeposit" && newChecklistItem.form.type !== "equipmentWithdraw") return prevFormObj
-
-                                                                    //set the new form data
-                                                                    newChecklistItem.form = seenLatestForm
-
-                                                                    newFormObj.checklist[eachChecklistItemIndex] = newChecklistItem
-
-                                                                    return newFormObj
-                                                                })
-                                                            }}
-                                                        />
-                                                    )}
-                                                </>
-                                            )}
-                                        </React.Fragment>
-                                    )}
-
-                                    {eachChecklistItem.type === "email" && (
-                                        <>
-                                            <label>to: </label>
-                                            <p>{eachChecklistItem.to}</p>
-
-                                            <label>subject: </label>
-                                            <p>{eachChecklistItem.subject}</p>
-
-                                            <label>email text: </label>
-                                            <p>{eachChecklistItem.email}</p>
-                                        </>
-                                    )}
-
-                                    {eachChecklistItem.type === "manual" && (
-                                        <>
-                                            <label>for: </label>
-                                            <p>{eachChecklistItem.for.type}</p>
-
-                                            <label>prompt: </label>
-                                            <p>{eachChecklistItem.prompt}</p>
-                                        </>
-                                    )}
-
-                                    {session.user.accessLevel === "admin" && (
-                                        <>
-                                            <button className='button1' style={{ backgroundColor: eachChecklistItem.completed ? "rgb(var(--color1))" : "" }}
-                                                onClick={() => {
-                                                    formObjSet(prevFormObj => {
-                                                        const newFormObj = { ...prevFormObj }
-                                                        if (newFormObj.checklist === undefined) return prevFormObj
-
-                                                        //to ensure refresh of boolean
-                                                        newFormObj.checklist = [...newFormObj.checklist]
-                                                        newFormObj.checklist[eachChecklistItemIndex] = { ...newFormObj.checklist[eachChecklistItemIndex] }
-                                                        newFormObj.checklist[eachChecklistItemIndex].completed = !newFormObj.checklist[eachChecklistItemIndex].completed
-
-                                                        return newFormObj
-                                                    })
-                                                }}
-                                            >{eachChecklistItem.completed ? "completed" : "incomplete"}</button>
-                                        </>
-                                    )}
-                                </div>
-                            )
-                        })}
-                    </div>
-                </>
-            )}
+                                                >{eachChecklistItem.completed ? "completed" : "incomplete"}</button>
+                                            </>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </>
+                )
+            }
 
             <button className='button1' style={{ justifySelf: "center" }}
                 onClick={handleSubmit}
             >{sentClientRequest !== undefined ? "update" : "submit"}</button>
-        </form>
+        </form >
     )
 }

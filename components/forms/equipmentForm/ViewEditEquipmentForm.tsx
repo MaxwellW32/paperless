@@ -7,7 +7,7 @@ import ConfirmationBox from '@/components/confirmationBox/ConfirmationBox'
 import toast from 'react-hot-toast'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
-import { company, equipmentFormNewEquipmentSchema, equipmentFormNewEquipmentType, equipmentFormType, equipmentT, resourceAuthType, searchObj } from '@/types'
+import { company, equipmentFormNewEquipmentSchema, equipmentFormNewEquipmentType, equipmentFormType, equipmentT, resourceAuthType, searchObjType } from '@/types'
 import { getEquipment } from '@/serverFunctions/handleEquipment'
 import ViewEquipment from '@/components/equipment/ViewEquipment'
 import TextArea from '@/components/textArea/TextArea'
@@ -31,7 +31,7 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
 
     const userInteracting = useRef(false)
 
-    const [equipmentSearchObj, equipmentSearchObjSet] = useState<searchObj<equipmentT>>({
+    const [equipmentSearchObj, equipmentSearchObjSet] = useState<searchObjType<equipmentT>>({
         searchItems: [],
     })
 
@@ -116,7 +116,7 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
             <ShowMore
                 label='search equipment'
                 content={
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
                         <Search
                             searchObj={equipmentSearchObj}
                             searchObjSet={equipmentSearchObjSet}
@@ -137,7 +137,7 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                         />
 
                         {equipmentSearchObj.searchItems.length > 0 && (
-                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
                                 {equipmentSearchObj.searchItems.map(eachEquipment => {
                                     return (
                                         <ViewEquipment key={eachEquipment.id} seenEquipment={eachEquipment}
@@ -183,10 +183,10 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
 
             {formObj.data.equipmentInRequest.length > 0 && (
                 <>
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 500px)", overflow: "auto", maxHeight: "60vh" }} className='snap'>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(100%, 500px)", overflow: "auto", maxHeight: "60vh" }} className='snap'>
                         {formObj.data.equipmentInRequest.map((eachEquipment, eachEquipmentIndex) => {
                             return (
-                                <div key={eachEquipmentIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", position: "relative" }}>
+                                <div key={eachEquipmentIndex} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", position: "relative" }}>
                                     <ConfirmationBox
                                         text={""}
                                         confirmationText='are you sure you want to remove?'
@@ -204,7 +204,7 @@ export function EditEquipmentForm({ seenForm, handleFormUpdate, seenCompanyId }:
                                             }
                                         }}
                                         icon={
-                                            <svg style={{ fill: "rgb(var(--shade2))" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"> <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
+                                            <svg style={{ fill: "var(--shade2)" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"> <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
                                         }
                                         runAction={() => {
                                             runSameOnAllFormObjUpdates()
@@ -482,7 +482,7 @@ export function ViewEquipmentForm({ seenForm }: { seenForm: equipmentFormType })
 
             {seenForm.data.equipmentInRequest.length > 0 && (
                 <>
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 300px)", overflow: "auto" }} className='snap'>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(100%, 300px)", overflow: "auto" }} className='snap'>
                         {seenForm.data.equipmentInRequest.map((eachEquipmentInRequest, eachEquipmentInRequestIndex) => {
                             return (
                                 <ViewEquipment key={eachEquipmentInRequestIndex} seenEquipment={eachEquipmentInRequest} />

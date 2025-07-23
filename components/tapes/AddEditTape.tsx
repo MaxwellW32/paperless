@@ -102,7 +102,7 @@ export default function AddEditTape({ sentTape, submissionAction }: { sentTape?:
         <form className={styles.form} action={() => { }}>
             <label>company for tape</label>
 
-            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
                 <button className='button1'
                     onClick={async () => {
                         try {
@@ -118,10 +118,10 @@ export default function AddEditTape({ sentTape, submissionAction }: { sentTape?:
                     }}
                 >get companies</button>
 
-                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
+                <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "250px", overflow: "auto" }} className='snap'>
                     {companies.map(eachCompany => {
                         return (
-                            <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: eachCompany.id === formObj.companyId ? "rgb(var(--color3))" : "rgb(var(--color2))", padding: "1rem" }}>
+                            <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", backgroundColor: eachCompany.id === formObj.companyId ? "var(--color3)" : "var(--color2)", padding: "var(--spacingR)" }}>
                                 <h3>{eachCompany.name}</h3>
 
                                 <button className='button3'

@@ -1,7 +1,7 @@
 .arrayCont {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
+    gap: var(--spacingR);
 }
 
 .mapCont {
@@ -9,14 +9,14 @@
     grid-auto-flow: column;
     grid-auto-columns: 300px;
     align-content: flex-start;
-    gap: 1rem;
+    gap: var(--spacingR);
     overflow: auto;
 }
 
 .mapEachCont {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
+    gap: var(--spacingR);
     position: relative;
 }
 

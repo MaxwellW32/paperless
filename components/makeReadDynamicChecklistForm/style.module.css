@@ -1,16 +1,16 @@
 .form {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
+    gap: var(--spacingR);
 }
 
 .labelCont {
     display: flex;
     align-items: center;
-    gap: .5rem;
+    gap: var(--spacingS);
 }
 
 .required {
-    color: rgb(var(--color1));
+    color: var(--color1);
     font-size: var(--fontSizeS);
 }

@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
 import styles from "./page.module.css"
-import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, refreshWSObjType, expectedResourceType, resourceAuthType, tape, equipmentT, searchObj, allFilterType } from '@/types'
+import { activeScreenType, checklistStarter, clientRequest, department, userDepartmentCompanySelection, refreshObjType, refreshWSObjType, expectedResourceType, resourceAuthType, tape, equipmentT, searchObjType, tableFilterTypes } from '@/types'
 import { getChecklistStartersTypes } from '@/serverFunctions/handleChecklistStarters'
 import { useAtom } from 'jotai'
 import { userDepartmentCompanySelectionGlobal, refreshObjGlobal, refreshWSObjGlobal, resourceAuthGlobal } from '@/utility/globalState'
@@ -44,15 +44,15 @@ export default function Dashboard() {
     const [userDepartmentCompanySelection,] = useAtom<userDepartmentCompanySelection | null>(userDepartmentCompanySelectionGlobal)
     const [activeClientRequests, activeClientRequestsSet] = useState<clientRequest[]>([])
 
-    const [pastRequestsSearchObj, pastRequestsSearchObjSet] = useState<searchObj<clientRequest>>({
+    const [pastRequestsSearchObj, pastRequestsSearchObjSet] = useState<searchObjType<clientRequest>>({
         searchItems: [],
     })
 
-    const [tapesSearchObj, tapesSearchObjSet] = useState<searchObj<tape>>({
+    const [tapesSearchObj, tapesSearchObjSet] = useState<searchObjType<tape>>({
         searchItems: [],
     })
 
-    const [equipmentSearchObj, equipmentSearchObjSet] = useState<searchObj<equipmentT>>({
+    const [equipmentSearchObj, equipmentSearchObjSet] = useState<searchObjType<equipmentT>>({
         searchItems: [],
     })
 
@@ -246,7 +246,7 @@ export default function Dashboard() {
     type updateOptionType = "all" | "specific"
 
     //handle tapes and equipment for clients only
-    async function loadResourceValues<T>(option: optionType, updateOption: updateOptionType, seenFilters: allFilterType): Promise<T[]> {
+    async function loadResourceValues<T>(option: optionType, updateOption: updateOptionType, seenFilters: tableFilterTypes<T>): Promise<T[]> {
         if (resourceAuth === undefined) throw new Error("no auth seen")
         if (userDepartmentCompanySelection === null || userDepartmentCompanySelection.type === "userDepartment") throw new Error("clients only")
 
@@ -306,7 +306,7 @@ export default function Dashboard() {
                 showingSideBarSet(true)
             }}
         >
-            <svg style={{ fill: "rgb(var(--shade1))", width: "1.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" /></svg>
+            <svg style={{ fill: "var(--shade1)", width: "1.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" /></svg>
         </button>
     ) : null
 
@@ -416,10 +416,10 @@ export default function Dashboard() {
                 )}
             </div>
 
-            <div className={styles.mainContent} style={{ backgroundColor: activeScreen === undefined ? "rgb(var(--color3))" : "rgb(var(--shade2))" }}>
+            <div className={styles.mainContent} style={{ backgroundColor: activeScreen === undefined ? "var(--color3)" : "var(--shade2)" }}>
                 {activeScreen === undefined ? (
                     <>
-                        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+                        <div style={{ display: "flex", gap: "var(--spacingR)", flexWrap: "wrap", alignItems: "center" }}>
                             {ShowSidebarButton}
 
                             <h1 className='noMargin'>dashboard</h1>
@@ -460,7 +460,7 @@ export default function Dashboard() {
                                         <div style={{ display: "grid", alignContent: "flex-start" }}>
                                             <h2>tapes</h2>
 
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
                                                 {tapesSearchObj.searchItems.map(eachTape => {
                                                     return (
                                                         <ViewTape key={eachTape.id} seenTape={eachTape} />
@@ -474,7 +474,7 @@ export default function Dashboard() {
                                         <div style={{ display: "grid", alignContent: "flex-start" }}>
                                             <h2>equipment</h2>
 
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
                                                 {equipmentSearchObj.searchItems.map(eachEquipment => {
                                                     return (
                                                         <ViewEquipment key={eachEquipment.id} seenEquipment={eachEquipment} />
@@ -488,7 +488,7 @@ export default function Dashboard() {
                         </div>
                     </>
                 ) : (
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                         {ShowSidebarButton}
 
                         {activeScreen.type === "newRequest" && activeScreen.activeChecklistStarterType !== undefined && (
@@ -564,7 +564,7 @@ export default function Dashboard() {
                                 {tapesSearchObj.searchItems.length > 0 && (
                                     <>
                                         <div style={{ display: "grid", alignContent: "flex-start" }}>
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
                                                 {tapesSearchObj.searchItems.map(eachTape => {
                                                     return (
                                                         <ViewTape key={eachTape.id} seenTape={eachTape} />
@@ -599,7 +599,7 @@ export default function Dashboard() {
                                 {equipmentSearchObj.searchItems.length > 0 && (
                                     <>
                                         <div style={{ display: "grid", alignContent: "flex-start" }}>
-                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
+                                            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto" }} className='snap'>
                                                 {equipmentSearchObj.searchItems.map(eachEquipment => {
                                                     return (
                                                         <ViewEquipment key={eachEquipment.id} seenEquipment={eachEquipment} />

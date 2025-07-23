@@ -244,7 +244,7 @@ export default function AddEditDepartment({ sentDepartment, submissionAction }: 
             )}
 
             {formObj.canManageRequests !== undefined && (
-                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                     <label>can department manage client requests?</label>
 
                     <button className='button1'

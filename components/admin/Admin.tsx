@@ -1,7 +1,7 @@
 "use client"
 import React, { useRef, useState } from 'react'
 import styles from "./admin.module.css"
-import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObj, tape, equipmentT } from '@/types'
+import { checklistStarter, department, company, userToDepartment, userToCompany, user, clientRequest, resourceAuthType, searchObjType, tape, equipmentT } from '@/types'
 import { getChecklistStarters, getSpecificChecklistStarters } from '@/serverFunctions/handleChecklistStarters'
 import { getDepartments, getSpecificDepartment } from '@/serverFunctions/handleDepartments'
 import { consoleAndToastError } from '@/usefulFunctions/consoleErrorWithToast'
@@ -55,31 +55,31 @@ export default function Page() {
     const [activeScreen, activeScreenSet] = useState<activeScreenType | undefined>(undefined)
     const [showingSideBar, showingSideBarSet] = useState(true)
 
-    const [usersSearchObj, usersSearchObjSet] = useState<searchObj<user>>({
+    const [usersSearchObj, usersSearchObjSet] = useState<searchObjType<user>>({
         searchItems: [],
     })
-    const [checklistStartersSearchObj, checklistStartersSearchObjSet] = useState<searchObj<checklistStarter>>({
+    const [checklistStartersSearchObj, checklistStartersSearchObjSet] = useState<searchObjType<checklistStarter>>({
         searchItems: [],
     })
-    const [clientRequestsSearchObj, clientRequestsSearchObjSet] = useState<searchObj<clientRequest>>({
+    const [clientRequestsSearchObj, clientRequestsSearchObjSet] = useState<searchObjType<clientRequest>>({
         searchItems: [],
     })
-    const [companiesSearchObj, companiesSearchObjSet] = useState<searchObj<company>>({
+    const [companiesSearchObj, companiesSearchObjSet] = useState<searchObjType<company>>({
         searchItems: [],
     })
-    const [departmentsSearchObj, departmentsSearchObjSet] = useState<searchObj<department>>({
+    const [departmentsSearchObj, departmentsSearchObjSet] = useState<searchObjType<department>>({
         searchItems: [],
     })
-    const [tapesSearchObj, tapesSearchObjSet] = useState<searchObj<tape>>({
+    const [tapesSearchObj, tapesSearchObjSet] = useState<searchObjType<tape>>({
         searchItems: [],
     })
-    const [equipmentSearchObj, equipmentSearchObjSet] = useState<searchObj<equipmentT>>({
+    const [equipmentSearchObj, equipmentSearchObjSet] = useState<searchObjType<equipmentT>>({
         searchItems: [],
     })
-    const [usersToDepartmentsSearchObj, usersToDepartmentsSearchObjSet] = useState<searchObj<userToDepartment>>({
+    const [usersToDepartmentsSearchObj, usersToDepartmentsSearchObjSet] = useState<searchObjType<userToDepartment>>({
         searchItems: [],
     })
-    const [usersToCompaniesSearchObj, usersToCompaniesSearchObjSet] = useState<searchObj<userToCompany>>({
+    const [usersToCompaniesSearchObj, usersToCompaniesSearchObjSet] = useState<searchObjType<userToCompany>>({
         searchItems: [],
     })
 
@@ -110,7 +110,7 @@ export default function Page() {
         }
 
         //perform update or new array
-        function setSearchItemsOnSearchObj<T>(sentSearchObjSet: React.Dispatch<React.SetStateAction<searchObj<T>>>, searchItems: T[], seenUpdateOption: updateOption) {
+        function setSearchItemsOnSearchObj<T>(sentSearchObjSet: React.Dispatch<React.SetStateAction<searchObjType<T>>>, searchItems: T[], seenUpdateOption: updateOption) {
             sentSearchObjSet(prevSearchObj => {
                 const newSearchObj = { ...prevSearchObj }
 
@@ -366,7 +366,7 @@ export default function Page() {
                         showingSideBarSet(false)
                     }}
                 >
-                    <svg style={{ fill: "rgb(var(--shade1))" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+                    <svg style={{ fill: "var(--shade1)" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
                 </button>
 
                 <h3>Choose a screen</h3>
@@ -400,7 +400,7 @@ export default function Page() {
                             showingSideBarSet(true)
                         }}
                     >
-                        <svg style={{ fill: "rgb(var(--shade1))", width: "1.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" /></svg>
+                        <svg style={{ fill: "var(--shade1)", width: "1.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" /></svg>
                     </button>
                 )}
 
@@ -433,12 +433,12 @@ export default function Page() {
                                 />
 
                                 {checklistStartersSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {checklistStartersSearchObj.searchItems.map(eachCheckliststarter => {
 
                                                 return (
-                                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <div key={eachCheckliststarter.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", backgroundColor: "var(--color3)", padding: "var(--spacingR)" }}>
                                                         <h3>{eachCheckliststarter.type}</h3>
 
                                                         <EditResourceButton
@@ -458,7 +458,7 @@ export default function Page() {
                                     <>
                                         <h3>Edit form:</h3>
 
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                             <AddEditChecklistStarter
                                                 sentChecklistStarter={editing.checklistStarters}
                                                 submissionAction={() => {
@@ -502,13 +502,13 @@ export default function Page() {
                                 />
 
                                 {clientRequestsSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(400px, 90%)", overflow: "auto" }} className='snap'>
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(400px, 90%)", overflow: "auto" }} className='snap'>
                                             {clientRequestsSearchObj.searchItems.map(eachClientRequest => {
                                                 if (eachClientRequest.checklistStarter === undefined || eachClientRequest.company === undefined) return null
 
                                                 return (
-                                                    <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "rgb(var(--color3))" }}
+                                                    <DashboardClientRequest key={eachClientRequest.id} style={{ backgroundColor: "var(--color3)" }}
                                                         eachClientRequest={eachClientRequest}
                                                         editButtonComp={(
                                                             <EditResourceButton
@@ -529,7 +529,7 @@ export default function Page() {
                                     <>
                                         <h3>Edit form:</h3>
 
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                             <AddEditClientRequest
                                                 sentClientRequest={editing.clientRequests}
                                                 submissionAction={() => {
@@ -571,10 +571,10 @@ export default function Page() {
                                 />
 
                                 {companiesSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                         {companiesSearchObj.searchItems.map(eachCompany => {
                                             return (
-                                                <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                <div key={eachCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                                     <h3>{eachCompany.name}</h3>
 
                                                     <Link href={`companies/edit/${eachCompany.id}`} target='_blank'>
@@ -615,10 +615,10 @@ export default function Page() {
                                 />
 
                                 {departmentsSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                         {departmentsSearchObj.searchItems.map(eachDepartment => {
                                             return (
-                                                <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                                <div key={eachDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                                     <h3>{eachDepartment.name}</h3>
 
                                                     <Link href={`departments/edit/${eachDepartment.id}`} target='_blank'>
@@ -659,13 +659,13 @@ export default function Page() {
                                 />
 
                                 {tapesSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {tapesSearchObj.searchItems.map(eachTape => {
                                                 if (eachTape.company === undefined) return null
 
                                                 return (
-                                                    <div key={eachTape.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <div key={eachTape.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", backgroundColor: "var(--color3)", padding: "var(--spacingR)" }}>
                                                         <h3>{eachTape.mediaLabel}</h3>
 
                                                         <h3>{eachTape.company.name}</h3>
@@ -687,7 +687,7 @@ export default function Page() {
                                     <>
                                         <h3>Edit form:</h3>
 
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                             <AddEditTape
                                                 sentTape={editing.tapes}
                                                 submissionAction={() => {
@@ -729,13 +729,13 @@ export default function Page() {
                                 />
 
                                 {equipmentSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {equipmentSearchObj.searchItems.map(eachEquipment => {
                                                 if (eachEquipment.company === undefined) return null
 
                                                 return (
-                                                    <div key={eachEquipment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <div key={eachEquipment.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", backgroundColor: "var(--color3)", padding: "var(--spacingR)" }}>
                                                         <h3>{eachEquipment.makeModel}</h3>
 
                                                         <h3>{eachEquipment.company.name}</h3>
@@ -757,7 +757,7 @@ export default function Page() {
                                     <>
                                         <h3>Edit form:</h3>
 
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                             <AddEditEquipment
                                                 sentEquipment={editing.equipment}
                                                 submissionAction={() => {
@@ -830,12 +830,12 @@ export default function Page() {
                                 />
 
                                 {usersSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {usersSearchObj.searchItems.map(eachUser => {
 
                                                 return (
-                                                    <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <div key={eachUser.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", backgroundColor: "var(--color3)", padding: "var(--spacingR)" }}>
                                                         <h3>{eachUser.name}</h3>
 
                                                         <EditResourceButton
@@ -855,7 +855,7 @@ export default function Page() {
                                     <>
                                         <h3>Edit form:</h3>
 
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                             <AddEditUser
                                                 sentUser={editing.users}
                                                 submissionAction={() => {
@@ -953,13 +953,13 @@ export default function Page() {
                                 />
 
                                 {usersToDepartmentsSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {usersToDepartmentsSearchObj.searchItems.map(eachUserToDepartment => {
                                                 if (eachUserToDepartment.user === undefined || eachUserToDepartment.department === undefined) return null
 
                                                 return (
-                                                    <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <div key={eachUserToDepartment.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", backgroundColor: "var(--color3)", padding: "var(--spacingR)" }}>
                                                         <h3>{eachUserToDepartment.user.name}</h3>
 
                                                         <h3>{eachUserToDepartment.department.name}</h3>
@@ -981,7 +981,7 @@ export default function Page() {
                                     <>
                                         <h3>Edit form:</h3>
 
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                             <AddEditUserDepartment
                                                 sentUserDepartment={editing.usersToDepartments}
                                                 departmentsStarter={departmentsSearchObj.searchItems}
@@ -1080,13 +1080,13 @@ export default function Page() {
                                 />
 
                                 {usersToCompaniesSearchObj.searchItems.length > 0 && (
-                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
+                                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 400px)", overflow: "auto" }} className='snap'>
                                             {usersToCompaniesSearchObj.searchItems.map(eachUserToCompany => {
                                                 if (eachUserToCompany.user === undefined || eachUserToCompany.company === undefined) return null
 
                                                 return (
-                                                    <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem" }}>
+                                                    <div key={eachUserToCompany.id} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", backgroundColor: "var(--color3)", padding: "var(--spacingR)" }}>
                                                         <h3>{eachUserToCompany.user.name}</h3>
 
                                                         <h3>{eachUserToCompany.company.name}</h3>
@@ -1108,7 +1108,7 @@ export default function Page() {
                                     <>
                                         <h3>Edit form:</h3>
 
-                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                                        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                                             <AddEditUserCompany
                                                 sentUserCompany={editing.usersToCompanies}
                                                 companiesStarter={companiesSearchObj.searchItems}
@@ -1159,7 +1159,7 @@ function EditResourceButton<K extends keyof editingType>({ editing, editingSet, 
 
     return (
         <>
-            <button className='button1' style={{ backgroundColor: viewingThisItem ? "rgb(var(--color1))" : "" }}
+            <button className='button1' style={{ backgroundColor: viewingThisItem ? "var(--color1)" : "" }}
                 onClick={() => {
                     editingSet(prevEditing => {
                         const newEditing = { ...prevEditing }

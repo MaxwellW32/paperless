@@ -9,7 +9,7 @@ import toast from 'react-hot-toast'
 import ViewTape from '@/components/tapes/ViewTape'
 import { useAtom } from 'jotai'
 import { resourceAuthGlobal } from '@/utility/globalState'
-import { company, resourceAuthType, searchObj, tape, tapeFormNewTapeSchema, tapeFormNewTapeType, tapeFormType } from '@/types'
+import { company, resourceAuthType, searchObjType, tape, tapeFormNewTapeSchema, tapeFormNewTapeType, tapeFormType } from '@/types'
 import { getInitialTapeData } from '@/components/tapes/getTapeData'
 import ShowMore from '@/components/showMore/ShowMore'
 import Search from '@/components/search/Search'
@@ -30,7 +30,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
 
     const userInteracting = useRef(true) //set to true so sends up once
 
-    const [tapesSearchObj, tapesSearchObjSet] = useState<searchObj<tape>>({
+    const [tapesSearchObj, tapesSearchObjSet] = useState<searchObjType<tape>>({
         searchItems: [],
     })
 
@@ -113,7 +113,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
             <ShowMore
                 label='search tapes'
                 content={
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", }}>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", }}>
                         <Search
                             searchObj={tapesSearchObj}
                             searchObjSet={tapesSearchObjSet}
@@ -131,7 +131,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
                         />
 
                         {tapesSearchObj.searchItems.length > 0 && (
-                            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
+                            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(90%, 350px)", overflow: "auto", gridTemplateRows: "350px" }} className='snap'>
                                 {tapesSearchObj.searchItems.map(eachTape => {
                                     return (
                                         <ViewTape key={eachTape.id} seenTape={eachTape}
@@ -177,10 +177,10 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
 
             {formObj.data.tapesInRequest.length > 0 && (
                 <>
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 400px)", overflow: "auto" }} className='snap'>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(100%, 400px)", overflow: "auto" }} className='snap'>
                         {formObj.data.tapesInRequest.map((eachTape, eachTapeIndex) => {
                             return (
-                                <div key={eachTapeIndex} style={{ display: "grid", alignContent: "flex-start", gap: "1rem", position: "relative" }}>
+                                <div key={eachTapeIndex} style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", position: "relative" }}>
                                     <ConfirmationBox
                                         text={""}
                                         confirmationText='are you sure you want to remove?'
@@ -198,7 +198,7 @@ export function EditTapeForm({ seenForm, handleFormUpdate, seenCompanyId }: { se
                                             }
                                         }}
                                         icon={
-                                            <svg style={{ fill: "rgb(var(--shade2))" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"> <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
+                                            <svg style={{ fill: "var(--shade2)" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"> <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
                                         }
                                         runAction={() => {
                                             runSameOnAllFormObjUpdates()
@@ -304,7 +304,7 @@ export function ViewTapeForm({ seenForm }: { seenForm: tapeFormType }) {
 
             {seenForm.data.tapesInRequest.length > 0 && (
                 <>
-                    <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", gridAutoFlow: "column", gridAutoColumns: "min(100%, 300px)", overflow: "auto" }} className='snap'>
+                    <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", gridAutoFlow: "column", gridAutoColumns: "min(100%, 300px)", overflow: "auto" }} className='snap'>
                         {seenForm.data.tapesInRequest.map((eachTapeInRequest, eachTapeInRequestIndex) => {
                             return (
                                 <ViewTape key={eachTapeInRequestIndex} seenTape={eachTapeInRequest} />

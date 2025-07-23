@@ -1,7 +1,7 @@
 "use server"
 import { db } from "@/db"
 import { clientRequests } from "@/db/schema"
-import { checklistItemType, clientRequest, clientRequestFilterType, clientRequestSchema, clientRequestStatusType, company, companySchema, department, newClientRequest, newClientRequestSchema, resourceAuthType, updateClientRequest, updateClientRequestSchema, user, userSchema } from "@/types"
+import { checklistItemType, clientRequest, clientRequestSchema, clientRequestStatusType, department, newClientRequest, newClientRequestSchema, resourceAuthType, tableFilterTypes, updateClientRequest, updateClientRequestSchema } from "@/types"
 import { eq, and, ne, desc, SQLWrapper } from "drizzle-orm"
 import { sendEmail } from "./handleMail"
 import { ensureCanAccessResource } from "./handleAuth"
@@ -104,7 +104,7 @@ export async function getSpecificClientRequest(clientRequestId: clientRequest["i
     return result
 }
 
-export async function getClientRequests(option: { type: "user" } | { type: "company" } | { type: "all" }, filter: clientRequestFilterType, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
+export async function getClientRequests(option: { type: "user" } | { type: "company" } | { type: "all" }, filter: tableFilterTypes<clientRequest> & { oppositeStatus?: boolean }, resourceAuth: resourceAuthType, limit = 50, offset = 0): Promise<clientRequest[]> {
     const authResponse = await ensureCanAccessResource({ type: "clientRequests", clientRequestId: "" }, resourceAuth, "ra")
     const { session } = interpretAuthResponseAndError(authResponse)
 

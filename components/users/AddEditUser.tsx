@@ -124,7 +124,7 @@ export default function AddEditUser({ sentUser, submissionAction }: { sentUser?:
             )}
 
             {formObj.fromDepartment !== undefined && (
-                <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem" }}>
+                <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)" }}>
                     <label>user from department or a client?</label>
 
                     <button className='button1'
@@ -221,7 +221,7 @@ export default function AddEditUser({ sentUser, submissionAction }: { sentUser?:
                     >search default Images</button>
 
                     {defaultImages.length > 0 && (
-                        <div style={{ display: "flex", gap: "1rem", overflow: "auto" }} className='snap'>
+                        <div style={{ display: "flex", gap: "var(--spacingR)", overflow: "auto" }} className='snap'>
                             {defaultImages.map(eachImage => {
                                 const fullUrl = `/defaultImages/${eachImage}`
                                 return (

@@ -69,7 +69,7 @@ export type crudOptionType = "c" | "r" | "ra" | "u" | "d"
 
 
 //handle search component with limits/offsets
-export type searchObj<T> = {
+export type searchObjType<T> = {
     searchItems: T[],
     loading?: true,
     limit?: number, //how many
@@ -134,10 +134,14 @@ export const baseDynamicFormInputArrSchema = z.object({
     data: z.array(baseDynamicFormSchema),
 });
 
-export type tapeFilterType = { id?: tape["id"], mediaLabel?: tape["mediaLabel"], companyId?: company["id"], tapeLocation?: tape["tapeLocation"], oppositeLocation?: boolean }
-export type clientRequestFilterType = { id?: clientRequest["id"], companyId?: company["id"], userId?: clientRequest["userId"], status?: clientRequest["status"], oppositeStatus?: boolean }
-export type equipmentFilterType = { id?: equipmentT["id"], makeModel?: equipmentT["makeModel"], serialNumber?: equipmentT["serialNumber"], companyId?: company["id"], equipmentLocation?: equipmentT["equipmentLocation"] }
-export type allFilterType = tapeFilterType | equipmentFilterType
+export type tableFilterTypes<T> = {
+    [key in keyof T]?: T[key]
+}
+
+
+
+
+
 
 
 
@@ -188,7 +192,8 @@ export const dateSchma = z.preprocess((val) => {
 }, z.date())
 
 //keep synced with db schema
-export const userAccessSchema = z.enum(["admin"])
+export const userAccessOptions = ["admin"] as const
+export const userAccessSchema = z.enum(userAccessOptions)
 export type userAccessLevel = z.infer<typeof userAccessSchema>
 
 export const userSchema = z.object({
@@ -294,7 +299,8 @@ export type updateEquipmentT = z.infer<typeof updateEquipmentSchema>
 
 
 //keep synced with db schema
-export const tapeLocationSchema = z.enum(["in-vault", "with-client"])
+export const tapeLocationOptions = ["in-vault", "with-client"] as const
+export const tapeLocationSchema = z.enum(tapeLocationOptions)
 export type tapeLocation = z.infer<typeof tapeLocationSchema>
 
 export const tapeSchema = z.object({
@@ -340,7 +346,8 @@ export type updateTape = z.infer<typeof updateTapeSchema>
 
 
 
-export const formTypesSchema = z.enum(["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "dynamic"])
+export const formTypesOptions = ["tapeDeposit", "tapeWithdraw", "equipmentDeposit", "equipmentWithdraw", "dynamic"] as const
+export const formTypesSchema = z.enum(formTypesOptions)
 export type formTypesType = z.infer<typeof formTypesSchema>
 
 export const tapeFormNewTapeSchema = newTapeSchema.extend({
@@ -441,7 +448,8 @@ export type updateChecklistStarter = z.infer<typeof updateChecklistStarterSchema
 
 
 //keep synced with db schema
-export const clientRequestStatusSchema = z.enum(["in-progress", "completed", "cancelled", "on-hold"])
+export const clientRequestStatusOptions = ["in-progress", "completed", "cancelled", "on-hold"] as const
+export const clientRequestStatusSchema = z.enum(clientRequestStatusOptions)
 export type clientRequestStatusType = z.infer<typeof clientRequestStatusSchema>
 
 //add access list
@@ -472,7 +480,8 @@ export type newClientRequest = z.infer<typeof newClientRequestSchema>
 
 
 //keep synced with db schema
-export const userDepartmentAccessLevelSchema = z.enum(["admin", "elevated", "regular"])
+export const userDepartmentAccessLevelOptions = ["admin", "elevated", "regular"] as const
+export const userDepartmentAccessLevelSchema = z.enum(userDepartmentAccessLevelOptions)
 export type userDepartmentAccessLevel = z.infer<typeof userDepartmentAccessLevelSchema>
 
 export const userToDepartmentSchema = z.object({
@@ -498,7 +507,8 @@ export type updateUserToDepartment = z.infer<typeof updateUserToDepartmentSchema
 
 
 //keep synced with db schema
-export const companyAccessLevelSchema = z.enum(["admin", "elevated", "regular"])
+export const companyAccessLevelOptions = ["admin", "elevated", "regular"] as const
+export const companyAccessLevelSchema = z.enum(companyAccessLevelOptions)
 export type companyAccessLevel = z.infer<typeof companyAccessLevelSchema>
 
 export const userToCompanySchema = z.object({

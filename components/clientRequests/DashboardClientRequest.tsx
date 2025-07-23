@@ -88,7 +88,7 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
 
             <label className='tag'>{eachClientRequest.status}</label>
 
-            <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--spacingS)", justifyContent: "flex-end" }}>
                 {viewButtonFunction !== undefined && (
                     <button style={{ justifySelf: "flex-end" }} className='button2'
                         onClick={viewButtonFunction}
@@ -109,106 +109,110 @@ export default function DashboardClientRequest({ eachClientRequest, viewButtonFu
                 )}
             </div>
 
-            {activeChecklistItem !== undefined ? (
-                <>
-                    {activeChecklistItem.type === "manual" && canAccessManualCheck && (//allow sign off on prompt popups
-                        <div>
-                            <label>{activeChecklistItem.prompt}</label>
+            {
+                activeChecklistItem !== undefined ? (
+                    <>
+                        {activeChecklistItem.type === "manual" && canAccessManualCheck && (//allow sign off on prompt popups
+                            <div>
+                                <label>{activeChecklistItem.prompt}</label>
 
-                            <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
-                                runAction={async () => {
-                                    try {
-                                        if (resourceAuth === undefined) throw new Error("not seeing auth")
+                                <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='confirmed!'
+                                    runAction={async () => {
+                                        try {
+                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
 
-                                        const newCompletedManualChecklistItem = { ...activeChecklistItem }
-                                        newCompletedManualChecklistItem.completed = true
+                                            const newCompletedManualChecklistItem = { ...activeChecklistItem }
+                                            newCompletedManualChecklistItem.completed = true
 
-                                        //update server
-                                        await updateClientRequestsChecklist(eachClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, resourceAuth)
+                                            //update server
+                                            await updateClientRequestsChecklist(eachClientRequest.id, newCompletedManualChecklistItem, activeChecklistItemIndex, resourceAuth)
 
-                                        runSameUpdate()
+                                            runSameUpdate()
 
-                                    } catch (error) {
-                                        consoleAndToastError(error)
-                                    }
-                                }}
-                            />
-                        </div>
-                    )}
-                </>
-            ) : (
-                <>
-                    {((session.user.accessLevel === "admin") || (seenDepartment !== undefined && seenDepartment.canManageRequests)) && (eachClientRequest.status !== "completed") && (
-                        <>
-                            <h3>finish client request?</h3>
+                                        } catch (error) {
+                                            consoleAndToastError(error)
+                                        }
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        {((session.user.accessLevel === "admin") || (seenDepartment !== undefined && seenDepartment.canManageRequests)) && (eachClientRequest.status !== "completed") && (
+                            <>
+                                <h3>finish client request?</h3>
 
-                            <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='request completed!'
-                                runAction={async () => {
-                                    try {
-                                        if (resourceAuth === undefined) throw new Error("not seeing auth")
+                                <ConfirmationBox text='confirm' confirmationText='are you sure you want to confirm?' successMessage='request completed!'
+                                    runAction={async () => {
+                                        try {
+                                            if (resourceAuth === undefined) throw new Error("not seeing auth")
 
-                                        await updateClientRequests(eachClientRequest.id, {
-                                            status: "completed"
-                                        }, resourceAuth, true, false)
+                                            await updateClientRequests(eachClientRequest.id, {
+                                                status: "completed"
+                                            }, resourceAuth, true, false)
 
-                                        //upload tapes to db
-                                        const clientForms: checklistItemFormType[] = eachClientRequest.checklist.filter(eachChecklistFilter => eachChecklistFilter.type === "form")
+                                            //upload tapes to db
+                                            const clientForms: checklistItemFormType[] = eachClientRequest.checklist.filter(eachChecklistFilter => eachChecklistFilter.type === "form")
 
-                                        clientForms.map(async eachClientForm => {
-                                            if (eachClientForm.form.data === null) return
+                                            clientForms.map(async eachClientForm => {
+                                                if (eachClientForm.form.data === null) return
 
-                                            if (eachClientForm.form.type === "tapeDeposit" || eachClientForm.form.type === "tapeWithdraw") {
-                                                eachClientForm.form.data.tapesInRequest.map(async eachTapeInRequest => {
-                                                    //update tape location
-                                                    eachTapeInRequest.tapeLocation = eachClientForm.form.type === "tapeDeposit" ? "in-vault" : "with-client"
+                                                if (eachClientForm.form.type === "tapeDeposit" || eachClientForm.form.type === "tapeWithdraw") {
+                                                    eachClientForm.form.data.tapesInRequest.map(async eachTapeInRequest => {
+                                                        //update tape location
+                                                        eachTapeInRequest.tapeLocation = eachClientForm.form.type === "tapeDeposit" ? "in-vault" : "with-client"
 
-                                                    if (eachTapeInRequest.id !== undefined) {
-                                                        //update tape
-                                                        await updateTapes(eachTapeInRequest.id, eachTapeInRequest, resourceAuth)
+                                                        if (eachTapeInRequest.id !== undefined) {
+                                                            //update tape
+                                                            await updateTapes(eachTapeInRequest.id, eachTapeInRequest, resourceAuth)
 
-                                                    } else {
-                                                        //new tape to db
-                                                        await addTapes(eachTapeInRequest, resourceAuth)
-                                                    }
+                                                        } else {
+                                                            //new tape to db
+                                                            await addTapes(eachTapeInRequest, resourceAuth)
+                                                        }
 
-                                                    runSameUpdate()
-                                                })
-                                            }
+                                                        runSameUpdate()
+                                                    })
+                                                }
 
-                                            if (eachClientForm.form.type === "equipmentDeposit" || eachClientForm.form.type === "equipmentWithdraw") {
-                                                eachClientForm.form.data.equipmentInRequest.map(async eachEquipmentInRequest => {
-                                                    //update equipment location
-                                                    eachEquipmentInRequest.equipmentLocation = eachClientForm.form.type === "equipmentDeposit" ? "on-site" : "off-site"
+                                                if (eachClientForm.form.type === "equipmentDeposit" || eachClientForm.form.type === "equipmentWithdraw") {
+                                                    eachClientForm.form.data.equipmentInRequest.map(async eachEquipmentInRequest => {
+                                                        //update equipment location
+                                                        eachEquipmentInRequest.equipmentLocation = eachClientForm.form.type === "equipmentDeposit" ? "on-site" : "off-site"
 
-                                                    if (eachEquipmentInRequest.id !== undefined) {
-                                                        //update tape
-                                                        await updateEquipment(eachEquipmentInRequest.id, eachEquipmentInRequest, resourceAuth)
+                                                        if (eachEquipmentInRequest.id !== undefined) {
+                                                            //update tape
+                                                            await updateEquipment(eachEquipmentInRequest.id, eachEquipmentInRequest, resourceAuth)
 
-                                                    } else {
-                                                        //new tape to db
-                                                        await addEquipment(eachEquipmentInRequest, resourceAuth)
-                                                    }
+                                                        } else {
+                                                            //new tape to db
+                                                            await addEquipment(eachEquipmentInRequest, resourceAuth)
+                                                        }
 
-                                                    runSameUpdate()
-                                                })
-                                            }
-                                        })
+                                                        runSameUpdate()
+                                                    })
+                                                }
+                                            })
 
-                                    } catch (error) {
-                                        consoleAndToastError(error)
-                                    }
-                                }}
-                            />
-                        </>
-                    )}
-                </>
-            )}
+                                        } catch (error) {
+                                            consoleAndToastError(error)
+                                        }
+                                    }}
+                                />
+                            </>
+                        )}
+                    </>
+                )
+            }
 
-            {progressBar !== undefined && (
-                <div style={{ position: "relative", height: ".25rem" }}>
-                    <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${progressBar * 100}%`, backgroundColor: "rgb(var(--color1))" }}></div>
-                </div>
-            )}
-        </div>
+            {
+                progressBar !== undefined && (
+                    <div style={{ position: "relative", height: ".25rem" }}>
+                        <div style={{ position: "absolute", top: 0, left: 0, height: "100%", width: `${progressBar * 100}%`, backgroundColor: "var(--color1)" }}></div>
+                    </div>
+                )
+            }
+        </div >
     )
 }

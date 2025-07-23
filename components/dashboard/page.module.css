@@ -11,18 +11,18 @@
     display: grid;
     align-content: flex-start;
     overflow: auto;
-    gap: 1rem;
+    gap: var(--spacingR);
     width: 300px;
-    background-color: rgb(var(--color4));
-    color: rgb(var(--shade2));
-    padding: 1rem;
+    background-color: var(--color4);
+    color: var(--shade2);
+    padding: var(--spacingR);
     z-index: 1;
 }
 
 .dashboardMenu {
     display: grid;
     align-content: flex-start;
-    gap: .5rem;
+    gap: var(--spacingS);
 }
 
 .dashboardMenu button {
@@ -57,28 +57,28 @@
 .clientRequests {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
+    gap: var(--spacingR);
 }
 
 .eachClientRequest {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
-    background-color: rgb(var(--shade2));
-    padding: 1rem;
+    gap: var(--spacingR);
+    background-color: var(--shade2);
+    padding: var(--spacingR);
 }
 
 .eachClientRequest>label {
     padding: .5rem;
-    background-color: rgb(var(--shade1));
-    color: rgb(var(--shade2));
+    background-color: var(--shade1);
+    color: var(--shade2);
     font-size: var(--fontSizeS);
     justify-self: flex-start;
 }
 
 .dateHolder {
     display: flex;
-    gap: .5rem;
+    gap: var(--spacingS);
     font-size: var(--fontSizeS);
     justify-self: flex-end;
 }
@@ -86,16 +86,16 @@
 .mainContent {
     display: grid;
     align-content: flex-start;
-    padding: 1rem;
-    background-color: rgb(var(--color3));
+    padding: var(--spacingR);
+    background-color: var(--color3);
     overflow: auto;
 }
 
 .overviewCont {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
-    padding: 1rem;
+    gap: var(--spacingR);
+    padding: var(--spacingR);
     /* grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 1fr)); */
     grid-template-areas: "a b";
     grid-auto-columns: 1fr;
@@ -105,9 +105,9 @@
 .overviewCont>div {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
-    background-color: rgb(var(--shade2));
-    padding: 1rem;
+    gap: var(--spacingR);
+    background-color: var(--shade2);
+    padding: var(--spacingR);
     overflow: auto;
     max-height: 100%;
     border-radius: .5rem;

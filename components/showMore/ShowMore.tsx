@@ -14,7 +14,7 @@ export default function ShowMore({ label, content, startShowing, allAttributes =
 
     return (
         <div {...allAttributes.mainDiv} className={`${styles.main} ${allAttributes.mainDiv.className ?? ""}`} style={{ ...allAttributes.mainDiv.style }}>
-            <div  {...allAttributes.labelDiv} style={{ display: "flex", gap: ".5rem", alignItems: "center", cursor: "pointer", ...allAttributes.labelDiv.style }}
+            <div  {...allAttributes.labelDiv} style={{ display: "flex", gap: "var(--spacingS)", alignItems: "center", cursor: "pointer", ...allAttributes.labelDiv.style }}
                 onClick={() => {
                     showingSet(prev => !prev)
                 }}
@@ -22,7 +22,7 @@ export default function ShowMore({ label, content, startShowing, allAttributes =
                 <label>{label}</label>
 
                 <div style={{ rotate: showing ? "90deg" : "", transition: "rotate 400ms" }}>
-                    <svg  {...allAttributes.svg} style={{ fill: "rgb(var(--shade1))", ...allAttributes.svg.style }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z" /></svg>
+                    <svg  {...allAttributes.svg} style={{ fill: "var(--shade1)", ...allAttributes.svg.style }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z" /></svg>
                 </div>
             </div>
 
@@ -31,6 +31,6 @@ export default function ShowMore({ label, content, startShowing, allAttributes =
                     {content}
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

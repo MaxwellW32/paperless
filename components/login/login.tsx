@@ -36,7 +36,7 @@ export default function LoginComp() {
 
     return (
         <main className={styles.main}>
-            <div style={{ display: "grid", alignContent: "flex-start", gap: ".5rem", width: "min(400px, 90%)" }}>
+            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingS)", width: "min(400px, 90%)" }}>
                 <h3>Email sign in</h3>
 
                 <input type="text" value={email} placeholder="Please enter your email"
@@ -59,6 +59,6 @@ export default function LoginComp() {
             </div>
 
             <ConnectBackground text={email} />
-        </main>
+        </main >
     )
 }

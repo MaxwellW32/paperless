@@ -11,7 +11,7 @@
     top: 100%;
     right: 0;
     width: min(300px, 100vw);
-    background-color: rgb(var(--shade2));
+    background-color: var(--shade2);
 }
 
 .moreIntemsItem {
@@ -21,6 +21,6 @@
 }
 
 .moreIntemsItem:hover {
-    background-color: rgb(var(--shade1));
-    color: rgb(var(--shade2));
+    background-color: var(--shade1);
+    color: var(--shade2);
 }

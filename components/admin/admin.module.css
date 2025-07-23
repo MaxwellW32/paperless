@@ -10,18 +10,18 @@
 .sidebar {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
+    gap: var(--spacingR);
     width: 300px;
-    background-color: rgb(var(--color3));
-    padding: 1rem;
+    background-color: var(--color3);
+    padding: var(--spacingR);
     overflow: auto;
 }
 
 .mainContent {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
-    padding: 1rem;
+    gap: var(--spacingR);
+    padding: var(--spacingR);
     overflow: auto;
 }
 

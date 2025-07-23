@@ -1,13 +1,13 @@
 .form {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
+    gap: var(--spacingR);
 }
 
 .main {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
+    gap: var(--spacingR);
 }
 
 
@@ -16,24 +16,24 @@
 .eachClientRequest {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
-    background-color: rgb(var(--color3));
-    color: rgb(var(--shade1));
-    padding: 1rem;
+    gap: var(--spacingR);
+    background-color: var(--color3);
+    color: var(--shade1);
+    padding: var(--spacingR);
     border-radius: 1rem;
 }
 
 .eachClientRequest>label {
     padding: .5rem;
-    background-color: rgb(var(--shade1));
-    color: rgb(var(--shade2));
+    background-color: var(--shade1);
+    color: var(--shade2);
     font-size: var(--fontSizeS);
     justify-self: flex-start;
 }
 
 .dateHolder {
     display: flex;
-    gap: .5rem;
+    gap: var(--spacingS);
     font-size: var(--fontSizeS);
     justify-self: flex-end;
 }
@@ -41,8 +41,8 @@
 .island {
     display: grid;
     align-content: flex-start;
-    gap: 1rem;
-    padding: 1rem;
-    background-color: rgb(var(--color3));
+    gap: var(--spacingR);
+    padding: var(--spacingR);
+    background-color: var(--color3);
     border-radius: 1rem;
 }

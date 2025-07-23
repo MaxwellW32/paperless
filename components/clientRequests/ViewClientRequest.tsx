@@ -72,10 +72,10 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                     <>
                         <h3>Clients visiting: </h3>
 
-                        <ul style={{ display: "grid", gap: "1rem" }}>
+                        <ul style={{ display: "grid", gap: "var(--spacingR)" }}>
                             {seenCompanyUsers.map((eachUser) => {
                                 return (
-                                    <li key={eachUser.id} className='tag' style={{ backgroundColor: "rgb(var(--color1))" }}>
+                                    <li key={eachUser.id} className='tag' style={{ backgroundColor: "var(--color1)" }}>
                                         <p>{eachUser.name}</p>
                                     </li>
                                 )
@@ -120,7 +120,7 @@ export default function ViewClientRequest({ sentClientRequest, department }: { s
                     if (!canShowForm) return null
 
                     return (
-                        <div key={eachChecklistItemIndex} style={{ backgroundColor: "rgb(var(--shade2))", padding: "1rem" }}>
+                        <div key={eachChecklistItemIndex} style={{ backgroundColor: "var(--shade2)", padding: "var(--spacingR)" }}>
                             {eachChecklistItem.form.type === "dynamic" && (
                                 <ReadDynamicForm seenForm={eachChecklistItem.form.data} />
                             )}

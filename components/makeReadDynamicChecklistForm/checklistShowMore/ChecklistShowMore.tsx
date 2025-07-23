@@ -8,7 +8,7 @@ export default function ChecklistShowMore({ label, content, svgColor, startShowi
     return (
         <div style={{ display: "grid", alignContent: "flex-start" }}>
             {/* label area */}
-            <div style={{ display: "flex", gap: ".5rem", alignItems: "center", cursor: "pointer" }}
+            <div style={{ display: "flex", gap: "var(--spacingS)", alignItems: "center", cursor: "pointer" }}
                 onClick={() => {
                     showingSet(prev => !prev)
                 }}
@@ -26,6 +26,6 @@ export default function ChecklistShowMore({ label, content, svgColor, startShowi
                     {content}
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

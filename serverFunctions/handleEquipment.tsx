@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { and, desc, eq, ne, sql, SQLWrapper } from "drizzle-orm";
 import { ensureCanAccessResource } from "./handleAuth";
 import { interpretAuthResponseAndError } from "@/utility/utility";
-import { equipmentT, newEquipmentT, newEquipmentSchema, resourceAuthType, equipmentSchema, company, equipmentFilterType } from "@/types";
+import { equipmentT, newEquipmentT, newEquipmentSchema, resourceAuthType, equipmentSchema, company, tableFilterTypes } from "@/types";
 import { equipment } from "@/db/schema";
 
 export async function addEquipment(newEquipmentObj: newEquipmentT, resourceAuth: resourceAuthType): Promise<equipmentT> {
@@ -58,7 +58,7 @@ export async function getSpecificEquipment(equipmentId: equipmentT["id"], resour
     return result
 }
 
-export async function getEquipment(filter: equipmentFilterType, resourceAuth: resourceAuthType, limit = 50, offset = 0, withProperty: { company?: true } = {}): Promise<equipmentT[]> {
+export async function getEquipment(filter: tableFilterTypes<equipmentT>, resourceAuth: resourceAuthType, limit = 50, offset = 0, withProperty: { company?: true } = {}): Promise<equipmentT[]> {
     // Security check
     const authResponse = await ensureCanAccessResource({ type: "equipment", equipmentId: "" }, resourceAuth, "ra")
     interpretAuthResponseAndError(authResponse)

@@ -4,8 +4,8 @@ import Moment from 'react-moment'
 
 export default function ViewTape({ seenTape, addFunction }: { seenTape: Partial<tape>, addFunction?: () => void }) {
     return (
-        <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", backgroundColor: "rgb(var(--color3))", padding: "1rem", gridTemplateRows: "1fr auto", overflow: "auto", borderRadius: "1rem" }}>
-            <div style={{ display: "grid", alignContent: "flex-start", gap: "1rem", overflow: "auto" }}>
+        <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", backgroundColor: "var(--color3)", padding: "var(--spacingR)", gridTemplateRows: "1fr auto", overflow: "auto", borderRadius: "1rem" }}>
+            <div style={{ display: "grid", alignContent: "flex-start", gap: "var(--spacingR)", overflow: "auto" }}>
                 {seenTape.mediaLabel !== undefined && (
                     <>
                         <label>media label</label>

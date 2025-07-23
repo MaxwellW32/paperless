@@ -1,9 +1,9 @@
-import { checklistItemType, user } from "@/types";
+import { checklistItemType, clientRequestStatusOptions, companyAccessLevelOptions, tapeLocationOptions, user, userAccessOptions, userDepartmentAccessLevelOptions } from "@/types";
 import { relations } from "drizzle-orm";
 import { timestamp, pgTable, text, primaryKey, integer, varchar, pgEnum, json, index, boolean } from "drizzle-orm/pg-core"
 import type { AdapterAccountType } from "next-auth/adapters"
 
-export const accessLevelEnum = pgEnum("accessLevel", ["admin"]);
+export const accessLevelEnum = pgEnum("accessLevel", userAccessOptions);
 
 export const users = pgTable("users", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -80,7 +80,7 @@ export const equipmentRelations = relations(equipment, ({ one }) => ({
 
 
 
-export const tapeLocationEnum = pgEnum("tapeLocation", ["in-vault", "with-client"]);
+export const tapeLocationEnum = pgEnum("tapeLocation", tapeLocationOptions);
 
 export const tapes = pgTable("tapes", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -112,7 +112,7 @@ export const checklistStartersRelations = relations(checklistStarters, ({ many }
 
 
 
-export const clientRequestStatusEnum = pgEnum("status", ["in-progress", "completed", "cancelled", "on-hold"]);
+export const clientRequestStatusEnum = pgEnum("status", clientRequestStatusOptions);
 
 export const clientRequests = pgTable("clientRequests", {
     id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -150,7 +150,7 @@ export const clientRequestsRelations = relations(clientRequests, ({ one }) => ({
 
 
 
-export const departmentAccessLevelEnum = pgEnum("departmentAccessLevel", ["admin", "elevated", "regular"]);
+export const departmentAccessLevelEnum = pgEnum("departmentAccessLevel", userDepartmentAccessLevelOptions);
 
 export const usersToDepartments = pgTable("usersToDepartments", {
     id: varchar("id", { length: 255 }).notNull().$defaultFn(() => crypto.randomUUID()),
@@ -179,7 +179,7 @@ export const usersToDepartmentsRelations = relations(usersToDepartments, ({ one 
 
 
 
-export const companyAccessLevelEnum = pgEnum("companyAccessLevel", ["admin", "elevated", "regular"]);
+export const companyAccessLevelEnum = pgEnum("companyAccessLevel", companyAccessLevelOptions);
 
 export const usersToCompanies = pgTable("usersToCompanies", {
     id: varchar("id", { length: 255 }).notNull().$defaultFn(() => crypto.randomUUID()),
