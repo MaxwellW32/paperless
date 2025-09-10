@@ -19,3 +19,15 @@
 
 //write to shared project
 //web sockets
+
+
+
+//concern
+//client contract ended - e.g hosting
+//however client sent
+//however datacenter employee caught request
+//each request has a checklist, manual checks, emails
+
+//change
+//supervisor approval
+//datacenter team notified first - to security
