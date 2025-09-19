@@ -176,7 +176,7 @@ export const usersToDepartmentsRelations = relations(usersToDepartments, ({ one 
     }),
 }));
 
-
+//admin, head, elevated, regular
 
 
 export const companyAccessLevelEnum = pgEnum("companyAccessLevel", companyAccessLevelOptions);
