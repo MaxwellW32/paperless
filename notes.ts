@@ -1,4 +1,10 @@
 //To do:
+//add cancel request - regular employee
+
+//talk with security - do we need to send memos
+
+//marian lincon - what types of reports should we generate
+
 //implement new auth - who can add to tables, specific columns in table
 //Convo with Albert login - email Auth - IT security. Look at login credentials for security - e.g ensure only company domain emails can be used for account login
 //Bank app - logout after 15 minutes - timeout screen with pin
